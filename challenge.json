@@ -1,0 +1,49 @@
+{
+  "challenge_code": "100017",
+  "challenge_name": "Land Re-Survey",
+  "usecase_title": "Development of AI Tools for Accelerating Resurvey: Parcel Extraction, Conflict Detection and Validation ",
+  "timeline": {
+    "launch_date": "20/10/2025",
+    "submission_deadline": "08/12/2025",
+    "shortlisting_date": "11/12/2025",
+    "presentation_date": "15/12/2025",
+    "winner_announcement": "18/12/2025",
+    "poc_deployment": "31/12/2025"
+  },
+  "details": {
+    "title": "AI Tools for Accelerating Land Resurvey: Parcel Extraction, Conflict Detection, and Validation",
+    "theme": "AI for Land Governance and Geospatial Intelligence",
+    "department": "Lands & Revenue Department, Government of Andhra Pradesh",
+    "challenge_teaser": "Help Andhra Pradesh achieve dispute-free, digital land governance! Build AI tools to automatically extract land parcels from aerial imagery, detect boundary conflicts, and enable real-time validation for faster, transparent resurvey operations.",
+    "challenge_overview": "The Government of Andhra Pradesh is executing a large-scale Resurvey initiative to provide dispute-free land titles through modern geospatial technologies such as drones, GNSS rovers, and a 70-station CORS network, delivering centimetre-grade accuracy across cadastral layers. Currently, parcel identification and conflict resolution rely heavily on manual delineation and field verification, resulting in significant delays and variability in accuracy. This challenge seeks to harness Artificial Intelligence to automate parcel boundary extraction, detect discrepancies between textual records and resurvey data, and enable AI-assisted field validation. The solution will empower survey teams to rapidly identify anomalies, resolve disputes, and accelerate the state’s cadastral modernization program.",
+    "expected_solution": [
+      "AI-Based Geospatial Image Processing: Automate parcel boundary extraction and land use classification from drone/aerial imagery aligned to ROR/parcel IDs and FMB control.",
+      "Conflict Detection: Automatically detect and highlight discrepancies between WebLand 1.0 (textual land records) and resurvey-derived parcel areas, linking to parcel ID and owner details.",
+      "AI-Assisted Field Validation: Provide mobile-ready tools for survey inspectors to verify boundaries, prioritize field checks, and log feedback with audit trails for dispute resolution.",
+      "System Integration: Ensure compatibility with WebLand 1.0 through secure APIs or batch imports as per departmental standards.",
+      "Visualization Dashboard: Enable visualization of conflict areas, verification status, and survey progress through an intuitive interface."
+    ],
+    "outcomes": [
+      "Accelerated generation of verified parcel maps for publication and objection handling.",
+      "Significant reduction in manual delineation and field survey turnaround time.",
+      "Early detection and prioritization of high-risk parcels to minimize litigation and re-surveys.",
+      "Standardized, AI-assisted validation processes improving transparency and auditability."
+    ],
+    "expected_impact": [
+      "Survey Teams Reduced manual tracing effort, improved consistency, and faster validation cycles.",
+      "Department Accelerated cadastral modernization and enhanced transparency in land records management.",
+      "Citizens Faster dispute resolution and reliable, tamper-proof land ownership verification."
+    ],
+    "dataset_access": [
+      "Multi-spectral drone/aerial imagery for feature extraction and classification benchmarks.",
+      "Digitized ROR, parcel IDs, and boundary polylines for AI training and testing.",
+      "Unique parcel identifiers for validation and ground-truth comparison."
+    ],
+    "poc_scope": "The proof-of-concept will be implemented in one mandal with active resurvey operations, covering varied land types and terrain, and involving three survey inspector units and ten field survey teams.",
+    "poc_success_criteria": [
+      "Parcel extraction precision greater than 80% relative to expert-labelled references.",
+      "At least 70% positive feedback from survey teams during field testing."
+    ],
+    "data_privacy": "Solutions must comply with state data protection guidelines for geospatial and citizen-linked datasets. Sensitive cadastral and ownership data must be processed securely, anonymized where possible, and accessed only within authorized environments."
+  }
+}
