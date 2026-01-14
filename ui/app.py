@@ -342,56 +342,53 @@ def create_parcel_map(gdf, center):
     else:
         gdf_plot = gdf
 
-    # Add parcels
-    for idx, row in gdf_plot.iterrows():
-        confidence = row.get('confidence', 0.5)
-        color = get_color(confidence)
+    # Prepare data for single GeoJson layer
+    gdf_plot = gdf_plot.copy()
+    gdf_plot['color'] = gdf_plot['confidence'].apply(get_color) if 'confidence' in gdf_plot.columns else '#EAB308'
+    gdf_plot['fill_opacity'] = gdf_plot['confidence'].apply(get_fill_opacity) if 'confidence' in gdf_plot.columns else 0.5
 
-        # Create tooltip
-        survey_no = row.get('ror_survey_no', 'N/A')
-        area_acres = row.get('area_acres', row.geometry.area / 4046.86)
-        routing = row.get('routing', 'UNKNOWN')
+    # Style function that reads from feature properties
+    def style_function(feature):
+        props = feature.get('properties', {})
+        return {
+            'fillColor': props.get('color', '#EAB308'),
+            'color': '#334155',
+            'weight': 1.5,
+            'fillOpacity': props.get('fill_opacity', 0.5)
+        }
 
-        tooltip_html = f"""
-        <div style="font-family: system-ui; font-size: 13px; min-width: 180px;">
-            <div style="font-weight: 600; margin-bottom: 8px; color: #1E293B;">
-                Parcel {idx}
-            </div>
-            <div style="margin-bottom: 4px;">
-                <span style="color: #64748B;">Survey No:</span>
-                <span style="font-weight: 500;">{survey_no}</span>
-            </div>
-            <div style="margin-bottom: 4px;">
-                <span style="color: #64748B;">Area:</span>
-                <span style="font-weight: 500;">{area_acres:.2f} acres</span>
-            </div>
-            <div style="margin-bottom: 4px;">
-                <span style="color: #64748B;">Confidence:</span>
-                <span style="font-weight: 600; color: {color};">{confidence:.0%}</span>
-            </div>
-            <div style="margin-top: 8px; padding: 4px 8px; background: {color}20; border-radius: 4px; text-align: center;">
-                <span style="font-weight: 600; color: {color};">{routing.replace('_', ' ')}</span>
-            </div>
-        </div>
-        """
+    def highlight_function(feature):
+        props = feature.get('properties', {})
+        return {
+            'fillColor': props.get('color', '#EAB308'),
+            'color': '#1E40AF',
+            'weight': 3,
+            'fillOpacity': 0.8
+        }
 
-        folium.GeoJson(
-            row.geometry.__geo_interface__,
-            style_function=lambda x, c=color, conf=confidence: {
-                'fillColor': c,
-                'color': '#334155',
-                'weight': 1.5,
-                'fillOpacity': get_fill_opacity(conf)
-            },
-            highlight_function=lambda x, c=color: {
-                'fillColor': c,
-                'color': '#1E40AF',
-                'weight': 3,
-                'fillOpacity': 0.7
-            },
-            tooltip=folium.Tooltip(tooltip_html),
-            popup=folium.Popup(tooltip_html, max_width=250)
-        ).add_to(m)
+    # Add all parcels as a single GeoJson layer
+    geojson_data = gdf_plot.__geo_interface__
+
+    folium.GeoJson(
+        geojson_data,
+        style_function=style_function,
+        highlight_function=highlight_function,
+        tooltip=folium.GeoJsonTooltip(
+            fields=['parcel_id', 'ror_survey_no', 'area_acres', 'confidence', 'routing'],
+            aliases=['Parcel:', 'Survey No:', 'Area (acres):', 'Confidence:', 'Status:'],
+            localize=True,
+            sticky=False,
+            style="""
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                padding: 10px;
+                font-family: system-ui;
+                font-size: 13px;
+            """
+        )
+    ).add_to(m)
 
     # Add legend
     legend_html = """
@@ -639,7 +636,7 @@ def main():
 
             # Create and display map
             m = create_parcel_map(processed_gdf, center)
-            st_folium(m, width=None, height=600, returned_objects=[], feature_group_to_add=None)
+            st_folium(m, width=None, height=600, returned_objects=[])
 
         with tab2:
             render_statistics(processed_gdf, routing_summary, conflicts)
