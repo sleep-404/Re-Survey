@@ -263,8 +263,8 @@ class BoundaryAIPipeline:
             'total_area_sqm': float(parcels.geometry.area.sum()),
             'mean_area_sqm': float(parcels.geometry.area.mean()) if len(parcels) > 0 else 0,
             'median_area_sqm': float(parcels.geometry.area.median()) if len(parcels) > 0 else 0,
-            'matched_parcels': sum(1 for m in matches if m.ror_record is not None),
-            'unmatched_parcels': sum(1 for m in matches if m.ror_record is None),
+            'matched_parcels': sum(1 for m in matches if m.ror_survey_no is not None),
+            'unmatched_parcels': sum(1 for m in matches if m.ror_survey_no is None),
             'total_conflicts': len(conflicts),
             'conflict_types': {}
         }
