@@ -11,7 +11,7 @@ from .data_loader import ORILoader, RORLoader, ShapefileLoader, VillageDataset
 from .segmentation import ParcelSegmenter, TiledSegmenter
 from .vectorization import TopologyEnforcer, BoundaryRefiner
 from .ror_engine import RORConstraintEngine
-from .confidence import ConfidenceScorer, ConflictDetector, BatchAnalyzer
+from .confidence import ConfidenceScorer, ConflictDetector
 from .pipeline import BoundaryAIPipeline, PipelineConfig, PipelineResult
 
 __all__ = [
@@ -26,7 +26,6 @@ __all__ = [
     'RORConstraintEngine',
     'ConfidenceScorer',
     'ConflictDetector',
-    'BatchAnalyzer',
     'BoundaryAIPipeline',
     'PipelineConfig',
     'PipelineResult',

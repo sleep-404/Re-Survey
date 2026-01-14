@@ -524,3 +524,16 @@ def get_routing_stats(parcels: gpd.GeoDataFrame) -> Dict:
     """Get routing statistics for scored parcels."""
     scorer = ConfidenceScorer()
     return scorer.get_routing_summary(parcels)
+
+
+# Additional class methods for pipeline compatibility
+
+ConfidenceScorer.score_parcels = lambda self, parcels, ror_records=None, expected_count=None: \
+    self.score_all_parcels(
+        parcels,
+        expected_count=expected_count or len(parcels),
+        min_area_sqm=parcels.geometry.area.min() * 0.5 if len(parcels) > 0 else 100,
+        max_area_sqm=parcels.geometry.area.max() * 1.5 if len(parcels) > 0 else 50000
+    )
+
+ConflictDetector.detect_all_conflicts = ConflictDetector.detect_conflicts
