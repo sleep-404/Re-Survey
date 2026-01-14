@@ -1,0 +1,74 @@
+03/01/26, 12:23 pm - Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them. Learn more.
+31/12/25, 4:01 pm - ~ Sreenath M created group "Re_Survey (RTGS Hackathon)"
+03/01/26, 12:23 pm - ~ Sreenath M added you
+03/01/26, 12:23 pm - ~ Sreenath M added ~ Dr Madhu Chandra
+03/01/26, 12:24 pm - +91 94956 42353: Hi all,
+
+1. The shortlisted participants for the hackathon have been added to the group.
+2. @participants: We have sent an email confirming your selection.
+3. You may raise your queries here.
+4. The exact time for the orientation on January 6th will be communicated shortly.
+03/01/26, 12:27 pm - ~ Sreenath M added ~ Megha
+03/01/26, 12:30 pm - ~ Sreenath M added ~ Prasanthi Chowdary
+05/01/26, 3:23 pm - +91 75693 41393: Hi team, Could you please confirm the timing for tomorrow's orientation session!?
+
+Thank you.
+05/01/26, 4:01 pm - +91 90520 06298: Sir, Please confirm the exact time for the orientation on January 6th
+05/01/26, 4:03 pm - +91 94956 42353: will confirm by 5.30  PM
+05/01/26, 5:11 pm - +91 79895 38844: @⁨~Kezia Kumari⁩ @⁨+91 93912 91725⁩ @⁨+91 94418 36701⁩ 
+Sir / Madam ,
+
+This is to inform you that an orientation session has been scheduled for the startups shortlisted for the AI Hackathon on 6th January 2026 (exact time will be communicated separately).
+
+You are requested to kindly attend the session to explain the concept and departmental side technical expectations on  “Development of AI Tools for Accelerating Resurvey – Parcel Extraction, Conflict Detection and Validation.”
+
+The session will cover:
+•	Brief on the use case and resurvey context
+•	Existing process flows and key pain points
+•	Current mitigation mechanisms
+•	Expectations from AI-based solutions, including technical/integration aspects
+•	Explanation of datasets being provided
+•	Clarification of queries raised by participating startups
+
+Your presence will be key to ensure clear articulation of functional needs, operational constraints, and field realities, and to guide participants towards outcome-oriented, implementable AI solutions aligned with the AP Resurvey Project for SS&LRs Dept.
+05/01/26, 5:56 pm - +91 96424 44482: Im engaged in Crda work tommorow sir.
+05/01/26, 7:46 pm - +91 90520 06298: Sir, Please confirm the exact time for the orientation on January 6th (tomorrow).
+05/01/26, 8:09 pm - +91 94956 42353: Waiting for the confirmation from CEO RTGS.
+05/01/26, 9:20 pm - +91 94956 42353: *Time : 12PM - 1 PM* <This message was edited>
+05/01/26, 9:24 pm - ~ Megha added +91 70138 12821
+05/01/26, 10:37 pm - +91 94956 42353: https://teams.microsoft.com/l/meetup-join/19%3ameeting_NzM2ZTQ1NGYtNTFhYS00M2JkLTg3NzEtY2RhZDMyYzJlYzE5%40thread.v2/0?context=%7b%22Tid%22%3a%225b973f99-77df-4beb-b27d-aa0c70b8482c%22%2c%22Oid%22%3a%22e2f87f76-026b-4636-bbe6-790e8d24ad8c%22%7d
+06/01/26, 7:25 am - You added Badri and Sarath
+06/01/26, 7:25 am - You added Praneeth
+06/01/26, 11:41 am - +91 94956 42353: Please join by 11.55
+06/01/26, 11:43 am - +91 90520 06298: Sir, we tried to join. The message " . Someone will let you in when the meeting starts." is displayed.
+06/01/26, 10:14 pm - +91 94956 42353: *Demo Presentation* 
+•	Proposed Dates: January 19th - 23rd 
+•	Exact Date and Time will be shared.
+07/01/26, 10:12 am - ~ Prasanthi Chowdary added +91 84318 96070 and +91 93810 60523
+08/01/26, 3:45 pm - +91 94956 42353: IMG-20260108-WA0001.jpg (file attached)
+@officials
+08/01/26, 4:46 pm - +91 90520 06298: Hi Sreenath,
+
+As discussed during the orientation session on 6th Jan 2026, please find the following google drive  link for sample data ( ORI data) for another two villages for testing.
+
+https://drive.google.com/file/d/1PnQUM8Yh79UoS4TdWKenhT8UFq5rE8w4/view?usp=sharing
+10/01/26, 12:03 am - +91 75693 41393: Hi sir,
+
+Thank you for sharing the ORI data. It would be great if you could provide us the boundary shapefiles like how provided for previous ones(kanumuru, nibanupudi)!
+
+Thank you again
+cc @⁨~Sreenath M⁩  <This message was edited>
+10/01/26, 8:04 am - +91 79895 38844: @⁨~P J Chandrasekhara Rao⁩ pl see
+10/01/26, 8:32 am - +91 90520 06298: Noted Sir.
+12/01/26, 11:20 am - +91 75693 41393: Hi Team, Good morning
+
+When can we expect the data, sir?
+12/01/26, 11:22 am - +91 90520 06298: We have already shared data through Google drive link
+12/01/26, 11:22 am - +91 90520 06298: https://drive.google.com/file/d/1PnQUM8Yh79UoS4TdWKenhT8UFq5rE8w4/view?usp=sharing
+12/01/26, 11:27 am - +91 75693 41393: Yes, sir, we received ORI data! 
+Any updates on the boundary shapefiles, similar to those provided for previous ones (Kanumuru, Nibanupudi)?
+As discussed, having digitized boundary data will help us reduce errors, maintain uniformity in inputs, and significantly enhance model performance and reproducibility.
+12/01/26, 11:34 am - +91 90520 06298: As discussed during the orientation session, the Land Parcel shapefile constitutes the final output to be generated by the AI Hackathon participants as part of the proposed solution.
+
+Accordingly, providing the Land Parcel shapefile or any derivative output to the participants in advance would materially compromise the objectivity and integrity of the solution validation process. Such pre-disclosure would effectively negate the assessment of the AI model’s core capabilities, including autonomous parcel extraction, boundary delineation, and conflict detection.
+12/01/26, 11:43 am - ~ JAY🕸️ added +91 91053 08987
