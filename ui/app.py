@@ -383,7 +383,14 @@ def create_parcel_map(gdf, center):
                 'weight': 1.5,
                 'fillOpacity': get_fill_opacity(conf)
             },
-            tooltip=folium.Tooltip(tooltip_html)
+            highlight_function=lambda x, c=color: {
+                'fillColor': c,
+                'color': '#1E40AF',
+                'weight': 3,
+                'fillOpacity': 0.7
+            },
+            tooltip=folium.Tooltip(tooltip_html),
+            popup=folium.Popup(tooltip_html, max_width=250)
         ).add_to(m)
 
     # Add legend
@@ -632,7 +639,7 @@ def main():
 
             # Create and display map
             m = create_parcel_map(processed_gdf, center)
-            st_folium(m, width=None, height=600, returned_objects=[])
+            st_folium(m, width=None, height=600, returned_objects=[], feature_group_to_add=None)
 
         with tab2:
             render_statistics(processed_gdf, routing_summary, conflicts)
