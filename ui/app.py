@@ -209,8 +209,8 @@ def load_village_data(shapefile_path: str, ror_path: str = None):
         return None, None, None
 
 
-@st.cache_data
-def process_parcels(_gdf, _ror_data):
+@st.cache_data(ttl=60)  # Cache for 60 seconds only
+def process_parcels(_gdf, _ror_data, _cache_version=2):
     """Process parcels with ROR matching and confidence scoring."""
     if _gdf is None:
         return None, None, None
