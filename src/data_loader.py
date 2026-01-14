@@ -213,40 +213,84 @@ class RORLoader:
         """
         Load and standardize ROR Excel data.
 
+        Handles AP ROR format with Telugu headers and merged cells.
+
         Returns:
             Standardized DataFrame with consistent column names
         """
-        # Read Excel file
-        df = pd.read_excel(self.path)
+        # Read Excel - try to detect header row
+        df_raw = pd.read_excel(self.path, header=None)
 
-        # Standardize column names (lowercase, strip spaces)
-        df.columns = df.columns.str.lower().str.strip()
+        # Find the row with actual column headers (contains "LP" or "Extent" or "ULPIN")
+        header_row = None
+        for idx, row in df_raw.iterrows():
+            row_str = ' '.join(str(v) for v in row.values if pd.notna(v))
+            if 'LP' in row_str and ('Extent' in row_str or 'ULPIN' in row_str):
+                header_row = idx
+                break
 
-        # Map to standard column names
-        column_map = {}
-        for standard_name, variations in self.COLUMN_MAPPINGS.items():
-            for col in df.columns:
-                if col in variations or any(v in col for v in variations):
-                    column_map[col] = standard_name
+        if header_row is None:
+            # Fall back to row 1 (common pattern)
+            header_row = 1
+
+        # Find the data start row (first row with numeric serial number)
+        data_start = header_row + 1
+        for idx in range(header_row + 1, min(header_row + 5, len(df_raw))):
+            first_val = df_raw.iloc[idx, 0]
+            if pd.notna(first_val):
+                try:
+                    int(float(first_val))
+                    data_start = idx
                     break
+                except (ValueError, TypeError):
+                    continue
 
-        df = df.rename(columns=column_map)
+        # Read with proper header
+        df = pd.read_excel(self.path, skiprows=data_start)
 
-        # Calculate area in square meters if we have acres
+        # Assign standard column names based on position
+        # AP ROR format: Serial, LP No, Extent(Acres), ULPIN, Survey No, ...
+        col_mapping = {}
+        for idx, col in enumerate(df.columns):
+            col_str = str(col).lower()
+            if idx == 0:
+                col_mapping[col] = 'serial_no'
+            elif idx == 1 or 'lp' in col_str:
+                col_mapping[col] = 'lp_number'
+            elif idx == 2 or 'extent' in col_str or 'acres' in col_str:
+                col_mapping[col] = 'extent_acres'
+            elif idx == 3 or 'ulpin' in col_str:
+                col_mapping[col] = 'ulpin'
+            elif idx == 4 or 'survey' in col_str or 'సర్వే' in col_str:
+                col_mapping[col] = 'survey_no'
+            elif 'స్వభావ' in col_str or 'nature' in col_str:
+                col_mapping[col] = 'land_type'
+            elif 'పేరు' in col_str or 'name' in col_str:
+                col_mapping[col] = 'owner_name'
+
+        df = df.rename(columns=col_mapping)
+
+        # Parse extent (acres) - handle "Acres-Cents" format
         if 'extent_acres' in df.columns:
-            guntas = df.get('extent_guntas', 0)
-            if isinstance(guntas, pd.Series):
-                guntas = guntas.fillna(0)
-            else:
-                guntas = 0
+            df['extent_acres'] = pd.to_numeric(df['extent_acres'], errors='coerce').fillna(0)
+            # Convert to sqm (1 acre = 4046.86 sqm)
+            df['extent_sqm'] = df['extent_acres'] * 4046.86
 
-            # 1 acre = 4046.86 sqm, 1 gunta = 101.17 sqm
-            df['extent_sqm'] = (df['extent_acres'].fillna(0) * 4046.86 +
-                               guntas * 101.17)
-
-        # Clean up survey numbers
+        # Clean survey numbers - extract just the number part
         if 'survey_no' in df.columns:
-            df['survey_no'] = df['survey_no'].astype(str).str.strip()
+            def clean_survey_no(val):
+                if pd.isna(val):
+                    return ''
+                s = str(val).strip()
+                # Remove "(SY No)" suffix and newlines
+                s = s.replace('\n', ' ').replace('(SY No)', '').strip()
+                return s
+
+            df['survey_no'] = df['survey_no'].apply(clean_survey_no)
+
+        # Remove rows with no valid data
+        if 'extent_acres' in df.columns:
+            df = df[df['extent_acres'] > 0].copy()
 
         return df
 
