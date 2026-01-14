@@ -120,12 +120,12 @@ class BoundaryAIPipeline:
         ror_records = []
         if ror_path:
             ror_loader = RORLoader(ror_path)
-            ror_records = ror_loader.get_records()
+            ror_records = ror_loader.get_parcel_constraints()
 
         ground_truth = None
         if shapefile_path:
             shp_loader = ShapefileLoader(shapefile_path)
-            ground_truth = shp_loader.get_parcels()
+            ground_truth = shp_loader.gdf
 
         # Stage 2: Segment imagery
         if progress_callback:
