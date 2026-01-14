@@ -9,7 +9,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import folium
-from streamlit_folium import st_folium
+from streamlit_folium import st_folium, folium_static
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
@@ -369,13 +369,37 @@ def create_parcel_map(gdf, center):
     # Add all parcels as a single GeoJson layer
     geojson_data = gdf_plot.__geo_interface__
 
+    # Build tooltip fields based on available columns
+    available_cols = gdf_plot.columns.tolist()
+    tooltip_fields = []
+    tooltip_aliases = []
+
+    if 'parcel_id' in available_cols:
+        tooltip_fields.append('parcel_id')
+        tooltip_aliases.append('Parcel:')
+    if 'ror_survey_no' in available_cols:
+        tooltip_fields.append('ror_survey_no')
+        tooltip_aliases.append('Survey No:')
+    elif 'lp_no' in available_cols:
+        tooltip_fields.append('lp_no')
+        tooltip_aliases.append('LP No:')
+    if 'area_acres' in available_cols:
+        tooltip_fields.append('area_acres')
+        tooltip_aliases.append('Area (acres):')
+    if 'confidence' in available_cols:
+        tooltip_fields.append('confidence')
+        tooltip_aliases.append('Confidence:')
+    if 'routing' in available_cols:
+        tooltip_fields.append('routing')
+        tooltip_aliases.append('Status:')
+
     folium.GeoJson(
         geojson_data,
         style_function=style_function,
         highlight_function=highlight_function,
         tooltip=folium.GeoJsonTooltip(
-            fields=['parcel_id', 'ror_survey_no', 'area_acres', 'confidence', 'routing'],
-            aliases=['Parcel:', 'Survey No:', 'Area (acres):', 'Confidence:', 'Status:'],
+            fields=tooltip_fields,
+            aliases=tooltip_aliases,
             localize=True,
             sticky=False,
             style="""
@@ -636,7 +660,7 @@ def main():
 
             # Create and display map
             m = create_parcel_map(processed_gdf, center)
-            st_folium(m, width=None, height=600, returned_objects=[])
+            folium_static(m, width=None, height=600)
 
         with tab2:
             render_statistics(processed_gdf, routing_summary, conflicts)
