@@ -23,7 +23,7 @@ from .data_loader import ORILoader, RORLoader, ShapefileLoader, VillageDataset
 from .segmentation import ParcelSegmenter, TiledSegmenter, create_mock_segments
 from .vectorization import TopologyEnforcer, BoundaryRefiner, merge_adjacent_segments
 from .ror_engine import RORConstraintEngine, MatchResult
-from .confidence import ConfidenceScorer, ConflictDetector, BatchAnalyzer
+from .confidence import ConfidenceScorer, ConflictDetector
 from .utils import get_routing_label, get_confidence_color
 
 
