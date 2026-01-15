@@ -261,17 +261,18 @@ def process_village(shp_path: str, ror_path: str, village_name: str) -> dict:
 def main():
     """Main function to prepare all demo data."""
 
-    base_path = Path('/Users/jeevan/RealTimeGovernance/prototypes/Re-Survey')
-    data_path = base_path / 'Resurvey'
-    output_path = base_path / 'demo_data'
-    output_path.mkdir(exist_ok=True)
+    # Use paths relative to script location
+    base_path = Path(__file__).parent.parent
+    raw_data_path = base_path / 'data' / 'raw'
+    output_path = base_path / 'data' / 'processed'
+    output_path.mkdir(parents=True, exist_ok=True)
 
     villages = []
 
     # Process Kanumuru
     kanumuru = process_village(
-        shp_path=str(data_path / 'kanumuru.shp'),
-        ror_path=str(data_path / 'kanumuru-annonymized ROR.xlsx'),
+        shp_path=str(raw_data_path / 'kanumuru' / 'kanumuru.shp'),
+        ror_path=str(raw_data_path / 'kanumuru' / 'kanumuru-annonymized ROR.xlsx'),
         village_name='Kanumuru'
     )
     villages.append(kanumuru)
@@ -282,8 +283,8 @@ def main():
 
     # Process Nibanupudi
     nibanupudi = process_village(
-        shp_path=str(data_path / 'nibanupudi.shp'),
-        ror_path=str(data_path / 'Nibhanupudi-annonymized ROR.xlsx'),
+        shp_path=str(raw_data_path / 'nibanupudi' / 'nibanupudi.shp'),
+        ror_path=str(raw_data_path / 'nibanupudi' / 'Nibhanupudi-annonymized ROR.xlsx'),
         village_name='Nibanupudi'
     )
     villages.append(nibanupudi)

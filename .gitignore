@@ -1,39 +1,17 @@
-# Environment
-.env
-.venv/
-venv/
-env/
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+venv/
+ENV/
+.venv/
+env/
 *.egg-info/
-.installed.cfg
-*.egg
-
-# Data files (too large for git)
-*.tif
-*.tiff
-*.zip
-*.mp4
-*.mp3
-data/processed/
-data/cache/
+dist/
+build/
+.eggs/
 
 # IDE
 .idea/
@@ -41,12 +19,58 @@ data/cache/
 *.swp
 *.swo
 
-# OS
+# Environment
+.env
+.env.local
+*.local
+
+# Large data files
+data/imagery/
+*.ecw
+*.tiff
+*.tif
+*.geotiff
+
+# Large media files
+*.mp4
+*.mp3
+*.wav
+
+# Temporary/screenshot files
+*.png
+*.jpg
+*.jpeg
+!designs/**/*.png
+
+# Logs
+*.log
+*.tmp
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Archive folder
+archive/
+
+# Original unorganized data (now in data/raw)
+Resurvey/
+Sample2/
+AI Hackathon/
+
+# Zip files
+*.zip
 
 # Streamlit
 .streamlit/
 
-# Jupyter
-.ipynb_checkpoints/
+# Claude settings
+.claude/

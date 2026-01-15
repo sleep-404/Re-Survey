@@ -13,8 +13,8 @@ from pathlib import Path
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Data paths
-DATA_DIR = Path(__file__).parent / 'demo_data'
+# Data paths - relative to project root
+DATA_DIR = Path(__file__).parent.parent / 'data' / 'processed'
 
 
 def load_villages():
