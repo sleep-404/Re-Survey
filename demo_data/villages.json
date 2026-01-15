@@ -1,0 +1,44 @@
+[
+  {
+    "id": "kanumuru",
+    "name": "Kanumuru",
+    "mandal": "Vuyyuru",
+    "stats": {
+      "total": 1125,
+      "approved": 745,
+      "verified": 150,
+      "review": 173,
+      "conflict": 57,
+      "avg_confidence": 0.8432866993241719,
+      "total_area_acres": 1676.8758734028029
+    },
+    "bounds": [
+      80.88984915926162,
+      16.319920625164457,
+      80.91608884907068,
+      16.354409075923375
+    ],
+    "geojson_file": "kanumuru_parcels.geojson"
+  },
+  {
+    "id": "nibanupudi",
+    "name": "Nibanupudi",
+    "mandal": "Vuyyuru",
+    "stats": {
+      "total": 857,
+      "approved": 570,
+      "verified": 111,
+      "review": 132,
+      "conflict": 44,
+      "avg_confidence": 0.8425893952263941,
+      "total_area_acres": 598.425770669123
+    },
+    "bounds": [
+      80.9808033864969,
+      16.274812483756754,
+      81.00096495288209,
+      16.291564775593116
+    ],
+    "geojson_file": "nibanupudi_parcels.geojson"
+  }
+]
