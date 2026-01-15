@@ -1,0 +1,48 @@
+# Ignore large data files
+*.ecw
+*.tif
+*.tiff
+AI Hackathon/
+Sample2/
+Resurvey/
+data/input/*.ecw
+data/input/*.tif
+
+# Ignore output (will be generated)
+output/
+validation_output/
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.zip
+*.jpg
+*.png
+*.mp4
+*.mp3
+*.txt
+!requirements*.txt
+
+# Checkpoints (will be downloaded in Docker build)
+checkpoints/
+*.pth

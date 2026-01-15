@@ -5,6 +5,7 @@ Uses Meta's Segment Anything Model (SAM) to detect land parcel boundaries
 from drone imagery.
 """
 
+import os
 import numpy as np
 import torch
 from pathlib import Path
@@ -94,8 +95,14 @@ class SAMSegmenter:
 
     def _get_checkpoint(self, checkpoint_path: Optional[str]) -> Path:
         """Get or download SAM checkpoint."""
+        # Check explicit path first
         if checkpoint_path and Path(checkpoint_path).exists():
             return Path(checkpoint_path)
+
+        # Check environment variable (for Docker deployment)
+        env_checkpoint = os.environ.get('SAM_CHECKPOINT_PATH')
+        if env_checkpoint and Path(env_checkpoint).exists():
+            return Path(env_checkpoint)
 
         # Default checkpoint location
         cache_dir = Path.home() / '.cache' / 'sam'

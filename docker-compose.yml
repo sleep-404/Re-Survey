@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  boundaryai:
+    build: .
+    image: boundaryai:latest
+    container_name: boundaryai
+
+    # GPU access
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    ports:
+      - "8501:8501"  # Streamlit UI
+
+    volumes:
+      # Mount your data directory
+      - ./data:/app/data
+      # Mount output directory
+      - ./output:/app/output
+
+    environment:
+      - SAM_CHECKPOINT_PATH=/app/checkpoints/sam_vit_b_01ec64.pth
+      - SAM_MODEL_TYPE=vit_b
+      - NVIDIA_VISIBLE_DEVICES=all
+
+    # Keep container running
+    restart: unless-stopped
+
+  # Optional: ECW conversion service (for converting ECW to TIFF)
+  gdal-ecw:
+    image: ginetto/gdal:2.4.4_ECW
+    container_name: gdal-ecw
+    volumes:
+      - ./data:/data
+    # Run conversion command as needed
+    profiles:
+      - tools
