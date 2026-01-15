@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Officer Dashboard - BoundaryAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#1e3fae",
+                    "background-light": "#f4f6f8",
+                    "background-dark": "#1a202d",
+                    "surface-light": "#ffffff",
+                    "surface-dark": "#2d3748",
+                },
+                fontFamily: {
+                    "display": ["Public Sans", "sans-serif"]
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                boxShadow: {
+                    'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.02)',
+                    'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                }
+            },
+        },
+    }
+</script>
+<style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 min-h-screen flex flex-col overflow-x-hidden">
+<!-- Header -->
+<header class="bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+<div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex h-16 items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded bg-primary/10 text-primary">
+<span class="material-symbols-outlined" style="font-size: 20px;">layers</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">BoundaryAI</h1>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+</button>
+<div class="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-gray-700">
+<div class="text-right hidden md:block">
+<p class="text-sm font-bold text-gray-900 dark:text-white leading-none">Ramesh Kumar</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mandal Surveyor</p>
+</div>
+<div class="size-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-md">RK</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Stats Overview -->
+<section class="mb-10">
+<h2 class="sr-only">Statistics Overview</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Total Villages -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-6xl">grid_view</span>
+</div>
+<div>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wider">Total Villages</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ total_villages }}</p>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-gray-500 h-full w-full"></div>
+</div>
+</div>
+
+<!-- Total Parcels -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-blue-200 dark:border-blue-900/30 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-10 text-primary group-hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined text-6xl">map</span>
+</div>
+<div>
+<p class="text-primary text-sm font-bold uppercase tracking-wider">Total Parcels</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ "{:,}".format(total_parcels) }}</p>
+</div>
+<div class="w-full bg-blue-100 dark:bg-blue-900/30 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-full"></div>
+</div>
+</div>
+
+<!-- Approved -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-green-200 dark:border-green-900/30 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-10 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-6xl">check_circle</span>
+</div>
+<div>
+<p class="text-green-700 dark:text-green-400 text-sm font-bold uppercase tracking-wider">Approved</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ "{:,}".format(total_approved) }}</p>
+</div>
+<div class="w-full bg-green-100 dark:bg-green-900/30 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-green-500 h-full" style="width: {{ (total_approved / total_parcels * 100)|round|int }}%"></div>
+</div>
+</div>
+
+<!-- Conflicts -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-red-200 dark:border-red-900/30 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-10 text-red-600 dark:text-red-400 group-hover:rotate-12 transition-transform">
+<span class="material-symbols-outlined text-6xl">warning</span>
+</div>
+<div>
+<p class="text-red-700 dark:text-red-400 text-sm font-bold uppercase tracking-wider">Conflicts</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ total_conflicts }}</p>
+</div>
+<div class="w-full bg-red-100 dark:bg-red-900/30 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-red-500 h-full" style="width: {{ (total_conflicts / total_parcels * 100)|round|int }}%"></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Filters -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+<div class="flex-1 max-w-lg relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-gray-400 shadow-sm transition-shadow" placeholder="Search village by name..." type="text"/>
+</div>
+</section>
+
+<!-- Village Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+{% for village in villages %}
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative">
+<!-- Status Stripe -->
+{% if village.stats.conflict > 0 %}
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+{% else %}
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500"></div>
+{% endif %}
+
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ village.name }}</h3>
+{% if village.stats.conflict > 0 %}
+<span class="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-yellow-200 dark:border-yellow-800">{{ village.stats.conflict }} Conflicts</span>
+{% else %}
+<span class="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">Ready</span>
+{% endif %}
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+{{ village.mandal }} Mandal
+</p>
+</div>
+</div>
+
+<!-- Map Preview -->
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700">
+<div id="preview-map-{{ village.id }}" class="w-full h-full"></div>
+</div>
+
+<div class="space-y-4">
+<!-- Progress -->
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">{{ village.stats.approved }}/{{ village.stats.total }}</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-green-500 h-2.5 rounded-full" style="width: {{ (village.stats.approved / village.stats.total * 100)|round|int }}%"></div>
+</div>
+</div>
+
+<!-- Alert Section -->
+{% if village.stats.conflict > 0 %}
+<div class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+<span class="material-symbols-outlined text-red-600 dark:text-red-400 text-lg mt-0.5">error</span>
+<div>
+<p class="text-sm font-bold text-red-700 dark:text-red-400">{{ village.stats.conflict }} Conflicts Detected</p>
+<p class="text-xs text-red-600/80 dark:text-red-400/80">{{ village.stats.review }} parcels need review</p>
+</div>
+</div>
+{% else %}
+<div class="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30">
+<span class="material-symbols-outlined text-green-600 dark:text-green-400 text-lg mt-0.5">check_circle</span>
+<div>
+<p class="text-sm font-bold text-green-700 dark:text-green-400">All Clear</p>
+<p class="text-xs text-green-600/80 dark:text-green-400/80">No major conflicts</p>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<a href="/village/{{ village.id }}" class="bg-primary hover:bg-primary/90 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2">
+<span>Review Parcels</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</article>
+{% endfor %}
+</section>
+</main>
+
+<!-- Leaflet for preview maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for village in villages %}
+    (function() {
+        var bounds = {{ village.bounds | tojson }};
+        var centerLat = (bounds[1] + bounds[3]) / 2;
+        var centerLon = (bounds[0] + bounds[2]) / 2;
+
+        var map = L.map('preview-map-{{ village.id }}', {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false
+        }).setView([centerLat, centerLon], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Load parcels
+        fetch('/api/village/{{ village.id }}/parcels')
+            .then(r => r.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: function(feature) {
+                        var colors = {
+                            'approved': '#10b981',
+                            'verified': '#3b82f6',
+                            'review': '#f59e0b',
+                            'conflict': '#ef4444'
+                        };
+                        return {
+                            color: colors[feature.properties.status] || '#6b7280',
+                            weight: 1,
+                            fillOpacity: 0.3
+                        };
+                    }
+                }).addTo(map);
+            });
+    })();
+    {% endfor %}
+});
+</script>
+</body></html>

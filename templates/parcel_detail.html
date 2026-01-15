@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ parcel.parcel_id }} - Parcel Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#1e3fae",
+                    "primary-dark": "#16308a",
+                    "background-light": "#fafafa",
+                    "surface-light": "#ffffff",
+                },
+                fontFamily: {
+                    "display": ["Public Sans", "sans-serif"]
+                },
+            },
+        },
+    }
+</script>
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+</style>
+</head>
+<body class="bg-background-light text-slate-900 font-display h-screen flex flex-col overflow-hidden">
+<!-- Header -->
+<header class="flex-none bg-surface-light border-b border-slate-200 px-6 py-3 shadow-sm z-20">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<a href="/village/{{ village.id }}/review" class="flex items-center justify-center p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</a>
+<div class="flex flex-col">
+<nav class="flex items-center gap-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
+<a class="hover:text-primary" href="/">Dashboard</a>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<a class="hover:text-primary" href="/village/{{ village.id }}">{{ village.name }}</a>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span>Parcel Analysis</span>
+</nav>
+<h1 class="text-lg font-bold text-slate-900 leading-tight">Survey No. {{ parcel.survey_no }}</h1>
+</div>
+</div>
+<!-- Pagination -->
+<div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+{% if prev_parcel %}
+<a href="/village/{{ village.id }}/parcel/{{ prev_parcel }}" class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-white hover:shadow-sm text-slate-600 transition-all">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+{% else %}
+<span class="flex items-center justify-center w-8 h-8 rounded-md text-slate-300">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</span>
+{% endif %}
+<span class="px-4 text-sm font-semibold text-slate-700 tabular-nums">{{ current_index }} of {{ total_review }}</span>
+{% if next_parcel %}
+<a href="/village/{{ village.id }}/parcel/{{ next_parcel }}" class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-white hover:shadow-sm text-slate-600 transition-all">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</a>
+{% else %}
+<span class="flex items-center justify-center w-8 h-8 rounded-md text-slate-300">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</span>
+{% endif %}
+</div>
+</div>
+</header>
+
+<!-- Main Content -->
+<main class="flex-1 flex overflow-hidden">
+<!-- Left Column: Data -->
+<section class="w-[40%] flex flex-col bg-slate-50 border-r border-slate-200 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+<div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+<!-- AI Detection Card -->
+<div class="bg-surface-light rounded-lg border border-slate-200 p-5 shadow-sm relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -mr-4 -mt-4"></div>
+<div class="flex items-start justify-between mb-4 relative">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">AI Detection</h3>
+</div>
+<span class="inline-flex items-center gap-1 {% if parcel.confidence >= 85 %}bg-green-100 text-green-700{% elif parcel.confidence >= 70 %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %} text-xs font-bold px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm">{% if parcel.confidence >= 85 %}verified{% elif parcel.confidence >= 70 %}help{% else %}warning{% endif %}</span>
+{% if parcel.confidence >= 85 %}High Confidence{% elif parcel.confidence >= 70 %}Moderate{% else %}Low Confidence{% endif %}
+</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-sm text-slate-500 mb-1">Estimated Area</p>
+<p class="text-3xl font-bold text-slate-900 tabular-nums tracking-tight">{{ parcel.area_acres }} <span class="text-lg font-medium text-slate-400">Acres</span></p>
+</div>
+<div class="border-l border-slate-100 pl-4">
+<p class="text-sm text-slate-500 mb-1">Confidence Score</p>
+<div class="flex items-end gap-2">
+<p class="text-3xl font-bold text-primary tabular-nums tracking-tight">{{ parcel.confidence }}%</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ROR Record Card -->
+<div class="bg-surface-light rounded-lg border border-slate-200 p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-slate-400">description</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">ROR Record (Official)</h3>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center py-2 border-b border-dashed border-slate-200">
+<span class="text-sm text-slate-500">Recorded Area</span>
+<span class="text-base font-semibold text-slate-900 tabular-nums">{{ parcel.ror_area_acres }} Acres</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-dashed border-slate-200">
+<span class="text-sm text-slate-500">Owner Name</span>
+<span class="text-base font-semibold text-slate-900">{{ parcel.owner }}</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-dashed border-slate-200">
+<span class="text-sm text-slate-500">Survey Number</span>
+<span class="text-base font-semibold text-slate-900">{{ parcel.survey_no }}</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-sm text-slate-500">Parcel ID</span>
+<span class="text-base font-semibold text-slate-900 font-mono">{{ parcel.parcel_id }}</span>
+</div>
+</div>
+</div>
+
+<!-- Comparison Card -->
+{% if parcel.mismatch|abs > 5 %}
+<div class="bg-red-50 rounded-lg border border-red-200 p-5 shadow-sm relative overflow-hidden">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-red-600">warning</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-red-800">Significant Discrepancy</h3>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-3xl font-black text-red-700 tracking-tight tabular-nums">{{ '%+.1f'|format(parcel.mismatch) }}%</span>
+<span class="text-sm font-medium text-red-600">difference from record</span>
+</div>
+<p class="text-sm text-red-700 leading-relaxed">
+AI detected area ({{ parcel.area_acres }} ac) {% if parcel.mismatch > 0 %}exceeds{% else %}is less than{% endif %} official record ({{ parcel.ror_area_acres }} ac) by <span class="font-bold">{{ '%.2f'|format((parcel.area_acres - parcel.ror_area_acres)|abs) }} acres</span>. This exceeds the allowable tolerance of 5%.
+</p>
+</div>
+{% else %}
+<div class="bg-green-50 rounded-lg border border-green-200 p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-green-600">check_circle</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-green-800">Within Tolerance</h3>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-3xl font-black text-green-700 tracking-tight tabular-nums">{{ '%+.1f'|format(parcel.mismatch) }}%</span>
+<span class="text-sm font-medium text-green-600">difference from record</span>
+</div>
+<p class="text-sm text-green-700 leading-relaxed">
+Area difference is within the 5% tolerance threshold.
+</p>
+</div>
+{% endif %}
+
+<!-- Status -->
+<div class="bg-surface-light rounded-lg border border-slate-200 p-5 shadow-sm">
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Current Status</h3>
+<div class="flex items-center gap-3">
+<div class="w-4 h-4 rounded-full {% if parcel.status == 'conflict' %}bg-red-500{% elif parcel.status == 'review' %}bg-amber-500{% elif parcel.status == 'approved' %}bg-green-500{% else %}bg-blue-500{% endif %}"></div>
+<span class="text-lg font-bold text-slate-900 capitalize">{{ parcel.status }}</span>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Right Column: Map -->
+<section class="flex-1 relative bg-slate-200 flex flex-col">
+<div id="map" class="absolute inset-0 w-full h-full z-0"></div>
+
+<!-- Map Controls -->
+<div class="absolute top-6 right-6 flex flex-col gap-2 z-10">
+<div class="bg-white rounded-lg shadow-lg border border-slate-200 p-1 flex flex-col">
+<button onclick="map.zoomIn()" class="p-2 hover:bg-slate-100 rounded text-slate-700" title="Zoom In">
+<span class="material-symbols-outlined">add</span>
+</button>
+<div class="h-px bg-slate-200 mx-1"></div>
+<button onclick="map.zoomOut()" class="p-2 hover:bg-slate-100 rounded text-slate-700" title="Zoom Out">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<div class="bg-white rounded-lg shadow-lg border border-slate-200 p-1">
+<button onclick="resetView()" class="p-2 hover:bg-slate-100 rounded text-slate-700" title="Reset View">
+<span class="material-symbols-outlined">center_focus_strong</span>
+</button>
+</div>
+</div>
+
+<!-- Map Legend -->
+<div class="absolute bottom-24 left-6 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 p-3 z-10">
+<div class="flex items-center gap-4 text-xs font-medium">
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 border-2 border-primary bg-primary/20 rounded-sm"></div>
+<span class="text-slate-700">AI Detected</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<!-- Bottom Action Bar -->
+<footer class="flex-none bg-surface-light border-t border-slate-200 p-4 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-lg text-sm font-bold shadow-sm transition-all">
+<span class="material-symbols-outlined text-[20px]">engineering</span>
+Field Verify
+</button>
+<div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+<button class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-[20px]">call_split</span>
+Split
+</button>
+<button class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-[20px]">call_merge</span>
+Merge
+</button>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-5 py-2.5 border-2 border-primary text-primary hover:bg-primary/5 rounded-lg text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+Edit Boundary
+</button>
+<button onclick="approveParcel()" class="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold shadow-md shadow-green-600/20 transition-all transform active:scale-95">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+Approve Parcel
+</button>
+</div>
+</div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var map = L.map('map').setView([{{ center_lat }}, {{ center_lon }}], 17);
+var parcelLayer;
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OSM'
+}).addTo(map);
+
+var parcelGeometry = {{ parcel.geometry | tojson }};
+
+var colors = {
+    'approved': '#10b981',
+    'verified': '#3b82f6',
+    'review': '#f59e0b',
+    'conflict': '#ef4444'
+};
+
+parcelLayer = L.geoJSON(parcelGeometry, {
+    style: {
+        color: colors['{{ parcel.status }}'] || '#1e3fae',
+        weight: 3,
+        fillOpacity: 0.4
+    }
+}).addTo(map);
+
+// Add vertex markers
+var coords = parcelGeometry.coordinates[0];
+coords.forEach(function(coord) {
+    L.circleMarker([coord[1], coord[0]], {
+        radius: 5,
+        color: '#1e3fae',
+        weight: 2,
+        fillColor: '#ffffff',
+        fillOpacity: 1
+    }).addTo(map);
+});
+
+// Fit bounds
+if (parcelLayer.getBounds().isValid()) {
+    map.fitBounds(parcelLayer.getBounds(), {padding: [50, 50]});
+}
+
+function resetView() {
+    map.fitBounds(parcelLayer.getBounds(), {padding: [50, 50]});
+}
+
+function approveParcel() {
+    alert('Parcel {{ parcel.parcel_id }} approved! (Demo - no backend update)');
+    {% if next_parcel %}
+    window.location.href = '/village/{{ village.id }}/parcel/{{ next_parcel }}';
+    {% else %}
+    window.location.href = '/village/{{ village.id }}/review';
+    {% endif %}
+}
+</script>
+</body></html>

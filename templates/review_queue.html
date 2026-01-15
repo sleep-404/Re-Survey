@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Review Queue - {{ village.name }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#1e3fae",
+                    "primary-hover": "#16308a",
+                    "background-light": "#fafafa",
+                    "surface-light": "#ffffff",
+                    "border-light": "#e2e8f0",
+                },
+                fontFamily: {
+                    "display": ["Public Sans", "sans-serif"],
+                    "mono": ["ui-monospace", "SFMono-Regular", "monospace"],
+                },
+            },
+        },
+    }
+</script>
+<style>
+    body { font-family: "Public Sans", sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+</style>
+</head>
+<body class="bg-background-light text-slate-900 h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation -->
+<header class="flex-none h-16 bg-surface-light border-b border-border-light flex items-center justify-between px-6 z-20 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined text-[24px]">landscape</span>
+</div>
+<div>
+<h1 class="font-bold text-lg leading-tight tracking-tight">{{ village.name }} Review</h1>
+<p class="text-xs text-slate-500 font-medium">{{ village.mandal }} Mandal</p>
+</div>
+</div>
+<div class="flex-1 max-w-md mx-8 hidden md:block">
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input id="search-input" class="w-full bg-slate-50 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400" placeholder="Search by Survey No. or Parcel ID..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+<a class="hover:text-primary" href="/">Dashboard</a>
+<a class="hover:text-primary" href="/village/{{ village.id }}">Map View</a>
+<a class="text-primary" href="#">Review Queue</a>
+</nav>
+<div class="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">RK</div>
+</div>
+</header>
+
+<!-- Main Content Area -->
+<main class="flex flex-1 overflow-hidden">
+<!-- Left Panel: Review Queue List -->
+<aside class="w-full md:w-[45%] lg:w-[40%] flex flex-col border-r border-border-light bg-background-light z-10 shadow-xl shadow-slate-200/50">
+<!-- Queue Header -->
+<div class="flex-none px-6 py-5 bg-surface-light border-b border-border-light">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+Review Queue
+<span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-bold">{{ total_review }}</span>
+</h2>
+<div class="flex items-center gap-2">
+<span class="text-xs font-medium text-slate-500">Sorted by severity</span>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-2 overflow-x-auto pb-1">
+<button onclick="filterList('all')" class="filter-btn active flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white rounded-full text-xs font-medium whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span> All
+</button>
+<button onclick="filterList('conflict')" class="filter-btn flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-xs font-medium border border-red-100 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Conflicts
+</button>
+<button onclick="filterList('review')" class="filter-btn flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-100 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Review
+</button>
+</div>
+</div>
+
+<!-- Scrollable List -->
+<div id="parcel-list" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-slate-50/50">
+{% for parcel in parcels %}
+<div class="parcel-card group relative bg-white rounded-lg p-4 border border-border-light hover:border-primary/50 cursor-pointer transition-all shadow-sm hover:shadow-md"
+     data-parcel-id="{{ parcel.parcel_id }}"
+     data-status="{{ parcel.status }}"
+     onclick="selectParcel('{{ parcel.parcel_id }}', {{ parcel | tojson | e }})">
+<div class="flex items-start gap-3 mb-3">
+<div class="mt-1 w-2.5 h-2.5 rounded-full shrink-0 {% if parcel.status == 'conflict' %}bg-red-500{% else %}bg-amber-400{% endif %}"></div>
+<div>
+<h3 class="text-base font-bold text-slate-900 leading-tight">{{ parcel.parcel_id }} &bull; Survey {{ parcel.survey_no }}</h3>
+<p class="text-xs text-slate-500 mt-0.5">Owner: {{ parcel.owner }}</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+{% if parcel.status == 'conflict' %}
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-100">Area Mismatch</span>
+{% else %}
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">Needs Review</span>
+{% endif %}
+</div>
+<div class="flex items-center justify-between text-xs text-slate-600 border-t border-slate-100 pt-3 mt-2">
+<span>AI: <strong class="text-slate-900 tabular-nums">{{ parcel.area_acres }} ac</strong></span>
+<span>ROR: <strong class="text-slate-900 tabular-nums">{{ parcel.ror_area_acres }} ac</strong></span>
+<span class="{% if parcel.mismatch|abs > 10 %}text-red-600{% else %}text-amber-600{% endif %} font-bold tabular-nums">{{ '%+.1f'|format(parcel.mismatch) }}%</span>
+</div>
+</div>
+{% endfor %}
+</div>
+
+<!-- Footer Actions -->
+<div class="flex-none p-4 bg-surface-light border-t border-border-light flex gap-3 z-10">
+<a href="/village/{{ village.id }}" class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium py-2.5 rounded-lg hover:bg-slate-50 flex items-center justify-center gap-2 text-sm shadow-sm">
+<span class="material-symbols-outlined text-[18px]">map</span>
+Back to Map
+</a>
+<a id="review-btn" href="#" class="flex-1 bg-primary text-white font-medium py-2.5 rounded-lg hover:bg-primary-hover shadow-lg shadow-primary/20 flex items-center justify-center gap-2 text-sm">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+Review Selected
+</a>
+</div>
+</aside>
+
+<!-- Right Panel: Map Preview -->
+<section class="flex-1 relative bg-slate-100 overflow-hidden">
+<div id="map" class="absolute inset-0"></div>
+
+<!-- Floating Info Card -->
+<div id="info-card" class="hidden absolute top-6 left-6 bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-white/20 max-w-xs z-20">
+<div class="flex items-center justify-between gap-4 mb-2">
+<h4 class="font-bold text-slate-900 text-sm">Visual Analysis</h4>
+<span id="info-status" class="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded uppercase">---</span>
+</div>
+<p id="info-text" class="text-xs text-slate-600 leading-relaxed mb-3">Select a parcel to see details</p>
+<div class="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+<div id="info-bar" class="h-full bg-primary w-0 transition-all"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-[10px] text-slate-500 font-medium">Confidence Score</span>
+<span id="info-confidence" class="text-[10px] text-slate-900 font-bold">---%</span>
+</div>
+</div>
+
+<!-- Map Controls -->
+<div class="absolute bottom-6 right-6 flex flex-col gap-2 z-20">
+<button onclick="map.zoomIn()" class="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center text-slate-700 hover:bg-slate-50">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button onclick="map.zoomOut()" class="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center text-slate-700 hover:bg-slate-50">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+
+<!-- Coordinates -->
+<div class="absolute bottom-4 left-6 bg-white/80 backdrop-blur px-2 py-1 rounded text-[10px] font-mono font-medium text-slate-800 z-10">
+Lat: {{ '%.4f'|format(center_lat) }}&deg; N &nbsp; Lng: {{ '%.4f'|format(center_lon) }}&deg; E
+</div>
+</section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var map = L.map('map').setView([{{ center_lat }}, {{ center_lon }}], 15);
+var parcelsLayer;
+var selectedLayer;
+var allParcels = {{ parcels | tojson }};
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OSM'
+}).addTo(map);
+
+var colors = {
+    'approved': '#10b981',
+    'verified': '#3b82f6',
+    'review': '#f59e0b',
+    'conflict': '#ef4444'
+};
+
+// Load all parcels for context
+fetch('/api/village/{{ village.id }}/parcels')
+    .then(r => r.json())
+    .then(data => {
+        parcelsLayer = L.geoJSON(data, {
+            style: function(f) {
+                return {
+                    color: colors[f.properties.status] || '#6b7280',
+                    weight: 1,
+                    fillOpacity: 0.2
+                };
+            }
+        }).addTo(map);
+
+        if (parcelsLayer.getBounds().isValid()) {
+            map.fitBounds(parcelsLayer.getBounds());
+        }
+    });
+
+function selectParcel(parcelId, parcelData) {
+    // Update list selection
+    document.querySelectorAll('.parcel-card').forEach(el => {
+        el.classList.remove('ring-2', 'ring-primary');
+    });
+    document.querySelector('[data-parcel-id="' + parcelId + '"]').classList.add('ring-2', 'ring-primary');
+
+    // Update review button
+    document.getElementById('review-btn').href = '/village/{{ village.id }}/parcel/' + parcelId;
+
+    // Update info card
+    document.getElementById('info-card').classList.remove('hidden');
+    document.getElementById('info-status').textContent = parcelData.status;
+    document.getElementById('info-text').innerHTML = 'AI detected <strong>' + parcelData.area_acres + ' ac</strong> vs ROR record of <strong>' + parcelData.ror_area_acres + ' ac</strong>. Difference: <span class="' + (Math.abs(parcelData.mismatch) > 10 ? 'text-red-600' : 'text-amber-600') + ' font-bold">' + (parcelData.mismatch > 0 ? '+' : '') + parcelData.mismatch + '%</span>';
+    document.getElementById('info-confidence').textContent = parcelData.confidence + '%';
+    document.getElementById('info-bar').style.width = parcelData.confidence + '%';
+    document.getElementById('info-bar').className = 'h-full transition-all ' + (parcelData.confidence < 70 ? 'bg-red-500' : parcelData.confidence < 85 ? 'bg-amber-500' : 'bg-green-500');
+
+    // Highlight parcel on map
+    if (selectedLayer) map.removeLayer(selectedLayer);
+    selectedLayer = L.geoJSON(parcelData.geometry, {
+        style: {
+            color: colors[parcelData.status],
+            weight: 4,
+            fillOpacity: 0.5
+        }
+    }).addTo(map);
+
+    // Zoom to parcel
+    map.fitBounds(selectedLayer.getBounds(), {padding: [50, 50]});
+}
+
+function filterList(status) {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white', 'active');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+    });
+    event.target.closest('.filter-btn').classList.add('bg-slate-800', 'text-white', 'active');
+    event.target.closest('.filter-btn').classList.remove('bg-slate-100', 'text-slate-600');
+
+    document.querySelectorAll('.parcel-card').forEach(card => {
+        if (status === 'all' || card.dataset.status === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Search
+document.getElementById('search-input').addEventListener('input', function(e) {
+    var query = e.target.value.toLowerCase();
+    document.querySelectorAll('.parcel-card').forEach(card => {
+        var text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? 'block' : 'none';
+    });
+});
+
+// Select first parcel by default
+if (allParcels.length > 0) {
+    selectParcel(allParcels[0].parcel_id, allParcels[0]);
+}
+</script>
+</body></html>
