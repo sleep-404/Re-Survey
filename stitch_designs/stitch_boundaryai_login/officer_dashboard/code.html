@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Officer Dashboard - BoundaryAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1e3fae",
+                        "background-light": "#f4f6f8", 
+                        "background-dark": "#1a202d",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    boxShadow: {
+                        'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.02)',
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 min-h-screen flex flex-col overflow-x-hidden">
+<!-- Header -->
+<header class="bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+<div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex h-16 items-center justify-between">
+<!-- Brand -->
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded bg-primary/10 text-primary">
+<span class="material-symbols-outlined" style="font-size: 20px;">layers</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">BoundaryAI</h1>
+</div>
+<!-- Right Side Actions -->
+<div class="flex items-center gap-6">
+<button class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+</button>
+<div class="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-gray-700">
+<div class="text-right hidden md:block">
+<p class="text-sm font-bold text-gray-900 dark:text-white leading-none">Ramesh Kumar</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mandal Surveyor</p>
+</div>
+<div class="size-9 rounded-full bg-gray-200 overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-sm" data-alt="Portrait of Ramesh Kumar">
+<img alt="Officer Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_TxbF-gUGYiAhB7IPkb22KDqF_YDhepWEMaRByBUesrYWk0Vr9W24eFlPLU7KQllzJoYgL8YRGFEwr8qyqW4OoUYOZvf4IiU99UOvE5uBWC6LMySJdm6qTv-8n_eWh4li7FTrhC-r54jL59iPrMB3ZZJdwqG-NhNOgGGz8hw1QX_9TyqkSO-8tScRB6vyAn4bwcEbGgRMj-qFeT0fosTuZYjHKmppOROsToZ7SIDXZ-fJurLl0vpGk5FW1rK2hFnsx-u2f42WDEgd"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Stats Overview -->
+<section class="mb-10">
+<h2 class="sr-only">Statistics Overview</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Stat Card: Total -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-6xl">grid_view</span>
+</div>
+<div>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wider">Total Villages</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">12</p>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-gray-500 h-full w-full"></div>
+</div>
+</div>
+<!-- Stat Card: Ready for Review -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-green-200 dark:border-green-900/30 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-10 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-6xl">check_circle</span>
+</div>
+<div>
+<p class="text-green-700 dark:text-green-400 text-sm font-bold uppercase tracking-wider">Ready for Review</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">3</p>
+</div>
+<div class="w-full bg-green-100 dark:bg-green-900/30 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-green-500 h-full w-[25%]"></div>
+</div>
+</div>
+<!-- Stat Card: In Progress -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-yellow-200 dark:border-yellow-900/30 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-10 text-yellow-600 dark:text-yellow-400 group-hover:rotate-12 transition-transform">
+<span class="material-symbols-outlined text-6xl">pending</span>
+</div>
+<div>
+<p class="text-yellow-700 dark:text-yellow-400 text-sm font-bold uppercase tracking-wider">In Progress</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">2</p>
+</div>
+<div class="w-full bg-yellow-100 dark:bg-yellow-900/30 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-yellow-500 h-full w-[16%]"></div>
+</div>
+</div>
+<!-- Stat Card: Completed -->
+<div class="bg-surface-light dark:bg-surface-dark p-5 rounded-lg border border-blue-200 dark:border-blue-900/30 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-0 top-0 p-4 opacity-10 text-primary group-hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined text-6xl">fact_check</span>
+</div>
+<div>
+<p class="text-primary text-sm font-bold uppercase tracking-wider">Completed</p>
+<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">7</p>
+</div>
+<div class="w-full bg-blue-100 dark:bg-blue-900/30 h-1 mt-4 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[58%]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Filters & Actions -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+<div class="flex-1 max-w-lg relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-gray-400 shadow-sm transition-shadow" placeholder="Search village by name or ID..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative min-w-[180px]">
+<select class="w-full pl-3 pr-10 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer shadow-sm text-sm font-medium">
+<option>Filter by Status</option>
+<option>Ready for Review</option>
+<option>In Progress</option>
+<option>Completed</option>
+<option>With Conflicts</option>
+</select>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none material-symbols-outlined text-xl">expand_more</span>
+</div>
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-light dark:bg-surface-dark text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg">tune</span>
+<span>More</span>
+</button>
+</div>
+</section>
+<!-- Village Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1: Review Pending (High Priority) -->
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative">
+<!-- Status Stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500"></div>
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Kanumuru</h3>
+<span class="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">Review Pending</span>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Vuyyuru Mandal
+                            </p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Map Preview / Context -->
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700" data-alt="Map of Kanumuru showing parcel boundaries" data-location="Kanumuru" style="https://lh3.googleusercontent.com/aida-public/AB6AXuAsTBQbVYVS8oTa_d14VDJJcsZwqj3Pk0zYk3Ea6n_rTF2ntMX4cgfvpvd2bHxVRGepRvCmUkJtRdzmjKBfB743SvgG0RQhvxXIIoIfHx88-ezLOANjfjglV2cTos3zLlgKaEVFTTtlWzKX4g_h8vHQcP8PIvKoM4ulr2EFguvNCXd7Lw9sYgVhInPeJri7_ru0WVM9TN8JjT1IKoWPIqVsoewfc9L8YVe2NGokMzHFDKeKtYlz3UC_mAaPjDGngb7dvNCEni1tEkMo">
+<div class="absolute inset-0 opacity-40 bg-[url('https://placeholder.pics/svg/400x200/DEDEDE/AAA')] bg-cover bg-center"></div>
+<!-- Overlay badge for map type -->
+<div class="absolute bottom-2 right-2 bg-white/90 dark:bg-black/60 px-2 py-0.5 rounded text-[10px] font-mono text-gray-600 dark:text-gray-300 shadow-sm border border-gray-200 dark:border-gray-600">Satellite</div>
+</div>
+<div class="space-y-4">
+<!-- Progress -->
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">480/500</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-green-500 h-2.5 rounded-full w-[96%] relative">
+<span class="absolute -right-2 -top-1 size-2 animate-ping rounded-full bg-green-400 opacity-75"></span>
+</div>
+</div>
+</div>
+<!-- Alert Section -->
+<div class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+<span class="material-symbols-outlined text-red-600 dark:text-red-400 text-lg mt-0.5">error</span>
+<div>
+<p class="text-sm font-bold text-red-700 dark:text-red-400">5 Conflicts Detected</p>
+<p class="text-xs text-red-600/80 dark:text-red-400/80">Boundary overlaps in Sector 4</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<button class="bg-primary hover:bg-primary/90 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2">
+<span>Review Parcels</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 2: In Progress -->
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative">
+<!-- Status Stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Vuyyuru</h3>
+<span class="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-yellow-200 dark:border-yellow-800">In Progress</span>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Vuyyuru Mandal
+                            </p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Map Preview / Context -->
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700" data-alt="Map of Vuyyuru showing parcel boundaries" data-location="Vuyyuru" style="https://lh3.googleusercontent.com/aida-public/AB6AXuBb34lkAKH5tYrspMqOvTZzuzr1asGq1NWaCKVf8NycquE0v_Wfc31z0JzLB7fSquRcirGomUg7BXgVCnH4OVkiLKTIc4UWv3REJTf1RU49Ljr5pJ31oNmTsjAkOmFOJfYo4lZLNM7lmqAnojFhVNn8LYUn5Ozrlyi2bNxhcotG7wpkPul7_K1jMjDNXx_Z4pSh1edRA82MtLiGEZ8D4ShmpkRI2OBVcZ4WKC8hvNC_hN5gjK_6j8NRi3Vp69OdCEgcl7BKOOiuYT3Y">
+<div class="absolute inset-0 opacity-40 bg-[url('https://placeholder.pics/svg/400x200/DEDEDE/AAA')] bg-cover bg-center"></div>
+</div>
+<div class="space-y-4">
+<!-- Progress -->
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">342/500</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-yellow-400 h-2.5 rounded-full w-[68%]"></div>
+</div>
+</div>
+<!-- Alert Section (More Critical) -->
+<div class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+<span class="material-symbols-outlined text-red-600 dark:text-red-400 text-lg mt-0.5">warning</span>
+<div>
+<p class="text-sm font-bold text-red-700 dark:text-red-400">23 Conflicts Detected</p>
+<p class="text-xs text-red-600/80 dark:text-red-400/80">Multiple ownership claims flagged</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<button class="bg-surface-light hover:bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-all active:scale-95">
+                        View Details
+                    </button>
+</div>
+</article>
+<!-- Card 3: In Progress -->
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative">
+<!-- Status Stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Gudlavalleru</h3>
+<span class="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-yellow-200 dark:border-yellow-800">In Progress</span>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Gudlavalleru Mandal
+                            </p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Map Preview / Context -->
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700" data-alt="Map of Gudlavalleru showing parcel boundaries" data-location="Gudlavalleru" style="https://lh3.googleusercontent.com/aida-public/AB6AXuBTT9VOWcnoO0z8pvG07mrrhHMomd2r7oLKR6tC3d0G_2_KUPZXAjy1TxhrMNWdBQuU0eUkBYYri6W6dZC_nU7mM3w-TRVTb5y2qMGwqoK5gmZd_hjuMdwaBBRREutRLb4ePyUrODqr--kMbp2PTNUY81Clve20MZIwa5PFz1utaRlHV_0dW_B8f_QVHx1suQdGI__EFf9kz0v44G_dpvw1wyAh1meksVSPYWf7YauJJp_h03QqwEuIzf1IVm5zLQ96UgDrCzHB_BvP">
+<div class="absolute inset-0 opacity-40 bg-[url('https://placeholder.pics/svg/400x200/DEDEDE/AAA')] bg-cover bg-center"></div>
+</div>
+<div class="space-y-4">
+<!-- Progress -->
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">120/450</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-yellow-400 h-2.5 rounded-full w-[26%]"></div>
+</div>
+</div>
+<!-- Alert Section (OK) -->
+<div class="flex items-start gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-600">
+<span class="material-symbols-outlined text-gray-400 text-lg mt-0.5">check_circle</span>
+<div>
+<p class="text-sm font-medium text-gray-600 dark:text-gray-300">No Major Conflicts</p>
+<p class="text-xs text-gray-400">Survey proceeding normally</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<button class="bg-surface-light hover:bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-all active:scale-95">
+                        View Details
+                    </button>
+</div>
+</article>
+<!-- Card 4: Completed -->
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative opacity-85 hover:opacity-100">
+<!-- Status Stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Pamarru</h3>
+<span class="bg-blue-100 dark:bg-blue-900/40 text-primary dark:text-blue-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-blue-200 dark:border-blue-800">Completed</span>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Pamarru Mandal
+                            </p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Map Preview / Context -->
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700" data-alt="Completed map of Pamarru" data-location="Pamarru" style="https://lh3.googleusercontent.com/aida-public/AB6AXuBZLC_7XlE7kY6bk9sY_B4OOY5sJPw5x_Cv7AYnhOD6bZHRozQHgdWHdo_HP_EMqzIFmaEhNXosa0M-2-M12NW14wK7gfQ03KA1yJ7mvkq5ShGyfFjmPVeyN2MqGRJod0nexH0x9G8PUGtDVrFSHdlCYtFqt9FOJf3CuZH9Wc4gjcG6D-ORHi1WIk7l9nNyJpA6ZHBZRM-okBW3NT1s4yX7a_9LJnYuNB0PUyp-mS0WdNDIHOIaH-XxHJbqWyACJROneIPRkPvw7lq0">
+<div class="absolute inset-0 opacity-40 bg-[url('https://placeholder.pics/svg/400x200/DEDEDE/AAA')] bg-cover bg-center"></div>
+<div class="absolute inset-0 bg-primary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary/40 text-5xl">lock</span>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Progress -->
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">320/320</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-primary h-2.5 rounded-full w-full"></div>
+</div>
+</div>
+<!-- Alert Section (Done) -->
+<div class="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+<span class="material-symbols-outlined text-primary text-lg mt-0.5">verified</span>
+<div>
+<p class="text-sm font-medium text-blue-800 dark:text-blue-300">Survey Finalized</p>
+<p class="text-xs text-blue-600 dark:text-blue-400">Approved on Oct 12, 2023</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<button class="text-primary hover:text-primary/80 dark:text-blue-400 font-semibold text-sm py-2 px-4 rounded-lg transition-colors flex items-center gap-1">
+<span>View Archive</span>
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</article>
+<!-- Card 5: Completed -->
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative opacity-85 hover:opacity-100">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Nidumolu</h3>
+<span class="bg-blue-100 dark:bg-blue-900/40 text-primary dark:text-blue-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-blue-200 dark:border-blue-800">Completed</span>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Pamarru Mandal
+                            </p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700" data-alt="Completed map of Nidumolu" data-location="Nidumolu" style="https://lh3.googleusercontent.com/aida-public/AB6AXuDUzA-KJ2RB-mEXqfcrFMtJiElBUS87Fa7ht5_NzcmliOVae-wJIIVLdYfHwzPoQFNF8AjwCG-mGih82CsulcuKh4DqaVOCQuNdrGzatuEF4aURKWrFAtu7dwSRxLdM7MxfJiqIPUxHXIe7KOsyuiF5fTamPuPvMhXKdoMNQ8CMa3atB5XbYxMbJiWa0fCVBU9iT1ig7ygSkyHN15x1AYKUZuDUL-MQzFGmGsSqVebzpNfFhUXY46w8BA-nSFbW2HX7hokIgaWtkPSe">
+<div class="absolute inset-0 opacity-40 bg-[url('https://placeholder.pics/svg/400x200/DEDEDE/AAA')] bg-cover bg-center"></div>
+<div class="absolute inset-0 bg-primary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary/40 text-5xl">lock</span>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">215/215</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-primary h-2.5 rounded-full w-full"></div>
+</div>
+</div>
+<div class="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+<span class="material-symbols-outlined text-primary text-lg mt-0.5">verified</span>
+<div>
+<p class="text-sm font-medium text-blue-800 dark:text-blue-300">Survey Finalized</p>
+<p class="text-xs text-blue-600 dark:text-blue-400">Approved on Sep 28, 2023</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<button class="text-primary hover:text-primary/80 dark:text-blue-400 font-semibold text-sm py-2 px-4 rounded-lg transition-colors flex items-center gap-1">
+<span>View Archive</span>
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</article>
+<!-- Card 6: Review Pending (Another one) -->
+<article class="group flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden relative">
+<!-- Status Stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500"></div>
+<div class="p-6 pb-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Machilipatnam North</h3>
+<span class="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">Review Pending</span>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Machilipatnam
+                            </p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Map Preview / Context -->
+<div class="h-28 w-full bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden relative border border-gray-100 dark:border-gray-700" data-alt="Map of Machilipatnam North showing parcel boundaries" data-location="Machilipatnam" style="https://lh3.googleusercontent.com/aida-public/AB6AXuAGju9QK0EgSU4o1SxIHR8KhFQM5OD9pIQpe--TGtsbh66UWvlwOugKhUBdcT2MfgQDqcwXdyb4wyJzuerPqMz3F-QeXI3BkhzZHDUgZvkn0NTpbS08sAuxyOf5Uj8P1NLTDCmOLUDQl2NL3NMinC01rB4qlKRAeXQeo3wQixmy3gw1LD6OWsM_hzMi6GfF9oHP6UoxOUHH8g3q1BMn1nOk61q1LZEUF1boRDbV0cD-2PwpBshonqA9QE45CBW2MazyZ031dpGNQzC_">
+<div class="absolute inset-0 opacity-40 bg-[url('https://placeholder.pics/svg/400x200/DEDEDE/AAA')] bg-cover bg-center"></div>
+</div>
+<div class="space-y-4">
+<!-- Progress -->
+<div>
+<div class="flex justify-between text-sm mb-1.5">
+<span class="text-gray-600 dark:text-gray-300 font-medium">Parcel Survey</span>
+<span class="text-gray-900 dark:text-white font-bold">650/650</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-green-500 h-2.5 rounded-full w-full"></div>
+</div>
+</div>
+<!-- Alert Section -->
+<div class="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30">
+<span class="material-symbols-outlined text-green-600 dark:text-green-400 text-lg mt-0.5">assignment_turned_in</span>
+<div>
+<p class="text-sm font-bold text-green-700 dark:text-green-400">Ready for Final Approval</p>
+<p class="text-xs text-green-600/80 dark:text-green-400/80">All conflicts resolved</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+<button class="bg-primary hover:bg-primary/90 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2">
+<span>Sign Off</span>
+<span class="material-symbols-outlined text-sm">edit_document</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Pagination / Footer hint -->
+<div class="mt-10 flex justify-center pb-10">
+<button class="text-gray-500 hover:text-primary font-medium text-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+                Show 6 more villages
+            </button>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Village Review Summary - BoundaryAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1e3fae",
+                        "background-light": "#fafafa",
+                        "background-dark": "#1a202d",
+                        "success": "#10b981",
+                        "warning": "#f59e0b",
+                        "danger": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"],
+                        "sans": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.375rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    boxShadow: {
+                        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'card': '0 0 0 1px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-3 text-slate-900 dark:text-white">
+<div class="size-8 flex items-center justify-center bg-primary/10 rounded-lg text-primary">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight">BoundaryAI</h2>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<nav class="hidden md:flex gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="hover:text-primary transition-colors" href="#">Parcels</a>
+<a class="text-slate-900 dark:text-white font-semibold" href="#">Review</a>
+</nav>
+<div class="flex gap-2 border-l border-slate-200 dark:border-slate-700 pl-6">
+<button class="flex size-9 cursor-pointer items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="flex size-9 cursor-pointer items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 ml-2 border border-slate-200 dark:border-slate-700" data-alt="Official Government Seal Avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTU2NlcMDD9guZZv_MNYSQNDmZIL73_Wnbm9NxL8BvqLBzmg4D6TYMO-D-jF6DW4QXx1gvFjIKFz-OizTMkm0Rrsr_GoyTzjxwcxntXk53SyKkVfyuY5w17u3Nc8zBu2ZEj4QOd_4HuEsvtSE_3x_cerixvxWXfp-03HOhyVP1LqKGZYyd3JhKctZO-iewYv4AjmR1lAsIRMyt6hOQCdZh3nM_lpm0SbJw5gqVTRo7f8A5zzPYsKyP2Zcj3Z15iYH9e_7kkMx7NSkD");'></div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center py-10 px-4 md:px-8">
+<div class="w-full max-w-[960px] flex flex-col gap-10">
+<!-- Success Hero Section -->
+<div class="flex flex-col items-center justify-center gap-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div class="relative">
+<div class="absolute inset-0 bg-success/20 rounded-full blur-xl scale-150"></div>
+<div class="relative bg-white dark:bg-slate-800 p-4 rounded-full shadow-soft border border-slate-100 dark:border-slate-700">
+<span class="material-symbols-outlined text-success text-[64px]" style="font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 48;">check_circle</span>
+</div>
+</div>
+<div class="space-y-2">
+<h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Review Complete!</h1>
+<div class="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span class="text-lg font-medium">Kanumuru Village (ID: 521132)</span>
+</div>
+</div>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<!-- Total -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white dark:bg-slate-800 p-6 shadow-card border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Reviewed</span>
+<span class="material-symbols-outlined text-slate-400">folder_open</span>
+</div>
+<p class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">500</p>
+</div>
+<!-- Approved -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white dark:bg-slate-800 p-6 shadow-card border-l-4 border-l-success border-y border-r border-transparent hover:border-r-slate-200 hover:border-y-slate-200 dark:hover:border-r-slate-700 dark:hover:border-y-slate-700 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-sm font-semibold text-success uppercase tracking-wider">Approved</span>
+<span class="material-symbols-outlined text-success">verified</span>
+</div>
+<p class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">460</p>
+</div>
+<!-- Edited -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white dark:bg-slate-800 p-6 shadow-card border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-sm font-semibold text-warning uppercase tracking-wider">Edited</span>
+<span class="material-symbols-outlined text-warning">edit_note</span>
+</div>
+<p class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">28</p>
+</div>
+<!-- Merged -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white dark:bg-slate-800 p-6 shadow-card border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Merged</span>
+<span class="material-symbols-outlined text-slate-400">merge</span>
+</div>
+<p class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">8</p>
+</div>
+<!-- Split -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white dark:bg-slate-800 p-6 shadow-card border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Split</span>
+<span class="material-symbols-outlined text-slate-400">call_split</span>
+</div>
+<p class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">2</p>
+</div>
+<!-- Field Verification -->
+<div class="group flex flex-col gap-3 rounded-xl bg-red-50 dark:bg-red-900/10 p-6 shadow-card border border-red-100 dark:border-red-900/30 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-sm font-bold text-danger uppercase tracking-wider">Field Verification</span>
+<span class="material-symbols-outlined text-danger">add_location_alt</span>
+</div>
+<p class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">2</p>
+</div>
+</div>
+<!-- Impact Metrics -->
+<div class="flex flex-wrap justify-center gap-4 py-2">
+<div class="flex items-center gap-4 px-6 py-3 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-full text-primary">
+<span class="material-symbols-outlined text-[20px]">timer</span>
+</div>
+<div>
+<p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Time Elapsed</p>
+<p class="text-lg font-bold text-slate-900 dark:text-white">2h 15m</p>
+</div>
+</div>
+<div class="flex items-center gap-4 px-6 py-3 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-full text-success">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+</div>
+<div>
+<p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Est. Savings</p>
+<p class="text-lg font-bold text-slate-900 dark:text-white">~3 days</p>
+</div>
+</div>
+<div class="flex items-center gap-4 px-6 py-3 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-full text-purple-600">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+</div>
+<div>
+<p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Avg. Accuracy</p>
+<p class="text-lg font-bold text-slate-900 dark:text-white">98.4%</p>
+</div>
+</div>
+</div>
+<!-- Action Panel -->
+<div class="flex flex-col md:flex-row items-center justify-center gap-4 w-full pt-4">
+<button class="w-full md:w-auto flex-1 max-w-xs group relative flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary h-12 px-6 text-white text-base font-bold shadow-md shadow-primary/20 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[20px] group-hover:-translate-y-0.5 transition-transform">download</span>
+<span>Export Shapefile</span>
+</button>
+<button class="w-full md:w-auto flex-1 max-w-xs group flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 h-12 px-6 text-slate-700 dark:text-white text-base font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+<span>Generate Report</span>
+</button>
+<button class="w-full md:w-auto flex-1 max-w-xs group flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 h-12 px-6 text-slate-700 dark:text-white text-base font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[20px]">send</span>
+<span>Send to Supervisor</span>
+</button>
+</div>
+<!-- Footer / Certification -->
+<div class="w-full mt-8 pt-8 border-t border-slate-200 dark:border-slate-800">
+<div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-6 flex flex-col md:flex-row items-start gap-4">
+<div class="flex h-6 items-center">
+<input aria-describedby="certification-description" class="h-5 w-5 rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-700" id="certification" name="certification" type="checkbox"/>
+</div>
+<div class="flex-1">
+<label class="font-medium text-slate-900 dark:text-white cursor-pointer select-none" for="certification">Digital Certification</label>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" id="certification-description">
+                                I, the undersigned officer, certify that the land parcel data for <span class="font-semibold text-slate-700 dark:text-slate-300">Kanumuru Village</span> has been reviewed in accordance with AP Revenue Department guidelines and accurately reflects the surveyed boundaries.
+                            </p>
+<div class="mt-4 flex items-center gap-2 text-xs text-slate-400 uppercase tracking-widest font-semibold">
+<span class="w-20 h-[1px] bg-slate-300 dark:bg-slate-600"></span>
+                                Awaiting Signature
+                                <span class="flex-1 h-[1px] bg-slate-300 dark:bg-slate-600"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

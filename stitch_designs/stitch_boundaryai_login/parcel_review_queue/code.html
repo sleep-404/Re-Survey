@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Parcel Review Queue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1e3fae",
+                        "primary-hover": "#16308a",
+                        "background-light": "#fafafa",
+                        "background-dark": "#1a202d",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e2536",
+                        "border-light": "#e2e8f0",
+                        "border-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: "Public Sans", sans-serif; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        /* Custom Scrollbar for the list */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation -->
+<header class="flex-none h-16 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 z-20 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined text-[24px]">landscape</span>
+</div>
+<div>
+<h1 class="font-bold text-lg leading-tight tracking-tight">AP Lands Review</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400 font-medium">District 04 • Mandal West</p>
+</div>
+</div>
+<div class="flex-1 max-w-md mx-8 hidden md:block">
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-slate-700 transition-all placeholder:text-slate-400" placeholder="Search by Survey No. or Parcel ID..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-primary" href="#">Review Queue</a>
+<a class="hover:text-primary transition-colors" href="#">Field Reports</a>
+</nav>
+<div class="h-6 w-px bg-border-light dark:bg-border-dark hidden lg:block"></div>
+<button class="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 p-1.5 rounded-full pr-3 transition-colors border border-transparent hover:border-border-light dark:hover:border-border-dark">
+<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 bg-center bg-cover" data-alt="User profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBaQettiBwynQF9Jpy5lL6gvkMGkw0lPnWxHRSaqXESTIugR3hbQXKSjdrImrIZO9UzOuylFEAlRtkN0eUFkzGNpDIK4yS1t80BcuU-NyY0nUWx_W5os8TkdCkQdyQm3AuM7X0DJ_iWvr73MZbKagZRoWnKSs_qPNQ7rfPuyHH56TKKtXV-zjVKP_p8vk1O1QJjpQro9NSUtSxFfvYXhXH-gtPHZ2A2-cyaSjV_ywLr6gxr5oSm00gECeJz4XatT_L8yHeURI3ByGNA');"></div>
+<span class="text-sm font-medium hidden lg:block">Officer Rao</span>
+<span class="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex flex-1 overflow-hidden">
+<!-- Left Panel: Review Queue List (40%) -->
+<aside class="w-full md:w-[45%] lg:w-[40%] xl:w-[35%] flex flex-col border-r border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark relative z-10 shadow-xl shadow-slate-200/50 dark:shadow-none">
+<!-- Queue Header & Controls -->
+<div class="flex-none px-6 py-5 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Review Queue
+                        <span class="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs px-2 py-0.5 rounded-full font-bold">23</span>
+</h2>
+<div class="flex items-center gap-2">
+<button class="text-xs font-medium text-slate-500 hover:text-primary flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-[16px]">sort</span>
+                            Severity: High
+                        </button>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 border border-transparent hover:border-primary/30 hover:text-primary transition-all whitespace-nowrap active:bg-primary active:text-white">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        All
+                    </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-full text-xs font-medium text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                        Area Mismatch
+                    </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full text-xs font-medium text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        Boundary Shift
+                    </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium text-slate-600 dark:text-slate-400 border border-transparent hover:border-slate-300 whitespace-nowrap">
+                        Encroachment
+                    </button>
+</div>
+</div>
+<!-- Scrollable List -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-slate-50/50 dark:bg-black/20">
+<!-- Active Card -->
+<div class="group relative bg-white dark:bg-surface-dark rounded-lg p-4 shadow-md ring-2 ring-primary border-transparent cursor-pointer transition-all">
+<div class="absolute top-4 right-4 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">Selected</div>
+<div class="flex items-start gap-3 mb-3">
+<div class="mt-1 w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 shadow-sm shadow-red-200 dark:shadow-none"></div>
+<div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">P-127 • Survey 45/2A</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Updated 2h ago • Batch #4092</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-100 dark:border-red-800">
+                             Area Mismatch
+                        </span>
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                            Irregular Geometry
+                        </span>
+</div>
+<!-- Data Grid -->
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-100 dark:border-slate-700 p-3 grid grid-cols-3 gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">AI Detected</span>
+<span class="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums font-mono">2.45 ac</span>
+</div>
+<div class="flex flex-col border-l border-slate-200 dark:border-slate-700 pl-4">
+<span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">ROR Record</span>
+<span class="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums font-mono">2.12 ac</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">Diff</span>
+<span class="text-sm font-bold text-red-600 dark:text-red-400 tabular-nums font-mono flex items-center gap-0.5">
+                                +15.6% <span class="material-symbols-outlined text-[14px]">warning</span>
+</span>
+</div>
+</div>
+</div>
+<!-- Normal Card 1 -->
+<div class="group relative bg-white dark:bg-surface-dark rounded-lg p-4 border border-border-light dark:border-border-dark hover:border-primary/50 cursor-pointer transition-all shadow-sm hover:shadow-md">
+<div class="flex items-start gap-3 mb-3">
+<div class="mt-1 w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+<div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">P-132 • Survey 12/B</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Updated 4h ago • Batch #4092</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
+                             Boundary Shift
+                        </span>
+</div>
+<div class="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 mt-2">
+<span>AI: <strong class="text-slate-900 dark:text-slate-200 tabular-nums">1.10 ac</strong></span>
+<span>ROR: <strong class="text-slate-900 dark:text-slate-200 tabular-nums">1.08 ac</strong></span>
+<span class="text-amber-600 dark:text-amber-400 font-bold tabular-nums">+1.8%</span>
+</div>
+</div>
+<!-- Normal Card 2 -->
+<div class="group relative bg-white dark:bg-surface-dark rounded-lg p-4 border border-border-light dark:border-border-dark hover:border-primary/50 cursor-pointer transition-all shadow-sm hover:shadow-md">
+<div class="flex items-start gap-3 mb-3">
+<div class="mt-1 w-2.5 h-2.5 rounded-full bg-red-500 shrink-0"></div>
+<div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">P-145 • Survey 88/1</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Updated 5h ago • Batch #4091</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-100 dark:border-red-800">
+                             Severe Encroachment
+                        </span>
+</div>
+<div class="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 mt-2">
+<span>AI: <strong class="text-slate-900 dark:text-slate-200 tabular-nums">0.95 ac</strong></span>
+<span>ROR: <strong class="text-slate-900 dark:text-slate-200 tabular-nums">1.50 ac</strong></span>
+<span class="text-red-600 dark:text-red-400 font-bold tabular-nums">-36.6%</span>
+</div>
+</div>
+<!-- Normal Card 3 -->
+<div class="group relative bg-white dark:bg-surface-dark rounded-lg p-4 border border-border-light dark:border-border-dark hover:border-primary/50 cursor-pointer transition-all shadow-sm hover:shadow-md opacity-60">
+<div class="flex items-start gap-3 mb-3">
+<div class="mt-1 w-2.5 h-2.5 rounded-full bg-green-500 shrink-0"></div>
+<div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">P-098 • Survey 21/A</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Resolved • Pending Audit</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                             Minor Dev
+                        </span>
+</div>
+</div>
+<!-- Normal Card 4 -->
+<div class="group relative bg-white dark:bg-surface-dark rounded-lg p-4 border border-border-light dark:border-border-dark hover:border-primary/50 cursor-pointer transition-all shadow-sm hover:shadow-md">
+<div class="flex items-start gap-3 mb-3">
+<div class="mt-1 w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+<div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">P-156 • Survey 102/C</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Updated 6h ago • Batch #4090</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
+                             Boundary Shift
+                        </span>
+</div>
+<div class="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 mt-2">
+<span>AI: <strong class="text-slate-900 dark:text-slate-200 tabular-nums">4.12 ac</strong></span>
+<span>ROR: <strong class="text-slate-900 dark:text-slate-200 tabular-nums">4.00 ac</strong></span>
+<span class="text-amber-600 dark:text-amber-400 font-bold tabular-nums">+3.0%</span>
+</div>
+</div>
+</div>
+<!-- Sticky Footer Actions -->
+<div class="flex-none p-4 bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark flex gap-3 z-10">
+<button class="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm shadow-sm">
+<span class="material-symbols-outlined text-[18px]">flag</span>
+                    Mark for Field Verify
+                </button>
+<button class="flex-1 bg-primary text-white font-medium py-2.5 rounded-lg hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2 text-sm">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    Review Selected
+                </button>
+</div>
+</aside>
+<!-- Right Panel: Map Preview (60%) -->
+<section class="flex-1 relative bg-slate-100 dark:bg-slate-900 overflow-hidden group/map">
+<!-- Map Background (Placeholder for Leaflet/Mapbox) -->
+<!-- Using a high-res satellite looking placeholder pattern -->
+<div class="absolute inset-0 bg-cover bg-center grayscale-[20%] contrast-[1.1]" data-alt="Aerial satellite view of rural landscape with fields and roads" data-location="Andhra Pradesh Rural District" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAM9bPcukow9e4MwummACuCtgI7ecQOdiI85DyP4dzjKMbUoGHIclKymhtr8lUYUQ9QhzqYOi5iCp4PCW4fVKCGmum9jqs2PJvK9GSNp9oOAtw6Cy9wLdi643incKMWUE-eQ1cXNFh_4XhCH9Q5NinEKyFW0PR2rvIEzZd_ke95twXxrqp7s5CE6wFcTj4L7SOSUUV7-u8tE1TPq8HaLYOXqA56FS41XEA6ISLiQFl9kmAzI0RyPIBE91qRknTHCXrglGMjoDXV-y0j');">
+</div>
+<!-- Fake Map Overlay SVG to simulate parcels -->
+<div class="absolute inset-0 pointer-events-none">
+<svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+<!-- Neighbor Parcels -->
+<path d="M 40% 30% L 55% 28% L 58% 45% L 42% 48% Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1"></path>
+<path d="M 25% 40% L 40% 30% L 42% 48% L 28% 55% Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1"></path>
+<!-- Selected Parcel Highlight -->
+<g transform="translate(0,0)">
+<!-- Parcel Shape -->
+<path d="M 42% 48% L 58% 45% L 62% 65% L 45% 70% Z" fill="rgba(30, 63, 174, 0.25)" stroke="#1e3fae" stroke-width="3" vector-effect="non-scaling-stroke"></path>
+<!-- Corner Markers for precision -->
+<circle cx="42%" cy="48%" fill="#ffffff" r="4" stroke="#1e3fae" stroke-width="2"></circle>
+<circle cx="58%" cy="45%" fill="#ffffff" r="4" stroke="#1e3fae" stroke-width="2"></circle>
+<circle cx="62%" cy="65%" fill="#ffffff" r="4" stroke="#1e3fae" stroke-width="2"></circle>
+<circle cx="45%" cy="70%" fill="#ffffff" r="4" stroke="#1e3fae" stroke-width="2"></circle>
+</g>
+</svg>
+</div>
+<!-- Floating Info Card on Map -->
+<div class="absolute top-6 left-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-white/20 dark:border-slate-700 max-w-xs">
+<div class="flex items-center justify-between gap-4 mb-2">
+<h4 class="font-bold text-slate-900 dark:text-white text-sm">Visual Analysis</h4>
+<span class="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Live</span>
+</div>
+<p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+                    Detected boundary deviates from registered survey map by <span class="font-bold text-red-600 dark:text-red-400">12 meters</span> on the North-East corner.
+                </p>
+<div class="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-red-500 w-[75%]"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-[10px] text-slate-500 font-medium">Confidence Score</span>
+<span class="text-[10px] text-slate-900 dark:text-slate-200 font-bold">Low (32%)</span>
+</div>
+</div>
+<!-- Map Controls -->
+<div class="absolute bottom-6 right-6 flex flex-col gap-2">
+<button class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" title="Zoom In">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" title="Zoom Out">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div class="h-2"></div>
+<button class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg shadow-lg flex items-center justify-center text-primary hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" title="Layers">
+<span class="material-symbols-outlined">layers</span>
+</button>
+</div>
+<!-- Map Scale & Attribution -->
+<div class="absolute bottom-4 left-6 flex items-end gap-4 pointer-events-none">
+<div class="bg-white/80 dark:bg-black/60 backdrop-blur px-2 py-1 rounded text-[10px] font-mono font-medium text-slate-800 dark:text-slate-300">
+                    Lat: 16.5062° N   Lng: 80.6480° E
+                </div>
+<div class="flex flex-col items-center gap-0.5">
+<div class="border-b-2 border-l-2 border-r-2 border-slate-900 dark:border-white h-2 w-24"></div>
+<span class="text-[10px] font-bold text-white drop-shadow-md">100 m</span>
+</div>
+</div>
+</section>
+</main>
+</body></html>

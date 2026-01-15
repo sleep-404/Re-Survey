@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Verification Request - AP Revenue Dept</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1e3fae",
+                        "background-light": "#fafafa",
+                        "background-dark": "#1a202d",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#121317] dark:text-white overflow-hidden">
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-[#121317]/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+<div class="flex flex-col w-full max-w-[580px] bg-white dark:bg-[#1a202d] rounded-xl shadow-2xl overflow-hidden border border-[#dcdee5] dark:border-[#2d3748] transform transition-all scale-100">
+<!-- Modal Header -->
+<div class="flex items-center justify-between px-6 py-5 border-b border-[#f0f1f4] dark:border-[#2d3748] bg-white dark:bg-[#1a202d]">
+<h3 class="text-[#121317] dark:text-white text-[1.15rem] font-bold leading-tight tracking-tight">Request Field Verification</h3>
+<button aria-label="Close modal" class="flex items-center justify-center w-8 h-8 rounded-full text-[#656d86] hover:bg-[#f0f1f4] hover:text-[#121317] dark:text-gray-400 dark:hover:bg-[#2d3748] dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Modal Body (Form) -->
+<div class="flex flex-col px-7 py-6 gap-6 max-h-[75vh] overflow-y-auto bg-white dark:bg-[#1a202d]">
+<!-- Field 1: Reason -->
+<label class="flex flex-col gap-2">
+<span class="text-[#121317] dark:text-gray-300 text-xs font-bold uppercase tracking-wider">Reason for Verification <span class="text-red-600">*</span></span>
+<div class="relative group">
+<select class="w-full appearance-none rounded-lg border border-[#dcdee5] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] pl-4 pr-10 py-3 text-[#121317] dark:text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm font-medium transition-shadow">
+<option value="">Select a discrepancy type...</option>
+<option value="bund">Bund not visible / Border unclear</option>
+<option value="encroachment">Encroachment suspected</option>
+<option value="geometry">Geometry mismatch with satellite data</option>
+<option value="dispute">Ownership dispute flagged</option>
+</select>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#656d86] group-focus-within:text-primary">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</label>
+<!-- Field 2: Priority -->
+<div class="flex flex-col gap-2">
+<span class="text-[#121317] dark:text-gray-300 text-xs font-bold uppercase tracking-wider">Priority Level</span>
+<div class="grid grid-cols-3 gap-3">
+<!-- Low -->
+<label class="cursor-pointer relative">
+<input class="peer sr-only" name="priority" type="radio" value="low"/>
+<div class="flex items-center justify-center py-2.5 px-3 rounded-lg border border-[#dcdee5] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] text-[#656d86] dark:text-gray-400 font-medium text-sm transition-all hover:bg-[#f8f9fc] dark:hover:bg-[#2a3441] peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary peer-checked:ring-1 peer-checked:ring-primary">
+                                 Low
+                             </div>
+</label>
+<!-- Medium (Selected) -->
+<label class="cursor-pointer relative">
+<input checked="" class="peer sr-only" name="priority" type="radio" value="medium"/>
+<div class="flex items-center justify-center py-2.5 px-3 rounded-lg border border-[#dcdee5] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] text-[#656d86] dark:text-gray-400 font-medium text-sm transition-all hover:bg-[#f8f9fc] dark:hover:bg-[#2a3441] peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary peer-checked:ring-1 peer-checked:ring-primary">
+                                 Medium
+                             </div>
+</label>
+<!-- High -->
+<label class="cursor-pointer relative">
+<input class="peer sr-only" name="priority" type="radio" value="high"/>
+<div class="flex items-center justify-center py-2.5 px-3 rounded-lg border border-[#dcdee5] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] text-[#656d86] dark:text-gray-400 font-medium text-sm transition-all hover:bg-[#f8f9fc] dark:hover:bg-[#2a3441] peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary peer-checked:ring-1 peer-checked:ring-primary">
+                                 High
+                             </div>
+</label>
+</div>
+</div>
+<!-- Field 3: Upload -->
+<div class="flex flex-col gap-2">
+<span class="text-[#121317] dark:text-gray-300 text-xs font-bold uppercase tracking-wider">Reference Image <span class="text-[#656d86] dark:text-gray-500 font-normal normal-case ml-1 tracking-normal">(Optional)</span></span>
+<div class="border-2 border-dashed border-[#dcdee5] dark:border-[#4a5568] rounded-lg p-5 flex flex-col items-center justify-center gap-2 text-center bg-[#fafafa] dark:bg-[#232a38] hover:bg-[#f0f1f4] dark:hover:bg-[#2d3748] hover:border-primary/50 transition-all cursor-pointer group h-32">
+<div class="p-2 rounded-full bg-white dark:bg-[#2d3748] shadow-sm text-[#656d86] group-hover:text-primary transition-colors border border-transparent group-hover:border-primary/20">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-medium text-[#121317] dark:text-gray-200 group-hover:text-primary">Click to upload reference</p>
+<p class="text-xs text-[#656d86] dark:text-gray-500">Supported: JPG, PNG (Max 5MB)</p>
+</div>
+</div>
+</div>
+<!-- Field 4: Notes -->
+<label class="flex flex-col gap-2">
+<span class="text-[#121317] dark:text-gray-300 text-xs font-bold uppercase tracking-wider">Additional Notes</span>
+<textarea class="w-full min-h-[100px] resize-none appearance-none rounded-lg border border-[#dcdee5] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] px-4 py-3 text-[#121317] dark:text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm font-normal placeholder:text-[#9ca3af] dark:placeholder:text-gray-500 transition-shadow" placeholder="Describe specific landmarks, neighbor inputs, or historical context..."></textarea>
+</label>
+</div>
+<!-- Modal Footer -->
+<div class="flex items-center justify-end gap-3 px-7 py-5 bg-[#fafafa] dark:bg-[#151a23] border-t border-[#f0f1f4] dark:border-[#2d3748]">
+<button class="px-5 py-2.5 rounded-lg border border-[#dcdee5] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] text-[#121317] dark:text-white text-sm font-semibold hover:bg-[#f8f9fc] dark:hover:bg-[#323d4d] transition-colors focus:ring-2 focus:ring-gray-200">
+                    Cancel
+                </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm flex items-center gap-2 focus:ring-2 focus:ring-primary/40 focus:ring-offset-1">
+                    Submit Request
+                </button>
+</div>
+</div>
+</div>
+<!-- Background App Shell (Simulated Content) -->
+<div aria-hidden="true" class="relative flex h-screen w-full flex-col bg-[#f4f5f7] dark:bg-black overflow-hidden blur-[3px] select-none pointer-events-none">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap bg-white dark:bg-[#1a202d] border-b border-solid border-b-[#e5e7eb] dark:border-b-[#2d3748] px-8 py-3 shrink-0 z-20">
+<div class="flex items-center gap-4 text-[#121317] dark:text-white">
+<div class="size-6 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined filled">verified_user</span>
+</div>
+<h2 class="text-[#121317] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Andhra Pradesh Lands &amp; Revenue</h2>
+</div>
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-6 hidden md:flex">
+<a class="text-[#121317] dark:text-gray-200 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-primary text-sm font-bold leading-normal border-b-2 border-primary pb-0.5" href="#">Parcels</a>
+<a class="text-[#121317] dark:text-gray-200 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Reports</a>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border border-gray-200" data-alt="User profile avatar showing a generic silhouette" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-v7DcQOfjuk2Ruz9UJXfuFoQvhYSsLBpKIavLnVEbK2kFttOc5GiSt0MrfOVSH7pdVSK6yXVTb1lUcE3lzjDvZHyQgRKrUCEdps6eFyCO8GKGQtkAV4H1XcAGrWka-lQojUkZKUGO6-V5_2Jawz0RcvIxR2ZucdJsoO7afHDuxTB1iUcnXKuDfnKZIrokFo6HzjKP6vhm8DnS9aM8xKLs4f1BdOX8hPTdifNHwwguzor9ea3eezfgcpCwoBalxC9h2SonQ8NzVoHk");'></div>
+</div>
+</header>
+<!-- Main Layout -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Side Navigation -->
+<aside class="w-64 bg-white dark:bg-[#1a202d] border-r border-[#e5e7eb] dark:border-[#2d3748] flex-col justify-between hidden md:flex z-10">
+<div class="flex flex-col pt-6 pb-4 px-4 gap-6">
+<div class="flex gap-3 px-2">
+<div class="bg-primary/10 rounded-lg size-10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<div class="flex flex-col justify-center">
+<h1 class="text-[#121317] dark:text-white text-sm font-bold leading-tight">AP Revenue Dept</h1>
+<p class="text-[#656d86] dark:text-gray-400 text-xs font-normal">Land Analysis Portal</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#f0f1f4] dark:bg-[#2d3748]">
+<span class="material-symbols-outlined text-primary text-[20px]">map</span>
+<p class="text-[#121317] dark:text-white text-sm font-semibold">Map View</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#656d86] hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-[#252e3e]">
+<span class="material-symbols-outlined text-[20px]">bar_chart</span>
+<p class="text-[#121317] dark:text-gray-300 text-sm font-medium">Analysis</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#656d86] hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-[#252e3e]">
+<span class="material-symbols-outlined text-[20px]">content_copy</span>
+<p class="text-[#121317] dark:text-gray-300 text-sm font-medium">Field Ops</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#656d86] hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-[#252e3e]">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<p class="text-[#121317] dark:text-gray-300 text-sm font-medium">Settings</p>
+</div>
+</nav>
+</div>
+</aside>
+<!-- Main Content Area (Background Context) -->
+<main class="flex-1 flex flex-col relative bg-white dark:bg-[#121212]">
+<!-- Breadcrumbs & Actions -->
+<div class="px-8 py-4 border-b border-[#e5e7eb] dark:border-[#2d3748] flex justify-between items-center bg-white dark:bg-[#1a202d]">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 text-xs text-[#656d86] dark:text-gray-400 mb-1">
+<span>Districts</span>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span>Krishna</span>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span>Vijayawada Rural</span>
+</div>
+<h1 class="text-xl font-bold text-[#121317] dark:text-white">Parcel #9328-A: Survey Detail</h1>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-[#dcdee5] dark:border-[#4a5568] rounded text-sm font-medium text-[#121317] dark:text-white">Export PDF</button>
+<button class="px-4 py-2 bg-primary text-white rounded text-sm font-medium">Edit Geometry</button>
+</div>
+</div>
+<!-- Content Grid -->
+<div class="flex flex-1 p-6 gap-6 bg-[#f8f9fc] dark:bg-black">
+<!-- Map Column -->
+<div class="flex-[2] rounded-xl border border-[#dcdee5] dark:border-[#2d3748] overflow-hidden bg-gray-200 relative shadow-sm">
+<!-- Simulated Map -->
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Satellite map view of rural land parcels with outlined boundaries" data-location="Vijayawada" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCKE8rjBvLYx-vL0lutLpCCwwOQKfDAcYJ97_bem-nYQ6CmmRuQtMwLvUqq4M_y8V0eDZUb1jEVLLvUBB1r7i9vVnQ6WTsm3LMIofFnVPe6JOVY50E_diqpZBiWtofbLS6XKuC1ybZqbtKiJYvyE2eVsVnRto0WvT__G4j6RswAIFIrfFO4AJiKq08EBiwQmJIFwmxT1K8n9hISr1Bk1wg97PMjbqIfEOnllBWhEta3syPXryDxijzLAm28khrUVZj4nPRYodBC5ekm');">
+</div>
+<!-- Map Controls Overlay -->
+<div class="absolute bottom-4 right-4 flex flex-col gap-2">
+<button class="size-10 bg-white dark:bg-[#1a202d] rounded shadow flex items-center justify-center text-[#121317] dark:text-white"><span class="material-symbols-outlined">add</span></button>
+<button class="size-10 bg-white dark:bg-[#1a202d] rounded shadow flex items-center justify-center text-[#121317] dark:text-white"><span class="material-symbols-outlined">remove</span></button>
+</div>
+</div>
+<!-- Details Column -->
+<div class="flex-1 flex flex-col gap-4">
+<div class="bg-white dark:bg-[#1a202d] rounded-xl border border-[#dcdee5] dark:border-[#2d3748] p-5 shadow-sm">
+<h3 class="text-sm font-bold text-[#121317] dark:text-white uppercase tracking-wider border-b border-[#f0f1f4] dark:border-[#2d3748] pb-3 mb-3">Ownership Data</h3>
+<div class="space-y-4">
+<div>
+<p class="text-xs text-[#656d86] dark:text-gray-400 uppercase">Owner Name</p>
+<p class="text-sm font-medium text-[#121317] dark:text-white">K. Venkata Rao</p>
+</div>
+<div>
+<p class="text-xs text-[#656d86] dark:text-gray-400 uppercase">Survey Number</p>
+<p class="text-sm font-medium text-[#121317] dark:text-white">293/1B</p>
+</div>
+<div>
+<p class="text-xs text-[#656d86] dark:text-gray-400 uppercase">Land Type</p>
+<p class="text-sm font-medium text-[#121317] dark:text-white">Wet / Irrigated</p>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-[#1a202d] rounded-xl border border-[#dcdee5] dark:border-[#2d3748] p-5 shadow-sm flex-1">
+<h3 class="text-sm font-bold text-[#121317] dark:text-white uppercase tracking-wider border-b border-[#f0f1f4] dark:border-[#2d3748] pb-3 mb-3">Action History</h3>
+<div class="space-y-3">
+<div class="flex gap-3">
+<div class="mt-1 size-2 rounded-full bg-green-500 shrink-0"></div>
+<div>
+<p class="text-sm font-medium text-[#121317] dark:text-white">Digitization Complete</p>
+<p class="text-xs text-[#656d86] dark:text-gray-400">2 days ago by Admin</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="mt-1 size-2 rounded-full bg-gray-300 shrink-0"></div>
+<div>
+<p class="text-sm font-medium text-[#121317] dark:text-white">Initial Survey</p>
+<p class="text-xs text-[#656d86] dark:text-gray-400">1 week ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

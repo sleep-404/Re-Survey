@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Parcel Detail Comparison - AP Land Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1e3fae",
+                        "primary-dark": "#16308a",
+                        "background-light": "#fafafa",
+                        "background-dark": "#1a202d",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "md": "0.375rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for the left panel */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+        }
+        
+        .map-overlay-pattern {
+            background-image: radial-gradient(#1e3fae 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display h-screen flex flex-col overflow-hidden">
+<!-- Header Section -->
+<header class="flex-none bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-slate-700 px-6 py-3 shadow-sm z-20">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<a class="flex items-center justify-center p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined">arrow_back</span>
+</a>
+<div class="flex flex-col">
+<nav class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+<a class="hover:text-primary transition-colors" href="#">Guntur</a>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Mangalagiri</a>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span>Parcel Analysis</span>
+</nav>
+<h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Survey No. 45/2A</h1>
+</div>
+</div>
+<!-- Pagination Controls -->
+<div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
+<button class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm text-slate-600 dark:text-slate-300 transition-all disabled:opacity-50">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<span class="px-4 text-sm font-semibold text-slate-700 dark:text-slate-200 tabular-nums tracking-wide">5 of 23</span>
+<button class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm text-slate-600 dark:text-slate-300 transition-all">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex overflow-hidden">
+<!-- Left Column: Data Truth -->
+<section class="w-[40%] flex flex-col bg-slate-50 dark:bg-[#121620] border-r border-slate-200 dark:border-slate-800 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+<div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+<!-- AI Detection Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="flex items-start justify-between mb-4 relative">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">AI Detection</h3>
+</div>
+<span class="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm">verified</span> Verified Model
+                        </span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-1">Estimated Area</p>
+<p class="text-3xl font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">2.45 <span class="text-lg font-medium text-slate-400">Acres</span></p>
+</div>
+<div class="border-l border-slate-100 dark:border-slate-700 pl-4">
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-1">Confidence Score</p>
+<div class="flex items-end gap-2">
+<p class="text-3xl font-bold text-primary tabular-nums tracking-tight">78%</p>
+<span class="text-xs font-medium text-orange-500 mb-1.5">Moderate</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+<span class="text-sm font-medium text-slate-600 dark:text-slate-300">Class: Agricultural / Wet Land</span>
+<button class="text-primary text-xs font-bold uppercase hover:underline">View Metadata</button>
+</div>
+</div>
+<!-- ROR Record Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-slate-400">description</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">ROR Record (Official)</h3>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center py-2 border-b border-dashed border-slate-200 dark:border-slate-700">
+<span class="text-sm text-slate-500 dark:text-slate-400">Recorded Area</span>
+<span class="text-base font-semibold text-slate-900 dark:text-white tabular-nums">2.12 Acres</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-dashed border-slate-200 dark:border-slate-700">
+<span class="text-sm text-slate-500 dark:text-slate-400">Owner Name</span>
+<span class="text-base font-semibold text-slate-900 dark:text-white">K. Rao &amp; Family</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-dashed border-slate-200 dark:border-slate-700">
+<span class="text-sm text-slate-500 dark:text-slate-400">Classification</span>
+<span class="text-base font-semibold text-slate-900 dark:text-white">Wet Land (Jirayat)</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-sm text-slate-500 dark:text-slate-400">Last Survey</span>
+<span class="text-base font-semibold text-slate-900 dark:text-white tabular-nums">12 Oct 2019</span>
+</div>
+</div>
+</div>
+<!-- Comparison / Alert Card -->
+<div class="bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800 p-5 shadow-sm relative overflow-hidden animate-pulse-slow">
+<!-- Subtle pattern for attention -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%); background-size: 10px 10px;"></div>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-red-600 dark:text-red-400">warning</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-red-800 dark:text-red-300">Significant Discrepancy</h3>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-3xl font-black text-red-700 dark:text-red-400 tracking-tight tabular-nums">+15.6%</span>
+<span class="text-sm font-medium text-red-600 dark:text-red-300">difference from record</span>
+</div>
+<p class="text-sm text-red-700 dark:text-red-200 leading-relaxed">
+                        AI detected area (2.45 ac) exceeds official record (2.12 ac) by <span class="font-bold">0.33 acres</span>. This exceeds the allowable tolerance of 5%.
+                    </p>
+</div>
+<!-- Possible Issues -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">Possible Issues Detected</h3>
+<ul class="space-y-3">
+<li class="flex items-start gap-3">
+<div class="flex-none mt-0.5 w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined text-[14px]">fence</span>
+</div>
+<div>
+<p class="text-sm font-medium text-slate-900 dark:text-slate-200">Potential Encroachment</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Boundary extends into adjacent government canal buffer.</p>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<div class="flex-none mt-0.5 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+<span class="material-symbols-outlined text-[14px]">water_drop</span>
+</div>
+<div>
+<p class="text-sm font-medium text-slate-900 dark:text-slate-200">Water Body Proximity</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Parcel is within 50m of a water source.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Right Column: Visual Truth (Map) -->
+<section class="flex-1 relative bg-slate-200 dark:bg-slate-900 flex flex-col">
+<!-- Map Container -->
+<div class="absolute inset-0 w-full h-full z-0 overflow-hidden">
+<img alt="Satellite imagery of agricultural land parcels with clearly defined field boundaries and roads" class="w-full h-full object-cover filter contrast-[1.1] brightness-[0.85] dark:brightness-[0.6]" data-alt="Satellite map view of the parcel area" data-location="Andhra Pradesh" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxFvjzLctWZJ6biIfdNFJT7lISVp5t4n03Ew3PEO2nr8DE-_gXkhLw94h9UfzY7b5z2n2AoPN5IHOS4SC5L72UZr5aLaiFMsImVNruhboom7-fUc6D8wOohcURjzp6c2aSOePr48-LAhfTuscI5-mFIt7dRscFSKEc7PBwb0konluQS3S596ij8XHYuB1V_29On8Az3t0BJPlgtQEkSfGCFLu0orfDKn6t1tbNeAHGCfWo0fWQ9yXNMnXJ0IV49tWEA92hLqtz6_kb"/>
+<!-- SVG Overlay for Polygons -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveaspectratio="xMidYMid slice" viewbox="0 0 800 600">
+<defs>
+<pattern height="10" id="diagonalHatch" patterntransform="rotate(45 0 0)" patternunits="userSpaceOnUse" width="10">
+<line style="stroke:#cbd5e1; stroke-width:1" x1="0" x2="0" y1="0" y2="10"></line>
+</pattern>
+</defs>
+<!-- ROR Boundary (Dashed/Dotted) -->
+<path class="opacity-70 drop-shadow-md" d="M 280 180 L 500 160 L 540 380 L 300 420 Z" fill="none" stroke="white" stroke-dasharray="6,4" stroke-width="2"></path>
+<!-- AI Boundary (Solid with Fill) -->
+<path class="drop-shadow-lg transition-all duration-300 hover:stroke-width-4" d="M 260 160 L 520 140 L 560 400 L 280 440 Z" fill="rgba(30, 63, 174, 0.25)" stroke="#1e3fae" stroke-width="3"></path>
+<!-- Vertex Dots -->
+<circle cx="260" cy="160" fill="white" r="5" stroke="#1e3fae" stroke-width="2"></circle>
+<circle cx="520" cy="140" fill="white" r="5" stroke="#1e3fae" stroke-width="2"></circle>
+<circle cx="560" cy="400" fill="white" r="5" stroke="#1e3fae" stroke-width="2"></circle>
+<circle cx="280" cy="440" fill="white" r="5" stroke="#1e3fae" stroke-width="2"></circle>
+<!-- Comparison Label on Map -->
+<g transform="translate(560, 400)">
+<rect fill="#ffffff" height="28" rx="4" stroke="#e2e8f0" width="120" x="10" y="-30"></rect>
+<text fill="#dc2626" font-family="Public Sans" font-size="12" font-weight="bold" x="20" y="-12">+ Deviation</text>
+</g>
+</svg>
+</div>
+<!-- Map Controls (Floating) -->
+<div class="absolute top-6 right-6 flex flex-col gap-2 z-10">
+<div class="bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-1 flex flex-col">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-700 dark:text-slate-200" title="Zoom In">
+<span class="material-symbols-outlined">add</span>
+</button>
+<div class="h-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-700 dark:text-slate-200" title="Zoom Out">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<div class="bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-1">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-700 dark:text-slate-200" title="Focus Parcel">
+<span class="material-symbols-outlined">center_focus_strong</span>
+</button>
+</div>
+<!-- Layer Toggle -->
+<div class="mt-2 bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 space-y-2 w-32">
+<div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 px-1">Layers</div>
+<label class="flex items-center gap-2 cursor-pointer px-1 hover:bg-slate-50 dark:hover:bg-slate-800 rounded py-1">
+<input checked="" class="form-checkbox h-3 w-3 text-primary rounded border-slate-300" type="checkbox"/>
+<span class="text-xs font-medium text-slate-700 dark:text-slate-300">AI Boundary</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer px-1 hover:bg-slate-50 dark:hover:bg-slate-800 rounded py-1">
+<input checked="" class="form-checkbox h-3 w-3 text-slate-400 rounded border-slate-300" type="checkbox"/>
+<span class="text-xs font-medium text-slate-700 dark:text-slate-300">ROR Record</span>
+</label>
+</div>
+</div>
+<!-- Map Legend (Floating) -->
+<div class="absolute bottom-24 left-6 bg-white/90 dark:bg-surface-dark/90 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-3 z-10">
+<div class="flex items-center gap-4 text-xs font-medium">
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 border-2 border-primary bg-primary/20 rounded-sm"></div>
+<span class="text-slate-700 dark:text-slate-200">AI Detected</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 border-2 border-white border-dashed bg-transparent rounded-sm shadow-sm"></div>
+<span class="text-slate-700 dark:text-slate-200">Official Record</span>
+</div>
+</div>
+</div>
+<!-- Empty div to push footer down visually in overlay if needed, but flex-col handles it -->
+</section>
+</main>
+<!-- Bottom Action Bar (Sticky Footer) -->
+<footer class="flex-none bg-surface-light dark:bg-surface-dark border-t border-slate-200 dark:border-slate-700 p-4 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<div class="max-w-full mx-auto flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-lg text-sm font-bold shadow-sm transition-all focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[20px]">engineering</span>
+                    Field Verify
+                </button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+<button class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-[20px]">call_split</span>
+                    Split
+                </button>
+<button class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-[20px]">call_merge</span>
+                    Merge
+                </button>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-5 py-2.5 border-2 border-primary text-primary hover:bg-primary/5 dark:hover:bg-primary/20 rounded-lg text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+                    Edit Boundary
+                </button>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold shadow-md shadow-green-600/20 transition-all transform active:scale-95 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+                    Approve Parcel
+                </button>
+</div>
+</div>
+</footer>
+</body></html>

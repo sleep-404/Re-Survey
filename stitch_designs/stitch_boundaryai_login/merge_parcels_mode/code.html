@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Merge Parcels Mode - AP Land Revenue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1e3fae",
+                        "primary-dark": "#162e82",
+                        "success": "#059669",
+                        "success-light": "#d1fae5",
+                        "background-light": "#fafafa",
+                        "background-dark": "#1a202d",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    boxShadow: {
+                        "float": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.05)"
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom map overlay patterns */
+        .parcel-base {
+            background-color: rgba(30, 63, 174, 0.25);
+            border: 2px solid #1e3fae;
+        }
+        .parcel-selected {
+            background-color: rgba(5, 150, 105, 0.35);
+            border: 2px solid #059669;
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(5, 150, 105, 0.1),
+                rgba(5, 150, 105, 0.1) 10px,
+                rgba(5, 150, 105, 0.2) 10px,
+                rgba(5, 150, 105, 0.2) 20px
+            );
+        }
+        .parcel-adjacent {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.8);
+        }
+        .parcel-adjacent:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 overflow-hidden h-screen w-screen relative">
+<!-- Top Navigation Bar (Mode Specific) -->
+<header class="absolute top-0 left-0 right-0 z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 shadow-sm px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="flex items-center justify-center size-10 rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined">merge</span>
+</div>
+<div>
+<h1 class="text-lg font-bold uppercase tracking-tight text-slate-900 dark:text-white leading-none mb-1">Merge Parcels Mode</h1>
+<p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Select adjacent parcels to merge with <span class="font-bold text-primary">Base P-127</span></p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden md:flex px-4 py-1.5 bg-yellow-50 text-yellow-800 text-xs font-semibold uppercase tracking-wider rounded border border-yellow-200 mr-4">
+<span class="material-symbols-outlined text-sm mr-1">warning</span>
+                Irreversible Action
+            </div>
+<button class="px-6 h-10 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-transparent text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Cancel
+            </button>
+<button class="flex items-center gap-2 px-6 h-10 rounded-lg bg-primary hover:bg-primary-dark text-white font-bold text-sm shadow-md transition-colors">
+<span class="material-symbols-outlined text-[20px]">check</span>
+                Confirm Merge
+            </button>
+</div>
+</header>
+<!-- Main Map Area -->
+<main class="w-full h-full bg-slate-900 relative z-0">
+<!-- Satellite Map Background -->
+<div class="absolute inset-0 w-full h-full bg-cover bg-center" data-alt="Satellite imagery of rural land parcels" data-location="Andhra Pradesh, India" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAM9bPcukow9e4MwummACuCtgI7ecQOdiI85DyP4dzjKMbUoGHIclKymhtr8lUYUQ9QhzqYOi5iCp4PCW4fVKCGmum9jqs2PJvK9GSNp9oOAtw6Cy9wLdi643incKMWUE-eQ1cXNFh_4XhCH9Q5NinEKyFW0PR2rvIEzZd_ke95twXxrqp7s5CE6wFcTj4L7SOSUUV7-u8tE1TPq8HaLYOXqA56FS41XEA6ISLiQFl9kmAzI0RyPIBE91qRknTHCXrglGMjoDXV-y0j'); filter: contrast(1.1) saturate(0.9);">
+</div>
+<!-- Map Controls (Zoom/Pan) -->
+<div class="absolute right-6 bottom-8 z-40 flex flex-col gap-2">
+<button class="size-10 bg-white dark:bg-surface-dark rounded-lg shadow-float flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="size-10 bg-white dark:bg-surface-dark rounded-lg shadow-float flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button class="mt-2 size-10 bg-white dark:bg-surface-dark rounded-lg shadow-float flex items-center justify-center text-primary font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transform transition-transform" title="Reset North">
+<span class="material-symbols-outlined" style="transform: rotate(-45deg);">explore</span>
+</button>
+</div>
+<!-- Instructional Tooltip/Toast -->
+<div class="absolute top-24 left-1/2 -translate-x-1/2 z-40">
+<div class="flex items-center gap-3 bg-slate-900/90 text-white px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md border border-slate-700/50 animate-bounce-subtle">
+<span class="material-symbols-outlined text-emerald-400 text-lg">touch_app</span>
+<span class="text-sm font-medium tracking-wide">Click adjacent parcels to add to selection</span>
+</div>
+</div>
+<!-- Map Overlay Content (Parcels) -->
+<div class="absolute inset-0 z-10 flex items-center justify-center">
+<div class="relative w-[800px] h-[600px]">
+<!-- Base Parcel P-127 -->
+<div class="absolute top-[30%] left-[30%] w-[180px] h-[220px] parcel-base rounded-tl-[40px] rounded-br-[20px] flex items-center justify-center z-20 group">
+<div class="bg-primary text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">star</span>
+                        P-127 (Base)
+                    </div>
+</div>
+<!-- Selected Parcel P-128 -->
+<div class="absolute top-[30%] left-[52.5%] w-[140px] h-[160px] parcel-selected rounded-tr-[30px] flex items-center justify-center z-20">
+<div class="bg-success text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                        P-128
+                    </div>
+</div>
+<!-- Unselected Adjacent P-129 -->
+<div class="absolute top-[58%] left-[35%] w-[160px] h-[120px] parcel-adjacent rounded-bl-[30px] flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+<span class="text-white/90 font-bold drop-shadow-md text-sm">P-129</span>
+</div>
+<!-- Unselected Adjacent P-126 -->
+<div class="absolute top-[10%] left-[25%] w-[200px] h-[140px] parcel-adjacent rounded-tl-[10px] flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+<span class="text-white/90 font-bold drop-shadow-md text-sm">P-126</span>
+</div>
+</div>
+</div>
+<!-- Bottom Left Floating Panel: Merge Preview -->
+<div class="absolute left-6 bottom-6 z-50 w-[420px] max-w-full">
+<div class="bg-white dark:bg-surface-dark rounded-xl shadow-float overflow-hidden border border-slate-100 dark:border-slate-700">
+<!-- Panel Header -->
+<div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+<div>
+<h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Merge Preview</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Consolidating 2 parcels</p>
+</div>
+<div class="size-8 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">layers</span>
+</div>
+</div>
+<!-- Content Body -->
+<div class="p-5">
+<!-- Parcel Chips -->
+<div class="flex flex-wrap gap-2 mb-6">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20 text-primary-dark dark:text-blue-300">
+<span class="material-symbols-outlined text-sm">home_pin</span>
+<span class="text-xs font-bold">P-127 (Base)</span>
+</div>
+<span class="text-slate-400 self-center">+</span>
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-success/10 border border-success/20 text-emerald-800 dark:text-emerald-300">
+<span class="material-symbols-outlined text-sm">check</span>
+<span class="text-xs font-bold">P-128</span>
+</div>
+</div>
+<!-- Comparison Stats -->
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col p-4 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600">
+<span class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase mb-1">New Combined Area</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">2.15</span>
+<span class="text-sm font-medium text-slate-500">ac</span>
+</div>
+</div>
+<div class="flex flex-col p-4 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600 relative overflow-hidden">
+<span class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase mb-1">ROR Target Area</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">2.12</span>
+<span class="text-sm font-medium text-slate-500">ac</span>
+</div>
+<!-- Subtle indicator line -->
+<div class="absolute bottom-0 left-0 w-full h-1 bg-slate-200 dark:bg-slate-700">
+<div class="h-full bg-emerald-500 w-[98%]"></div>
+</div>
+</div>
+</div>
+<!-- Validation Message -->
+<div class="mt-4 flex items-center justify-between px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-lg">
+<div class="flex items-center gap-3">
+<div class="size-6 rounded-full bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px] font-bold">done</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-emerald-800 dark:text-emerald-200">Within Tolerance</span>
+<span class="text-xs text-emerald-700 dark:text-emerald-400 font-medium">+1.4% difference from ROR</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-emerald-300 text-[48px] opacity-20 -mr-2">verified</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Map Scale / Legal Footer -->
+<div class="absolute bottom-1 right-24 z-30 pointer-events-none opacity-70">
+<div class="bg-white/80 dark:bg-black/50 backdrop-blur text-[10px] text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded">
+            Imagery © 2024 Maxar Technologies, Map data © 2024 Govt of AP
+        </div>
+</div>
+<div class="absolute bottom-3 right-6 z-30 pointer-events-none">
+<div class="w-16 h-1 bg-white/80 border border-black/20 relative">
+<span class="absolute -top-4 left-0 text-[10px] font-bold text-white drop-shadow-md">50 m</span>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Boundary Mode - Land Parcel Analysis</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#1e3fae",
+              "background-light": "#fafafa",
+              "background-dark": "#1a202d",
+              "alert-red": "#ef4444",
+              "success-green": "#07883d",
+            },
+            fontFamily: {
+              "display": ["Public Sans", "sans-serif"]
+            },
+            borderRadius: {
+                "DEFAULT": "0.25rem", 
+                "lg": "0.5rem", 
+                "xl": "0.75rem", 
+                "full": "9999px"
+            },
+            boxShadow: {
+                'floating': '0 4px 20px -2px rgba(0, 0, 0, 0.15)',
+                'vertex': '0 2px 5px rgba(0,0,0,0.3)',
+            }
+          },
+        },
+      }
+    </script>
+<style>body {
+    font-family: "Public Sans", sans-serif;
+    overflow: hidden;
+    /* Prevent scrolling for map app feel */
+    }
+/* Map pattern background simulation */
+.map-container {
+    background-color: #e5e7eb;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuChKLIFl7HFQ2YhAUN9fP0onWytou9cmukxtZUdlgeOmVQ1-scNou4vGTX07NFspkLo3cnroy0-ZPEotauUOiiPmmPXdemMXvo5M5KXyzMXxgbgHoyBYAOsow3nSQvJrTJvAOdisRCeFgqA5v1JgcDluMshemi1oE1es4TaXtgjsW6T9xseMV-jcLJ-hzGDJ_rnSrXjSX-0eMOaKosbi5oaciiodxG0uXEeKYWx1ci5H3FAqK_jyqswU1lcEThUL4k8i8dmmHLHwGgF);
+    /* Fallback */
+    background-size: cover;
+    background-position: center
+    }
+/* Custom scrollbar for tools if needed */
+::-webkit-scrollbar {
+    width: 6px
+    }
+::-webkit-scrollbar-track {
+    background: transparent
+    }
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px
+    }</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#121317] h-screen w-full flex flex-col relative group/design-root">
+<!-- Top Navigation Bar -->
+<header class="absolute top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-[#e2e4e9] shadow-sm px-6 py-3 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<div>
+<div class="flex items-center gap-2">
+<span class="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Editing</span>
+<h1 class="text-[#121317] text-lg font-bold leading-tight font-display">Survey No. 428/A</h1>
+</div>
+<p class="text-slate-500 text-xs font-medium">Guntur District, Andhra Pradesh</p>
+</div>
+</div>
+<!-- Instruction Banner (Inline for cleaner look) -->
+<div class="hidden md:flex items-center gap-2 bg-blue-50 border border-blue-100 px-4 py-1.5 rounded-full">
+<span class="material-symbols-outlined text-primary text-sm">info</span>
+<p class="text-primary text-sm font-medium">Drag vertices to adjust boundary lines.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center justify-center px-4 h-10 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm">
+                Cancel
+            </button>
+<button class="flex items-center justify-center gap-2 px-5 h-10 rounded-lg bg-primary text-white text-sm font-bold shadow-md hover:bg-blue-800 transition-colors">
+<span class="material-symbols-outlined text-lg">save</span>
+<span>Save Changes</span>
+</button>
+</div>
+</header>
+<!-- Main Map Canvas Area -->
+<main class="flex-1 relative w-full h-full overflow-hidden">
+<!-- Satellite Map Background -->
+<div class="absolute inset-0 z-0 map-container" data-alt="Aerial satellite view of agricultural land parcels with distinct boundaries" data-location="Andhra Pradesh" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAM9bPcukow9e4MwummACuCtgI7ecQOdiI85DyP4dzjKMbUoGHIclKymhtr8lUYUQ9QhzqYOi5iCp4PCW4fVKCGmum9jqs2PJvK9GSNp9oOAtw6Cy9wLdi643incKMWUE-eQ1cXNFh_4XhCH9Q5NinEKyFW0PR2rvIEzZd_ke95twXxrqp7s5CE6wFcTj4L7SOSUUV7-u8tE1TPq8HaLYOXqA56FS41XEA6ISLiQFl9kmAzI0RyPIBE91qRknTHCXrglGMjoDXV-y0j');">
+<!-- SVG Overlay for Map Graphics -->
+<svg class="w-full h-full absolute inset-0 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="10" id="diagonalHatch" patterntransform="rotate(45 0 0)" patternunits="userSpaceOnUse" width="10">
+<line style="stroke:#1e3fae; stroke-width:1; opacity: 0.1" x1="0" x2="0" y1="0" y2="10"></line>
+</pattern>
+</defs>
+<!-- Context Parcels (Neighbors) - Grayed out -->
+<path d="M 200,150 L 500,120 L 550,400 L 180,380 Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"></path>
+<path d="M 850,200 L 1100,180 L 1150,500 L 880,520 Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"></path>
+<!-- Active Parcel (Survey No. 428/A) -->
+<!-- Filled with subtle pattern/color -->
+<path class="drop-shadow-lg" d="M 500,120 L 850,200 L 880,520 L 550,400 Z" fill="rgba(30, 63, 174, 0.15)" stroke="#1e3fae" stroke-width="3" vector-effect="non-scaling-stroke"></path>
+</svg>
+<!-- Interactive Vertices (HTML elements for easier interaction simulation) -->
+<!-- These are absolutely positioned based on the SVG coordinates roughly -->
+<div class="absolute w-full h-full pointer-events-none z-10">
+<!-- Vertex 1 -->
+<div class="absolute top-[120px] left-[500px] -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-grab group">
+<div class="w-4 h-4 bg-white border-2 border-primary rounded-full shadow-vertex group-hover:scale-150 transition-transform duration-200"></div>
+<div class="absolute top-6 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Vertex 1</div>
+</div>
+<!-- Vertex 2 -->
+<div class="absolute top-[200px] left-[850px] -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-grab group">
+<div class="w-4 h-4 bg-white border-2 border-primary rounded-full shadow-vertex group-hover:scale-150 transition-transform duration-200"></div>
+</div>
+<!-- Vertex 3 (Active/Selected) -->
+<div class="absolute top-[520px] left-[880px] -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-grabbing group">
+<div class="w-5 h-5 bg-primary border-2 border-white ring-2 ring-primary/30 rounded-full shadow-vertex scale-125"></div>
+<!-- Coordinate Tooltip -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-xs font-mono px-2 py-1 rounded shadow-lg border border-slate-200 whitespace-nowrap flex flex-col items-center">
+<span class="font-bold">Lat: 16.3082° N</span>
+<span>Lng: 80.4321° E</span>
+</div>
+</div>
+<!-- Vertex 4 -->
+<div class="absolute top-[400px] left-[550px] -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-grab group">
+<div class="w-4 h-4 bg-white border-2 border-primary rounded-full shadow-vertex group-hover:scale-150 transition-transform duration-200"></div>
+</div>
+<!-- Midpoint Handles (Ghost vertices) -->
+<div class="absolute top-[160px] left-[675px] -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
+<div class="w-3 h-3 bg-white/80 border border-slate-400 rounded-full shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Floating Left Toolbar -->
+<aside class="absolute left-6 top-24 bottom-auto z-20 flex flex-col gap-4">
+<div class="bg-white rounded-xl shadow-floating border border-slate-100 overflow-hidden flex flex-col p-1.5 w-14 items-center gap-1">
+<!-- Move / Select -->
+<button aria-label="Move Tool" class="group w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary transition-all relative">
+<span class="material-symbols-outlined">near_me</span>
+<span class="absolute left-12 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">Select</span>
+</button>
+<div class="w-8 h-[1px] bg-slate-100 my-1"></div>
+<!-- Add Vertex -->
+<button aria-label="Add Vertex" class="group w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
+<span class="material-symbols-outlined">add_location_alt</span>
+<span class="absolute left-12 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">Add Vertex</span>
+</button>
+<!-- Delete Vertex -->
+<button aria-label="Delete Vertex" class="group w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
+<span class="material-symbols-outlined">wrong_location</span>
+<span class="absolute left-12 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">Remove Vertex</span>
+</button>
+<div class="w-8 h-[1px] bg-slate-100 my-1"></div>
+<!-- Snap to Bund -->
+<button aria-label="Snap to Bund" class="group w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
+<span class="material-symbols-outlined">save_alt</span>
+<span class="absolute left-12 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">Snap to Bund</span>
+</button>
+</div>
+<!-- Undo / Redo Group -->
+<div class="bg-white rounded-xl shadow-floating border border-slate-100 overflow-hidden flex flex-col p-1.5 w-14 items-center gap-1">
+<button aria-label="Undo" class="group w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
+<span class="material-symbols-outlined">undo</span>
+</button>
+<button aria-label="Redo" class="group w-10 h-10 flex items-center justify-center rounded-lg text-slate-300 cursor-not-allowed transition-all relative" disabled="">
+<span class="material-symbols-outlined">redo</span>
+</button>
+</div>
+</aside>
+<!-- Bottom Left Data Stats Panel -->
+<div class="absolute left-6 bottom-8 z-20 w-80">
+<div class="bg-white rounded-xl shadow-floating border border-slate-100 p-5 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-slate-100 pb-3">
+<h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Parcel Metrics</h3>
+<div class="flex items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined text-sm">square_foot</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-y-4">
+<!-- Current Area -->
+<div class="flex flex-col">
+<span class="text-xs text-slate-500 font-medium mb-1">Current Area</span>
+<span class="text-2xl font-bold text-slate-900 font-display tabular-nums">2.38 <span class="text-sm font-normal text-slate-500">ac</span></span>
+</div>
+<!-- ROR Area -->
+<div class="flex flex-col pl-4 border-l border-slate-100">
+<span class="text-xs text-slate-500 font-medium mb-1">ROR Area</span>
+<span class="text-2xl font-bold text-slate-700 font-display tabular-nums">2.12 <span class="text-sm font-normal text-slate-500">ac</span></span>
+</div>
+</div>
+<!-- Difference Alert Box -->
+<div class="mt-1 bg-red-50 rounded-lg p-3 flex items-start gap-3 border border-red-100">
+<span class="material-symbols-outlined text-alert-red mt-0.5">warning</span>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-red-800 uppercase tracking-wide">Significant Variance</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-lg font-bold text-alert-red font-display tabular-nums">+0.26 ac</span>
+<span class="text-sm font-bold text-alert-red bg-red-100 px-1.5 rounded tabular-nums">+12.3%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Right Map Controls -->
+<div class="absolute right-6 bottom-8 z-20 flex flex-col gap-3">
+<div class="bg-white rounded-lg shadow-floating border border-slate-100 overflow-hidden flex flex-col">
+<button class="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 border-b border-slate-100 transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<button class="w-10 h-10 bg-white rounded-lg shadow-floating border border-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors" title="Toggle Layers">
+<span class="material-symbols-outlined">layers</span>
+</button>
+<button class="w-10 h-10 bg-white rounded-lg shadow-floating border border-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors" title="My Location">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+<!-- Scale Bar -->
+<div class="absolute bottom-2 right-20 bg-white/80 backdrop-blur px-2 py-1 rounded text-[10px] font-mono border border-white/50 shadow-sm text-slate-800 pointer-events-none">
+            20 m
+            <div class="w-full h-1 bg-slate-800 mt-0.5 border-x border-slate-800"></div>
+</div>
+</main>
+</body></html>
