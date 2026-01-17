@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useModeStore, MODE_LABELS } from '../../hooks/useModeStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore } from '../../hooks/useHistoryStore';
+import { exportShapefile } from '../../utils/exportShapefile';
 import type { AppMode } from '../../types';
 
 interface ToolButtonProps {
@@ -37,10 +40,29 @@ function ToolButton({ mode, currentMode, onClick, disabled, shortcut }: ToolButt
 export function ToolPanel() {
   const { mode, enterDrawMode, enterEditMode, enterSplitMode, exitToSelectMode } = useModeStore();
   const { getSelectionCount } = useSelectionStore();
+  const { parcels } = usePolygonStore();
   const { canUndo, canRedo, undo, redo } = useHistoryStore();
+  const [isExporting, setIsExporting] = useState(false);
 
   const selectionCount = getSelectionCount();
   const hasSingleSelection = selectionCount === 1;
+
+  const handleExport = async () => {
+    if (parcels.length === 0) {
+      alert('No parcels to export');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const timestamp = new Date().toISOString().slice(0, 10);
+      await exportShapefile(parcels, `parcels_${timestamp}`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -110,6 +132,17 @@ export function ToolPanel() {
             <kbd className="rounded bg-gray-700 px-1.5 py-0.5 text-xs text-gray-400">
               ⇧Z
             </kbd>
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={isExporting || parcels.length === 0}
+            className={`flex w-full items-center justify-between rounded px-3 py-2 text-sm transition-colors ${
+              isExporting || parcels.length === 0
+                ? 'cursor-not-allowed bg-gray-800 text-gray-500'
+                : 'bg-cyan-700 text-white hover:bg-cyan-600'
+            }`}
+          >
+            <span>{isExporting ? 'Exporting...' : 'Export Shapefile'}</span>
           </button>
         </div>
       </div>
