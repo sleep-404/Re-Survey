@@ -5,6 +5,16 @@
 
 ---
 
+## Success Criteria (from Orientation Session)
+
+| Metric | Target |
+|--------|--------|
+| Parcel extraction precision | ≥85% when benchmarked against manual audits |
+| Topology errors | Zero overlaps and gaps between adjacent parcels |
+| Parcel types supported | Agricultural, Gramakantam (Abadi), Building footprints, Roads, Open spaces, Water bodies |
+
+---
+
 ## Available Data
 
 | Asset | Path | Format | Size |
@@ -43,7 +53,9 @@ src/
 │   │   ├── Sidebar.tsx
 │   │   ├── ToolPanel.tsx
 │   │   ├── LayerPanel.tsx
-│   │   └── TopologyPanel.tsx
+│   │   ├── ParcelTypePanel.tsx
+│   │   ├── TopologyPanel.tsx
+│   │   └── AccuracyPanel.tsx
 │   ├── BottomBar/
 │   │   ├── BottomBar.tsx
 │   │   ├── SelectionInfo.tsx
@@ -53,8 +65,7 @@ src/
 │   │   ├── RestoreSessionDialog.tsx
 │   │   └── ConfirmDialog.tsx
 │   └── LoadScreen/
-│       ├── EmptyState.tsx
-│       └── ProcessingState.tsx
+│       └── LoadingState.tsx
 ├── hooks/
 │   ├── usePolygonStore.ts       # Zustand store for polygons
 │   ├── useSelectionStore.ts     # Selection state
@@ -64,10 +75,13 @@ src/
 ├── utils/
 │   ├── geometry.ts              # Turf.js helpers
 │   ├── topology.ts              # Gap/overlap detection
+│   ├── accuracy.ts              # Ground truth comparison & IoU
 │   ├── export.ts                # Shapefile export
 │   └── coordinates.ts           # CRS conversion
 ├── types/
 │   └── index.ts                 # TypeScript types
+├── constants/
+│   └── parcelTypes.ts           # Parcel type definitions
 └── App.tsx
 ```
 
@@ -91,6 +105,7 @@ src/
 ```python
 # Dependencies: geopandas, pyproj
 # Purpose: Reproject GeoJSON from EPSG:32644 (UTM 44N) to EPSG:4326 (WGS84)
+#          and add random parcelType classification (placeholder)
 # Input: evaluation_output/.../sam_raw_segments.geojson
 # Output: public/data/sam_segments.geojson
 ```
@@ -98,8 +113,33 @@ src/
 **Requirements:**
 - Read GeoJSON with geopandas
 - Reproject to EPSG:4326
+- Add random `parcelType` property to each polygon (placeholder for future AI classification)
+- Add unique `id` to each polygon
 - Write to `public/data/` folder
 - Also convert ground_truth.geojson if needed
+
+**Random Classification (Placeholder for MVP):**
+```python
+import random
+import uuid
+
+PARCEL_TYPES = [
+    'agricultural',    # Most common in rural areas
+    'building',
+    'road',
+    'open_space',
+    'water_body',
+    'compound',
+    'gramakantam',
+]
+WEIGHTS = [0.60, 0.15, 0.10, 0.05, 0.05, 0.03, 0.02]
+
+for feature in gdf.iterfeatures():
+    feature['properties']['parcelType'] = random.choices(PARCEL_TYPES, WEIGHTS)[0]
+    feature['properties']['id'] = str(uuid.uuid4())[:8]
+```
+
+**Note:** Random classification is a placeholder. Future work will use spectral/shape analysis or a trained classifier.
 
 **Acceptance Criteria:**
 - [ ] Tiles render correctly in browser
@@ -172,6 +212,48 @@ usePolygonStore.getState().setPolygons(geojson.features);
 **Acceptance Criteria:**
 - [ ] Can hide/show ORI
 - [ ] Can hide/show polygons
+
+### Task 1.4: Parcel Type Classification
+**File:** `src/constants/parcelTypes.ts`, `src/components/Sidebar/ParcelTypePanel.tsx`
+
+**Data Source:** Classifications are pre-loaded from `parcelType` property in `sam_segments.geojson` (generated with random values in Task 0.2 as placeholder). Users can manually correct via UI.
+
+**Parcel Types (from Orientation Session):**
+```typescript
+type ParcelType =
+  | 'agricultural'      // Farm land with bunds
+  | 'gramakantam'       // Abadi/habitation area outer boundary
+  | 'building'          // Building footprint
+  | 'compound'          // Compound wall boundary
+  | 'road'              // Road polygon (double-line)
+  | 'open_space'        // Open space within Gramakantam
+  | 'water_body'        // Tank, pond, canal
+  | 'government_land'   // Government-owned parcel
+  | 'unclassified';     // Default for new/untagged parcels
+```
+
+**Requirements:**
+- Each polygon has a `parcelType` property (default: `unclassified`)
+- Sidebar panel to assign type to selected polygon(s)
+- Color-coded rendering by parcel type
+- Keyboard shortcuts: 1-9 for quick type assignment
+- Filter polygons by type in layer panel
+
+**Color Scheme:**
+| Type | Fill Color | Border Color |
+|------|------------|--------------|
+| agricultural | transparent | orange |
+| gramakantam | yellow 10% | yellow |
+| building | red 20% | red |
+| road | gray 30% | gray |
+| water_body | blue 20% | blue |
+| open_space | green 10% | green |
+
+**Acceptance Criteria:**
+- [ ] Can assign parcel type to selected polygon(s)
+- [ ] Polygons render with type-specific colors
+- [ ] Can filter view by parcel type
+- [ ] Type persists in export
 
 ---
 
@@ -400,6 +482,14 @@ type Action =
 | Ctrl+A | Select all | Always |
 | Ctrl+Z | Undo | Always |
 | Ctrl+Shift+Z | Redo | Always |
+| 1 | Set type: Agricultural | Any selected |
+| 2 | Set type: Gramakantam | Any selected |
+| 3 | Set type: Building | Any selected |
+| 4 | Set type: Road | Any selected |
+| 5 | Set type: Water Body | Any selected |
+| 6 | Set type: Open Space | Any selected |
+| 7 | Set type: Compound | Any selected |
+| 8 | Set type: Government Land | Any selected |
 
 **Acceptance Criteria:**
 - [ ] All shortcuts work
@@ -456,6 +546,42 @@ type Action =
 - [ ] Click [→] zooms to error
 - [ ] Errors highlighted on map with patterns
 - [ ] Fix All fixes small errors
+
+### Task 7.4: Ground Truth Comparison & Accuracy Metrics
+**File:** `src/utils/accuracy.ts`, `src/components/Sidebar/AccuracyPanel.tsx`
+
+**Purpose:** Compare edited polygons against ground truth to measure accuracy (≥85% target from orientation session).
+
+**Requirements:**
+- Load ground truth GeoJSON (`/data/ground_truth.geojson`)
+- Calculate Intersection over Union (IoU) for each polygon
+- Aggregate accuracy score across all polygons
+- Show per-polygon accuracy with color gradient (red < 85%, green ≥ 85%)
+- List low-accuracy parcels for field team prioritization
+
+**Metrics:**
+```typescript
+interface AccuracyMetrics {
+  overallIoU: number;           // Average IoU across all matched polygons
+  matchedCount: number;         // Polygons with ground truth match
+  unmatchedCount: number;       // Polygons without ground truth match
+  belowThresholdCount: number;  // Polygons with IoU < 85%
+  parcelsNeedingReview: Polygon[]; // Sorted by IoU ascending (worst first)
+}
+```
+
+**Field Validation Priority List:**
+- Sort parcels by accuracy score (lowest first)
+- Mark parcels with topology errors
+- Mark parcels with no ground truth match
+- Export priority list for field teams
+
+**Acceptance Criteria:**
+- [ ] Ground truth loads and displays (toggle in layer panel)
+- [ ] IoU calculated for each polygon
+- [ ] Overall accuracy percentage shown
+- [ ] Low-accuracy parcels highlighted on map
+- [ ] Priority list exportable for field teams
 
 ---
 
@@ -518,6 +644,11 @@ type Action =
 - Reproject from EPSG:4326 (web) back to EPSG:32644 (UTM 44N) for output
 - Include .prj file with EPSG:32644 WKT
 - Zip all files (.shp, .shx, .dbf, .prj)
+- Include parcel attributes in .dbf:
+  - `id`: Unique polygon ID
+  - `parcel_typ`: Parcel type (agricultural, building, road, etc.)
+  - `area_sqm`: Area in square meters
+  - `iou_score`: Accuracy score vs ground truth (if available)
 
 **Coordinate Conversion:**
 ```typescript
@@ -538,37 +669,36 @@ function toUTM(lng: number, lat: number): [number, number] {
 
 ---
 
-## Phase 10: Initial Load States
+## Phase 10: Initial Load & Loading States
 
-### Task 10.1: Empty State
-**File:** `src/components/LoadScreen/EmptyState.tsx`
+### Task 10.1: Loading State
+**File:** `src/components/LoadScreen/LoadingState.tsx`
 
-**Requirements:**
-- Centered drop zone
-- "Load ORI Image" title
-- "Drop .tif file here or click to browse"
-- File input accepts .tif, .tiff
-
-**Acceptance Criteria:**
-- [ ] Drop zone renders
-- [ ] Drag-drop works
-- [ ] Click opens file picker
-
-### Task 10.2: Processing State
-**File:** `src/components/LoadScreen/ProcessingState.tsx`
+**Note:** For hackathon MVP, we load pre-computed data from `public/` folder. No file upload needed since ORI tiles and SAM segments are provided.
 
 **Requirements:**
-- Progress bar (0-100%)
-- "Extracting polygons..."
-- Live count: "Found: 612"
-- [Cancel] button
-
-**Note:** For MVP, we load pre-computed SAM segments. Real AI extraction is future work.
+- Show loading spinner while fetching data
+- Progress indicator: "Loading tiles...", "Loading polygons...", "Loading ground truth..."
+- Show polygon count once loaded: "Loaded 12,432 polygons"
+- Transition to main editor once complete
 
 **Acceptance Criteria:**
-- [ ] Progress bar shows
-- [ ] Count updates
-- [ ] Cancel stops loading
+- [ ] Loading state shows on app start
+- [ ] Progress updates as data loads
+- [ ] Graceful error handling if data missing
+- [ ] Smooth transition to editor
+
+### Task 10.2: Village Selector (Future Enhancement)
+**Note:** For multi-village support in future iterations.
+
+**Requirements:**
+- Dropdown to select from available villages
+- Each village has its own tiles + segments in `public/data/{village}/`
+- Switching village reloads all data
+
+**Acceptance Criteria:**
+- [ ] Can switch between villages
+- [ ] Data reloads correctly
 
 ---
 
@@ -658,7 +788,9 @@ Week 1: Foundation
 ├── Task 0.2: Data preparation
 ├── Task 1.1: MapCanvas
 ├── Task 1.2: Polygon layer
-└── Task 1.3: Layer toggle
+├── Task 1.3: Layer toggle
+├── Task 1.4: Parcel type classification
+└── Task 10.1: Loading state
 
 Week 2: Selection & Basic Editing
 ├── Task 2.1: Click selection
@@ -676,26 +808,25 @@ Week 3: Advanced Editing
 ├── Task 2.3: Box selection
 └── Task 2.4: Lasso selection
 
-Week 4: Validation & Export
+Week 4: Validation, Accuracy & Export
 ├── Task 7.1: Overlap detection
 ├── Task 7.2: Gap detection
 ├── Task 7.3: Validation UI
+├── Task 7.4: Ground truth comparison & accuracy metrics
 ├── Task 9.1: Export dialog
 └── Task 9.2: Shapefile generation
 
 Week 5: Polish
-├── Task 6.1: All keyboard shortcuts
+├── Task 6.1: All keyboard shortcuts (including 1-8 for parcel types)
 ├── Task 8.1: Auto-save
 ├── Task 8.2: Session restore
-├── Task 10.1: Empty state
-├── Task 10.2: Processing state
 ├── Task 11.1: Context menu
 └── Task 12.*: Accessibility
 
 Week 6: Performance & Testing
 ├── Task 13.1: Large polygon sets
 ├── Task 13.2: Debouncing
-└── End-to-end testing
+└── End-to-end testing (verify ≥85% accuracy target)
 ```
 
 ---
