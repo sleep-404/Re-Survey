@@ -1,10 +1,13 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { Map, MapMouseEvent, GeoJSONSource } from 'maplibre-gl';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useModeStore } from '../../hooks/useModeStore';
+import { useDrawingStore } from '../../hooks/useDrawingStore';
+import { useHistoryStore, createAddAction } from '../../hooks/useHistoryStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
+import type { ParcelFeature } from '../../types';
 
 // Default center - nibanupudi village parcels
 const DEFAULT_CENTER: [number, number] = [80.98846, 16.27826];
@@ -18,9 +21,12 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
 
-  const { parcels, isLoading } = usePolygonStore();
+  const { parcels, isLoading, addParcel } = usePolygonStore();
   const { selectedIds, hoveredId, setHovered, select, addToSelection, removeFromSelection } = useSelectionStore();
   const { mode } = useModeStore();
+  const { isDrawing, vertices, startDrawing, addVertex, finishDrawing } = useDrawingStore();
+  const { pushAction } = useHistoryStore();
+  const [cursorPosition, setCursorPosition] = useState<[number, number] | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -166,6 +172,50 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
           ],
         },
       });
+
+      // Add drawing preview source and layers
+      map.current.addSource('drawing', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Drawing polygon fill
+      map.current.addLayer({
+        id: 'drawing-fill',
+        type: 'fill',
+        source: 'drawing',
+        paint: {
+          'fill-color': '#06b6d4',
+          'fill-opacity': 0.2,
+        },
+        filter: ['==', '$type', 'Polygon'],
+      });
+
+      // Drawing lines
+      map.current.addLayer({
+        id: 'drawing-line',
+        type: 'line',
+        source: 'drawing',
+        paint: {
+          'line-color': '#06b6d4',
+          'line-width': 2,
+          'line-dasharray': [2, 2],
+        },
+      });
+
+      // Drawing vertices
+      map.current.addLayer({
+        id: 'drawing-points',
+        type: 'circle',
+        source: 'drawing',
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#06b6d4',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+        },
+        filter: ['==', '$type', 'Point'],
+      });
     });
 
     // Cleanup on unmount
@@ -200,10 +250,73 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     });
   }, [parcels, selectedIds, hoveredId]);
 
+  // Update drawing preview
+  useEffect(() => {
+    if (!map.current) return;
+
+    const source = map.current.getSource('drawing') as GeoJSONSource;
+    if (!source) return;
+
+    const features: GeoJSON.Feature[] = [];
+
+    if (vertices.length > 0) {
+      // Add points for each vertex
+      vertices.forEach((v) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: v },
+          properties: {},
+        });
+      });
+
+      // Add line connecting vertices (and to cursor if drawing)
+      const lineCoords = [...vertices];
+      if (cursorPosition && isDrawing) {
+        lineCoords.push(cursorPosition);
+      }
+      if (lineCoords.length >= 2) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: lineCoords },
+          properties: {},
+        });
+      }
+
+      // Add polygon preview if we have at least 3 vertices
+      if (vertices.length >= 3) {
+        const polygonCoords = [...vertices, vertices[0]];
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [polygonCoords] },
+          properties: {},
+        });
+      }
+    }
+
+    source.setData({
+      type: 'FeatureCollection',
+      features,
+    });
+  }, [vertices, cursorPosition, isDrawing]);
+
   // Handle click events
   const handleClick = useCallback(
     (e: MapMouseEvent) => {
-      if (mode !== 'select' || !map.current) return;
+      if (!map.current) return;
+
+      // Drawing mode - add vertex on click
+      if (mode === 'draw') {
+        const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+        if (!isDrawing) {
+          startDrawing();
+        }
+        addVertex(coords);
+        return;
+      }
+
+      // Select mode
+      if (mode !== 'select') return;
 
       const features = map.current.queryRenderedFeatures(e.point, {
         layers: ['parcels-fill'],
@@ -233,14 +346,28 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         select(clickedId);
       }
     },
-    [mode, selectedIds, select, addToSelection, removeFromSelection]
+    [mode, selectedIds, select, addToSelection, removeFromSelection, isDrawing, startDrawing, addVertex]
   );
 
-  // Handle mouse move for hover
+  // Handle mouse move for hover and drawing preview
   const handleMouseMove = useCallback(
     (e: MapMouseEvent) => {
       if (!map.current) return;
 
+      // Update cursor position for drawing preview
+      if (mode === 'draw' && isDrawing) {
+        setCursorPosition([e.lngLat.lng, e.lngLat.lat]);
+        map.current.getCanvas().style.cursor = 'crosshair';
+        return;
+      }
+
+      // Drawing mode but not yet started
+      if (mode === 'draw') {
+        map.current.getCanvas().style.cursor = 'crosshair';
+        return;
+      }
+
+      // Select mode - show hover state
       const features = map.current.queryRenderedFeatures(e.point, {
         layers: ['parcels-fill'],
       });
@@ -258,7 +385,43 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         map.current.getCanvas().style.cursor = '';
       }
     },
-    [hoveredId, setHovered]
+    [hoveredId, setHovered, mode, isDrawing]
+  );
+
+  // Handle double-click to finish drawing
+  const handleDoubleClick = useCallback(
+    (e: MapMouseEvent) => {
+      if (mode !== 'draw' || !isDrawing) return;
+
+      e.preventDefault();
+
+      const closedVertices = finishDrawing();
+      if (closedVertices && closedVertices.length >= 4) {
+        // Create a new parcel feature
+        const newParcel: ParcelFeature = {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [closedVertices],
+          },
+          properties: {
+            id: `new-${Date.now()}`,
+            parcelType: 'unclassified',
+          },
+        };
+
+        // Add to store and history
+        addParcel(newParcel);
+        pushAction(createAddAction(newParcel));
+
+        // Switch back to select mode and select the new parcel
+        useModeStore.getState().exitToSelectMode();
+        useSelectionStore.getState().select(newParcel.properties.id);
+      }
+
+      setCursorPosition(null);
+    },
+    [mode, isDrawing, finishDrawing, addParcel, pushAction]
   );
 
   // Attach event handlers
@@ -267,14 +430,23 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
 
     map.current.on('click', handleClick);
     map.current.on('mousemove', handleMouseMove);
+    map.current.on('dblclick', handleDoubleClick);
+
+    // Disable default double-click zoom in draw mode
+    if (mode === 'draw') {
+      map.current.doubleClickZoom.disable();
+    } else {
+      map.current.doubleClickZoom.enable();
+    }
 
     return () => {
       if (map.current) {
         map.current.off('click', handleClick);
         map.current.off('mousemove', handleMouseMove);
+        map.current.off('dblclick', handleDoubleClick);
       }
     };
-  }, [handleClick, handleMouseMove]);
+  }, [handleClick, handleMouseMove, handleDoubleClick, mode]);
 
   return (
     <div className={`relative ${className}`}>

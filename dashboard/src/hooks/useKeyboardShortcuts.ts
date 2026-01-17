@@ -3,6 +3,7 @@ import { useModeStore } from './useModeStore';
 import { useSelectionStore } from './useSelectionStore';
 import { usePolygonStore } from './usePolygonStore';
 import { useHistoryStore, createDeleteAction, createChangeTypeAction } from './useHistoryStore';
+import { useDrawingStore } from './useDrawingStore';
 import { getParcelTypeByShortcut } from '../constants/parcelTypes';
 
 export function useKeyboardShortcuts() {
@@ -10,6 +11,7 @@ export function useKeyboardShortcuts() {
   const { getSelectedIds, getSelectionCount, clearSelection, selectAll } = useSelectionStore();
   const { parcels, getParcelsByIds, deleteParcels, setParcelsType } = usePolygonStore();
   const { undo, redo, canUndo, canRedo, pushAction } = useHistoryStore();
+  const { isDrawing, cancelDrawing } = useDrawingStore();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -78,6 +80,9 @@ export function useKeyboardShortcuts() {
           return;
 
         case 'escape':
+          if (isDrawing) {
+            cancelDrawing();
+          }
           if (mode !== 'select') {
             exitToSelectMode();
           } else {
@@ -152,5 +157,7 @@ export function useKeyboardShortcuts() {
     canUndo,
     canRedo,
     pushAction,
+    isDrawing,
+    cancelDrawing,
   ]);
 }
