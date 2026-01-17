@@ -2,7 +2,7 @@
 
 ## Software Specification Document
 
-**Version:** 2.1
+**Version:** 2.2
 **Date:** 2026-01-17
 **Project:** AI Tools for Accelerating Land Resurvey
 **Department:** Lands & Revenue Department, Government of Andhra Pradesh
@@ -107,10 +107,7 @@ The officer has drone imagery ready and needs to extract land parcel polygons.
 │  │  STEP 6: EXPORT SHAPEFILES                                      │   │
 │  │  • Officer clicks "Export"                                      │   │
 │  │  • Selects output location                                      │   │
-│  │  • Tool generates:                                              │   │
-│  │    - parcels.shp (agricultural land polygons)                   │   │
-│  │    - buildings.shp (if Abadi area)                              │   │
-│  │    - water_bodies.shp (ponds, tanks)                            │   │
+│  │  • Tool generates shapefiles with land parcel polygons          │   │
 │  │  • Ready for ground truthing phase                              │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
@@ -236,11 +233,7 @@ After polygons are matched with ROR data (later in workflow), area difference sh
 > "output will be the **shapefiles** which you can visualize"
 > — *Orientation Session*
 
-| Output | Format | Contents |
-|--------|--------|----------|
-| Land parcels | Shapefile (.shp) | Polygon geometries |
-| Gramakantam features | Shapefile (.shp) | Buildings, roads, compounds |
-| Water bodies | Shapefile (.shp) | Ponds, tanks, canals |
+**Output:** Shapefiles (.shp) containing polygon geometries
 
 **Note:** Shapefiles at this stage contain geometry only. LP numbers are assigned later during ground truthing.
 
@@ -264,7 +257,7 @@ After polygons are matched with ROR data (later in workflow), area difference sh
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  HEADER: BoundaryAI - Village: Nibanupudi                               │
-│  [Load ORI] [Run AI Extraction] [Export Shapefiles] [Settings]          │
+│  [Load ORI] [Run AI Extraction] [Export Shapefiles]                     │
 ├─────────────────┬───────────────────────────────────────────────────────┤
 │                 │                                                       │
 │  SIDEBAR        │                    MAP VIEW                           │
@@ -273,33 +266,24 @@ After polygons are matched with ROR data (later in workflow), area difference sh
 │  Layer Controls │   │                                               │  │
 │  ☑ ORI Imagery  │   │      [Interactive Map]                        │  │
 │  ☑ AI Polygons  │   │                                               │  │
-│  ☐ Buildings    │   │      - ORI as basemap                         │  │
-│  ☐ Roads        │   │      - AI-extracted polygons overlaid         │  │
-│  ☐ Water Bodies │   │      - Click to select polygons               │  │
-│                 │   │      - Zoom/pan navigation                    │  │
-│  ─────────────  │   │                                               │  │
-│                 │   └───────────────────────────────────────────────┘  │
-│  Statistics     │                                                       │
-│  ┌───────────┐  │   TOOLS: [Select] [Merge] [Split] [Draw] [Delete]    │
-│  │Polygons:  │  │          [Edit Vertices] [Undo] [Redo]               │
+│                 │   │      - ORI as basemap                         │  │
+│  ─────────────  │   │      - AI-extracted polygons overlaid         │  │
+│                 │   │      - Click to select polygons               │  │
+│  Statistics     │   │      - Zoom/pan navigation                    │  │
+│  ┌───────────┐  │   │                                               │  │
+│  │Polygons:  │  │   └───────────────────────────────────────────────┘  │
 │  │  1,247    │  │                                                       │
-│  │           │  ├───────────────────────────────────────────────────────┤
-│  │Buildings: │  │  PROPERTIES PANEL (when polygon selected)            │
-│  │  342      │  │                                                       │
-│  │           │  │  Type: Agricultural Parcel                            │
-│  │Roads:     │  │  Area: 0.52 acres (2,104 sqm)                         │
-│  │  28       │  │  Perimeter: 184 m                                     │
-│  │           │  │  Vertices: 12                                         │
-│  │Water:     │  │                                                       │
-│  │  5        │  │  [Delete] [Merge with Adjacent] [Edit Boundary]       │
-│  └───────────┘  │                                                       │
-│                 │                                                       │
+│  └───────────┘  │   TOOLS: [Select] [Merge] [Split] [Draw] [Delete]    │
+│                 │          [Edit Vertices] [Undo] [Redo]               │
 │  ─────────────  │                                                       │
-│                 │                                                       │
-│  Topology       │                                                       │
+│                 ├───────────────────────────────────────────────────────┤
+│  Topology       │  PROPERTIES PANEL (when polygon selected)            │
 │  [Validate]     │                                                       │
-│  Overlaps: 0    │                                                       │
-│  Gaps: 0        │                                                       │
+│  Overlaps: 0    │  Area: 0.52 acres (2,104 sqm)                         │
+│  Gaps: 0        │  Perimeter: 184 m                                     │
+│                 │  Vertices: 12                                         │
+│                 │                                                       │
+│                 │  [Delete] [Merge with Adjacent] [Edit Boundary]       │
 │                 │                                                       │
 └─────────────────┴───────────────────────────────────────────────────────┘
 ```
@@ -310,9 +294,6 @@ After polygons are matched with ROR data (later in workflow), area difference sh
 |-------|-------------|---------|
 | ORI Imagery | Drone/aerial basemap | ON |
 | AI Polygons | All extracted polygons | ON |
-| Buildings | Building footprints (blue) | OFF |
-| Roads | Road polygons (red) | OFF |
-| Water Bodies | Ponds, tanks, canals | OFF |
 
 ### 5.3 Tools
 
@@ -333,18 +314,9 @@ When polygon selected:
 ┌─────────────────────────────────────┐
 │ POLYGON PROPERTIES                  │
 ├─────────────────────────────────────┤
-│ Type: Agricultural Parcel           │
-│                                     │
-│ Area: 0.52 acres                    │
-│       2,104 sqm                     │
-│                                     │
+│ Area: 0.52 acres (2,104 sqm)        │
 │ Perimeter: 184 m                    │
-│                                     │
 │ Vertices: 12                        │
-│                                     │
-│ Centroid: 16.2814°N, 80.9851°E      │
-│                                     │
-│ ─────────────────────────────────── │
 │                                     │
 │ [Delete] [Merge] [Edit Boundary]    │
 └─────────────────────────────────────┘
@@ -512,12 +484,7 @@ When multiple polygons selected:
 **Steps:**
 1. Click "Export Shapefiles"
 2. Select output folder
-3. Choose layers to export:
-   - ☑ Agricultural parcels
-   - ☑ Buildings
-   - ☑ Roads
-   - ☑ Water bodies
-4. Click "Export"
+3. Click "Export"
 
 **Result:** Shapefiles created for ground truthing phase
 
@@ -714,3 +681,4 @@ Supervisor can:
 | 1.0 | 2026-01-17 | Initial specification |
 | 2.0 | 2026-01-17 | Corrected workflow based on transcript review. Removed incorrect LP number assignment. Clarified tool's role in overall process. |
 | 2.1 | 2026-01-17 | Simplified user flow to start from raw drone imagery. Removed redundant workflow sections. |
+| 2.2 | 2026-01-17 | Removed assumptions not in transcript (separate shapefiles for buildings/roads/water bodies, layer categories). Output is simply shapefiles with polygons. |
