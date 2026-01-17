@@ -31,27 +31,30 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
       style: {
         version: 8,
         sources: {
-          // OSM tiles as fallback base layer
-          'osm-tiles': {
+          // Esri World Imagery as high-res satellite fallback
+          'esri-satellite': {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            ],
             tileSize: 256,
-            attribution: '© OpenStreetMap contributors',
+            attribution: '© Esri, Maxar, Earthstar Geographics',
+            maxzoom: 19,
           },
-          // Local ORI tiles (when available)
+          // Local ORI tiles (when available, higher priority)
           'ori-tiles': {
             type: 'raster',
             tiles: ['/tiles/{z}/{x}/{y}.png'],
             tileSize: 256,
             minzoom: 12,
-            maxzoom: 20,
+            maxzoom: 22,
           },
         },
         layers: [
           {
-            id: 'osm-layer',
+            id: 'satellite-layer',
             type: 'raster',
-            source: 'osm-tiles',
+            source: 'esri-satellite',
             minzoom: 0,
             maxzoom: 22,
           },
