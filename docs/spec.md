@@ -2,7 +2,7 @@
 
 ## Software Specification Document
 
-**Version:** 2.0
+**Version:** 2.1
 **Date:** 2026-01-17
 **Project:** AI Tools for Accelerating Land Resurvey
 **Department:** Lands & Revenue Department, Government of Andhra Pradesh
@@ -44,67 +44,85 @@ The Government of Andhra Pradesh is executing a large-scale Resurvey initiative 
 
 ---
 
-## 2. Overall Resurvey Workflow
+## 2. User Flow
 
-Understanding where our tool fits in the overall process (from Orientation Session):
+### 2.1 Starting Point
+
+**Input:** Raw drone imagery (ORI - Orthorectified Images) for a village
+
+The officer has drone imagery ready and needs to extract land parcel polygons.
+
+### 2.2 End-to-End User Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     OVERALL RESURVEY WORKFLOW                           │
+│                         USER FLOW                                        │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  1. Section 5 Notification (announce resurvey for state)                │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STEP 1: LOAD IMAGERY                                           │   │
+│  │  • Officer opens tool                                           │   │
+│  │  • Selects village / loads ORI file                             │   │
+│  │  • Imagery displays on map canvas                               │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                              ↓                                          │
-│  2. Drone Flight → Capture aerial images                                │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STEP 2: RUN AI EXTRACTION                                      │   │
+│  │  • Officer clicks "Extract Parcels"                             │   │
+│  │  • AI analyzes imagery and detects bunds                        │   │
+│  │  • Polygons generated along bund boundaries                     │   │
+│  │  • Progress indicator shows processing status                   │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                              ↓                                          │
-│  3. Generate ORI (Orthorectified Images)                                │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STEP 3: REVIEW AI OUTPUT                                       │   │
+│  │  • Polygons overlaid on imagery                                 │   │
+│  │  • Officer pans/zooms to inspect                                │   │
+│  │  • Identifies issues:                                           │   │
+│  │    - Over-segmentation (AI created too many polygons)           │   │
+│  │    - Under-segmentation (AI missed some bunds)                  │   │
+│  │    - Misaligned boundaries                                      │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                              ↓                                          │
-│  4. Quality Check ORI in lab                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STEP 4: EDIT & CORRECT                                         │   │
+│  │  • DELETE: Remove false polygons (AI hallucinations)            │   │
+│  │  • MERGE: Combine over-segmented areas                          │   │
+│  │  • SPLIT: Divide under-segmented areas                          │   │
+│  │  • ADD: Draw polygons AI missed                                 │   │
+│  │  • ADJUST: Move vertices to align with actual bunds             │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                              ↓                                          │
-│  5. Submit ORI to field staff                                           │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STEP 5: VALIDATE TOPOLOGY                                      │   │
+│  │  • Officer clicks "Validate"                                    │   │
+│  │  • Tool checks for:                                             │   │
+│  │    - Overlapping polygons (highlighted red)                     │   │
+│  │    - Gaps between polygons (highlighted blue)                   │   │
+│  │  • Officer fixes issues or uses auto-fix                        │   │
+│  │  • Re-validates until clean                                     │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                              ↓                                          │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │  6. FIX BOUNDARIES (Manual - before polygonization)               │  │
-│  │     • Fix village boundaries using cadastral maps                 │  │
-│  │     • Fix block boundaries                                        │  │
-│  │     • Fix government land boundaries using FMB records            │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                              ↓                                          │
-│  ╔═══════════════════════════════════════════════════════════════════╗  │
-│  ║  7. POLYGONIZATION / VECTORIZATION  ◄── OUR AI TOOL FITS HERE     ║  │
-│  ║     • Extract polygons along visible bunds from ORI               ║  │
-│  ║     • Create building footprints in Abadi areas                   ║  │
-│  ║     • Detect water bodies                                         ║  │
-│  ║     • Output: Draft shapefiles (geometry only, no LP numbers)     ║  │
-│  ╚═══════════════════════════════════════════════════════════════════╝  │
-│                              ↓                                          │
-│  8. FPOLR (Field Level Purification of Land Records)                    │
-│                              ↓                                          │
-│  9. Ground Truthing with GNSS Rovers                                    │
-│     • Officers go to field with draft polygons                          │
-│     • Collect corner coordinates                                        │
-│     • Correct any errors (false bunds, missing parcels)                 │
-│                              ↓                                          │
-│  10. LP Number Assignment & Correlation Statement                       │
-│      • Assign LP numbers to each polygon                                │
-│      • Create correlation: Old Survey Number → New LP Number            │
-│                              ↓                                          │
-│  11. Merge with ROR Data                                                │
-│      • Link polygons to owner records                                   │
-│      • Add land classification, extent, etc.                            │
-│                              ↓                                          │
-│  12. Upload to WebLand / VS Login                                       │
-│                              ↓                                          │
-│  13. Approval Chain: VRO → Tahsildar → RDO → Joint Collector            │
-│                              ↓                                          │
-│  14. Draft Land Register → Final Land Register                          │
-│                              ↓                                          │
-│  15. Section 30 Notification (completion of resurvey)                   │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STEP 6: EXPORT SHAPEFILES                                      │   │
+│  │  • Officer clicks "Export"                                      │   │
+│  │  • Selects output location                                      │   │
+│  │  • Tool generates:                                              │   │
+│  │    - parcels.shp (agricultural land polygons)                   │   │
+│  │    - buildings.shp (if Abadi area)                              │   │
+│  │    - water_bodies.shp (ponds, tanks)                            │   │
+│  │  • Ready for ground truthing phase                              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key Insight:** Our tool operates at Step 7. LP numbers are assigned LATER at Step 10.
+### 2.3 What Happens After (Outside Our Tool)
+
+The exported shapefiles are used by field officers for:
+- Ground truthing with GNSS rovers
+- LP number assignment
+- Merging with ROR (ownership records)
 
 ---
 
@@ -228,67 +246,14 @@ After polygons are matched with ROR data (later in workflow), area difference sh
 
 ---
 
-## 4. User Workflow in Our Tool
-
-### 4.1 Actors
+## 4. Actors
 
 | Actor | Role in Our Tool |
 |-------|------------------|
-| Survey Inspector | Reviews AI output, corrects polygons |
+| Survey Inspector | Primary user - reviews AI output, corrects polygons |
 | Mandal Surveyor | 20% quality check |
 | DIA | 10% quality review |
 | DSL | 5% quality review |
-
-### 4.2 Workflow
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        TOOL WORKFLOW                                    │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  1. LOAD DATA                                                           │
-│     • Load ORI image (GeoTIFF)                                          │
-│     • AI automatically processes and extracts polygons                  │
-│                                                                         │
-│  2. REVIEW AI OUTPUT                                                    │
-│     • View extracted polygons overlaid on ORI                           │
-│     • Polygons colored by type:                                         │
-│       - Agricultural parcels                                            │
-│       - Buildings (blue)                                                │
-│       - Roads (red)                                                     │
-│       - Water bodies                                                    │
-│                                                                         │
-│  3. CORRECT ERRORS                                                      │
-│     • Delete false bunds (over-segmentation)                            │
-│     • Merge polygons that should be one parcel                          │
-│     • Add missing polygons                                              │
-│     • Adjust boundaries that don't align with visible bunds             │
-│                                                                         │
-│  4. VALIDATE TOPOLOGY                                                   │
-│     • Run topology check                                                │
-│     • Tool highlights overlaps (red) and gaps (blue)                    │
-│     • Fix any topology errors                                           │
-│                                                                         │
-│  5. EXPORT                                                              │
-│     • Export shapefiles (geometry only)                                 │
-│     • Ready for ground truthing phase                                   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### 4.3 What Happens After Export (Not Our Tool)
-
-```
-After exporting from our tool:
-
-1. Officers take shapefiles to field
-2. Ground truthing with GNSS rovers
-3. Correct any remaining errors
-4. Assign LP numbers to each polygon
-5. Create correlation statement (old survey → new LP)
-6. Merge with ROR data
-7. Upload to WebLand
-```
 
 ---
 
@@ -748,3 +713,4 @@ Supervisor can:
 |---------|------|---------|
 | 1.0 | 2026-01-17 | Initial specification |
 | 2.0 | 2026-01-17 | Corrected workflow based on transcript review. Removed incorrect LP number assignment. Clarified tool's role in overall process. |
+| 2.1 | 2026-01-17 | Simplified user flow to start from raw drone imagery. Removed redundant workflow sections. |
