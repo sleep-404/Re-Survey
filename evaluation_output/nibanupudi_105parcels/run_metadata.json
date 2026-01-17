@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-01-17T09:58:22.152098",
+  "image": "AI Hackathon/nibanupudi.tif",
+  "ground_truth": "data/raw/nibanupudi/eval_subset.shp",
+  "ground_truth_parcels": 105,
+  "region_pixels": "23137x25939",
+  "tiles_total": 195,
+  "segments_detected": 12032,
+  "processing_time_seconds": 3261.127751350403,
+  "settings": {
+    "model": "vit_h",
+    "tile_size": 2048,
+    "overlap": 256,
+    "points_per_side": 32,
+    "pred_iou_thresh": 0.8,
+    "stability_thresh": 0.85,
+    "min_area": 200
+  }
+}

@@ -1,7 +1,9 @@
 import { useModeStore, MODE_LABELS, MODE_HINTS } from '../../hooks/useModeStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
-import { useHistoryStore, createDeleteAction } from '../../hooks/useHistoryStore';
+import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
+import { union } from '@turf/turf';
+import type { ParcelFeature } from '../../types';
 
 interface BottomBarProps {
   className?: string;
@@ -54,6 +56,55 @@ export function BottomBar({ className = '' }: BottomBarProps) {
     clearSelection();
   };
 
+  // Handle merge action
+  const handleMerge = () => {
+    if (selectedParcels.length < 2) return;
+
+    try {
+      // Merge all selected polygons using turf union
+      let mergedGeometry = selectedParcels[0];
+      for (let i = 1; i < selectedParcels.length; i++) {
+        const result = union(mergedGeometry, selectedParcels[i]);
+        if (result) {
+          mergedGeometry = result as unknown as ParcelFeature;
+        }
+      }
+
+      // Handle the merged result
+      const mergedResult = mergedGeometry as GeoJSON.Feature;
+      if (!mergedResult || !mergedResult.geometry) {
+        alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
+        return;
+      }
+
+      // Create the new merged parcel
+      const mergedParcel: ParcelFeature = {
+        type: 'Feature',
+        geometry: mergedResult.geometry as GeoJSON.Polygon,
+        properties: {
+          id: `merged-${Date.now()}`,
+          parcelType: selectedParcels[0].properties.parcelType,
+          // Sum areas if available
+          area: selectedParcels.reduce((sum, p) => sum + (p.properties.area ?? 0), 0),
+        },
+      };
+
+      // Record history for undo
+      pushAction(createMergeAction(selectedParcels, mergedParcel));
+
+      // Remove original parcels and add merged one
+      const { mergeParcels } = usePolygonStore.getState();
+      mergeParcels(selectedIds, mergedParcel);
+
+      // Select the new merged parcel
+      clearSelection();
+      useSelectionStore.getState().select(mergedParcel.properties.id);
+    } catch (err) {
+      console.error('Merge failed:', err);
+      alert('Failed to merge polygons. They may not be compatible for merging.');
+    }
+  };
+
   return (
     <div
       className={`flex items-center justify-between border-t border-gray-700 bg-gray-900 px-4 py-2 ${className}`}
@@ -101,7 +152,7 @@ export function BottomBar({ className = '' }: BottomBarProps) {
                 <ActionButton
                   label="Merge"
                   shortcut="M"
-                  onClick={() => {/* TODO: Implement merge */}}
+                  onClick={handleMerge}
                 />
               )}
               {selectionCount === 1 && (

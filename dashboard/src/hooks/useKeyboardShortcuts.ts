@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { useModeStore } from './useModeStore';
 import { useSelectionStore } from './useSelectionStore';
 import { usePolygonStore } from './usePolygonStore';
-import { useHistoryStore, createDeleteAction, createChangeTypeAction } from './useHistoryStore';
+import { useHistoryStore, createDeleteAction, createChangeTypeAction, createMergeAction } from './useHistoryStore';
 import { useDrawingStore } from './useDrawingStore';
 import { getParcelTypeByShortcut } from '../constants/parcelTypes';
+import { union } from '@turf/turf';
+import type { ParcelFeature } from '../types';
 
 export function useKeyboardShortcuts() {
   const { mode, enterDrawMode, enterEditMode, enterSplitMode, exitToSelectMode } = useModeStore();
@@ -62,6 +64,55 @@ export function useKeyboardShortcuts() {
             pushAction(createDeleteAction(parcelsToDelete));
             deleteParcels(selectedIds);
             clearSelection();
+          }
+          return;
+
+        case 'm':
+          if (selectionCount >= 2) {
+            const parcelsToMerge = getParcelsByIds(selectedIds);
+
+            try {
+              // Merge all selected polygons using turf union
+              let mergedGeometry = parcelsToMerge[0];
+              for (let i = 1; i < parcelsToMerge.length; i++) {
+                const result = union(mergedGeometry, parcelsToMerge[i]);
+                if (result) {
+                  mergedGeometry = result as unknown as ParcelFeature;
+                }
+              }
+
+              // Handle the merged result
+              const mergedResult = mergedGeometry as GeoJSON.Feature;
+              if (!mergedResult || !mergedResult.geometry) {
+                alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
+                return;
+              }
+
+              // Create the new merged parcel
+              const mergedParcel: ParcelFeature = {
+                type: 'Feature',
+                geometry: mergedResult.geometry as GeoJSON.Polygon,
+                properties: {
+                  id: `merged-${Date.now()}`,
+                  parcelType: parcelsToMerge[0].properties.parcelType,
+                  area: parcelsToMerge.reduce((sum, p) => sum + (p.properties.area ?? 0), 0),
+                },
+              };
+
+              // Record history for undo
+              pushAction(createMergeAction(parcelsToMerge, mergedParcel));
+
+              // Remove original parcels and add merged one
+              const { mergeParcels } = usePolygonStore.getState();
+              mergeParcels(selectedIds, mergedParcel);
+
+              // Select the new merged parcel
+              clearSelection();
+              useSelectionStore.getState().select(mergedParcel.properties.id);
+            } catch (err) {
+              console.error('Merge failed:', err);
+              alert('Failed to merge polygons. They may not be compatible for merging.');
+            }
           }
           return;
 

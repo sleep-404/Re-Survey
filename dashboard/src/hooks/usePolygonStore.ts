@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Position } from 'geojson';
 import type { ParcelFeature, ParcelType } from '../types';
 
 interface PolygonState {
@@ -11,6 +12,7 @@ interface PolygonState {
   setParcels: (parcels: ParcelFeature[]) => void;
   addParcel: (parcel: ParcelFeature) => void;
   updateParcel: (id: string, updates: Partial<ParcelFeature['properties']>) => void;
+  updateParcelGeometry: (id: string, coordinates: Position[]) => void;
   deleteParcel: (id: string) => void;
   deleteParcels: (ids: string[]) => void;
   setParcelType: (id: string, parcelType: ParcelType) => void;
@@ -45,6 +47,21 @@ export const usePolygonStore = create<PolygonState>((set, get) => ({
       parcels: state.parcels.map((p) =>
         p.properties.id === id
           ? { ...p, properties: { ...p.properties, ...updates } }
+          : p
+      ),
+    })),
+
+  updateParcelGeometry: (id, coordinates) =>
+    set((state) => ({
+      parcels: state.parcels.map((p) =>
+        p.properties.id === id && p.geometry.type === 'Polygon'
+          ? {
+              ...p,
+              geometry: {
+                ...p.geometry,
+                coordinates: [coordinates],
+              },
+            }
           : p
       ),
     })),
