@@ -13,7 +13,7 @@
 | Ground Truth | `evaluation_output/.../ground_truth.geojson` | GeoJSON (EPSG:32644) | 63KB |
 | SAM Segments | `evaluation_output/.../sam_raw_segments.geojson` | GeoJSON (EPSG:32644) | 34MB |
 
-**Note:** The 11GB ORI needs to be converted to Cloud Optimized GeoTIFF (COG) or tiled for web display.
+**Note:** The 11GB ORI will be converted to XYZ tiles (PNG) using `scripts/tile_ori.py` and served from `public/tiles/`.
 
 ---
 
@@ -71,12 +71,40 @@ src/
 └── App.tsx
 ```
 
-### Task 0.2: Data Preparation (Backend/Scripts)
+### Task 0.2: Data Preparation Scripts
+**Files:** `scripts/tile_ori.py`, `scripts/convert_coordinates.py`
+
+**Script 1: tile_ori.py**
+```python
+# Dependencies: gdal2tiles (from GDAL), rasterio
+# Purpose: Convert 11GB GeoTIFF to XYZ tile pyramid
+# Output: public/tiles/{z}/{x}/{y}.png (zoom levels 12-20)
 ```
-- Convert nibanupudi.tif to tiles (XYZ or COG)
-- Convert GeoJSON from EPSG:32644 to EPSG:4326 (WGS84) for web maps
-- Host tiles locally or on CDN
+
+**Requirements:**
+- Use `gdal2tiles.py` or `rasterio` to generate PNG tiles
+- Output to `public/tiles/` folder
+- Generate zoom levels 12-20 (village to parcel level)
+- Estimated output: ~500MB-2GB of tiles
+
+**Script 2: convert_coordinates.py**
+```python
+# Dependencies: geopandas, pyproj
+# Purpose: Reproject GeoJSON from EPSG:32644 (UTM 44N) to EPSG:4326 (WGS84)
+# Input: evaluation_output/.../sam_raw_segments.geojson
+# Output: public/data/sam_segments.geojson
 ```
+
+**Requirements:**
+- Read GeoJSON with geopandas
+- Reproject to EPSG:4326
+- Write to `public/data/` folder
+- Also convert ground_truth.geojson if needed
+
+**Acceptance Criteria:**
+- [ ] Tiles render correctly in browser
+- [ ] GeoJSON loads without CRS errors
+- [ ] Polygons align with imagery
 
 ---
 
@@ -87,12 +115,23 @@ src/
 
 **Requirements:**
 - Initialize MapLibre GL map
-- Load ORI tiles as raster layer
+- Load ORI tiles as raster source from `/tiles/{z}/{x}/{y}.png`
 - Support zoom/pan
 - Handle map events (click, mousemove)
 
+**Tile Configuration:**
+```typescript
+map.addSource('ori-tiles', {
+  type: 'raster',
+  tiles: ['/tiles/{z}/{x}/{y}.png'],
+  tileSize: 256,
+  minzoom: 12,
+  maxzoom: 20
+});
+```
+
 **Acceptance Criteria:**
-- [ ] Map renders with ORI imagery
+- [ ] Map renders with ORI imagery from local tiles
 - [ ] Scroll zooms in/out
 - [ ] Click+drag pans
 - [ ] Map fills 80% of screen width
@@ -101,17 +140,26 @@ src/
 **File:** `src/components/Map/PolygonLayer.tsx`
 
 **Requirements:**
-- Load GeoJSON polygons
+- Load GeoJSON polygons from `/data/sam_segments.geojson`
 - Render with orange border, no fill
 - Handle hover state (border thicker, 10% fill)
 - Handle selected state (cyan border, 15% fill)
 - Handle multi-selected state (dashed cyan border)
 
+**Loading Pattern:**
+```typescript
+// Fetch pre-computed SAM segments on app load
+const response = await fetch('/data/sam_segments.geojson');
+const geojson = await response.json();
+// Store in Zustand for editing
+usePolygonStore.getState().setPolygons(geojson.features);
+```
+
 **Acceptance Criteria:**
 - [ ] Polygons render on map
 - [ ] Hover effect works
 - [ ] Selected polygons visually distinct
-- [ ] Performance OK with 1000+ polygons
+- [ ] Performance OK with 10,000+ polygons (SAM outputs ~12k segments)
 
 ### Task 1.3: Layer Toggle
 **File:** `src/components/Sidebar/LayerPanel.tsx`
@@ -463,17 +511,30 @@ type Action =
 ### Task 9.2: Shapefile Generation
 **File:** `src/utils/export.ts`
 
-**Library:** shpwrite or shapefile-js
+**Library:** shpwrite + proj4
 
 **Requirements:**
 - Convert GeoJSON to Shapefile
-- Include .prj file for EPSG:32644
-- Zip all files
+- Reproject from EPSG:4326 (web) back to EPSG:32644 (UTM 44N) for output
+- Include .prj file with EPSG:32644 WKT
+- Zip all files (.shp, .shx, .dbf, .prj)
+
+**Coordinate Conversion:**
+```typescript
+import proj4 from 'proj4';
+
+// Define UTM Zone 44N
+proj4.defs('EPSG:32644', '+proj=utm +zone=44 +datum=WGS84 +units=m +no_defs');
+
+function toUTM(lng: number, lat: number): [number, number] {
+  return proj4('EPSG:4326', 'EPSG:32644', [lng, lat]);
+}
+```
 
 **Acceptance Criteria:**
 - [ ] Valid shapefile generated
 - [ ] Opens correctly in QGIS
-- [ ] Coordinates in EPSG:32644
+- [ ] Coordinates in EPSG:32644 (meters, not degrees)
 
 ---
 
@@ -650,9 +711,11 @@ Week 6: Performance & Testing
     "zustand": "^4.5.0",
     "shpwrite": "^0.3.2",
     "file-saver": "^2.0.5",
-    "jszip": "^3.10.0"
+    "jszip": "^3.10.0",
+    "proj4": "^2.9.0"
   },
   "devDependencies": {
+    "@types/proj4": "^2.5.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
@@ -660,11 +723,68 @@ Week 6: Performance & Testing
 }
 ```
 
+**Python dependencies for data prep scripts:**
+```
+gdal
+rasterio
+geopandas
+pyproj
+```
+
 ---
 
-## Questions Before Starting
+## Architecture Decisions (Confirmed)
 
-1. **Tile Server:** Should we set up a local tile server for the ORI, or use a cloud solution?
-2. **SAM Integration:** For MVP, load pre-computed segments. When to integrate live SAM?
-3. **Backend:** Any Python backend needed, or pure client-side?
-4. **Deployment:** Where will this be hosted?
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Tile Server** | Local (Vite static files) | All data served from `public/` folder |
+| **SAM Integration** | Pre-computed segments | Load existing `sam_raw_segments.geojson` |
+| **Backend** | None (pure client-side) | All editing/export happens in browser |
+| **Deployment** | Local machine | `npm run dev` serves everything |
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Browser (React App)                  │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │               MapLibre GL JS                      │  │
+│  │  • Loads ORI tiles from /tiles/{z}/{x}/{y}.png   │  │
+│  │  • Loads GeoJSON from /data/*.geojson            │  │
+│  │  • All editing operations in-browser (Turf.js)   │  │
+│  │  • Export to Shapefile in-browser (shpwrite)     │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│              Vite Dev Server (localhost:5173)           │
+│  public/                                                │
+│  ├── tiles/          # Pre-generated XYZ tiles         │
+│  │   └── {z}/{x}/{y}.png                               │
+│  └── data/                                              │
+│      ├── sam_segments.geojson  # Pre-computed SAM      │
+│      └── ground_truth.geojson  # Optional reference    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### One-Time Data Preparation (Python Scripts)
+
+Before starting the React app, run these scripts once:
+
+```bash
+# 1. Generate XYZ tiles from the 11GB ORI
+python scripts/tile_ori.py \
+  --input "AI Hackathon/nibanupudi.tif" \
+  --output public/tiles/ \
+  --zoom 12-20
+
+# 2. Convert coordinates from EPSG:32644 to EPSG:4326
+python scripts/convert_coordinates.py \
+  --input evaluation_output/nibanupudi_105parcels/sam_raw_segments.geojson \
+  --output public/data/sam_segments.geojson \
+  --from-crs EPSG:32644 \
+  --to-crs EPSG:4326
+```
+
+These scripts need to be created in Phase 0.
