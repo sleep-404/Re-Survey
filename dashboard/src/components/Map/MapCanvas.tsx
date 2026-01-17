@@ -6,8 +6,10 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useModeStore } from '../../hooks/useModeStore';
 import { useDrawingStore } from '../../hooks/useDrawingStore';
 import { useEditingStore } from '../../hooks/useEditingStore';
-import { useHistoryStore, createAddAction, createEditVerticesAction } from '../../hooks/useHistoryStore';
+import { useSplitStore } from '../../hooks/useSplitStore';
+import { useHistoryStore, createAddAction, createEditVerticesAction, createSplitAction } from '../../hooks/useHistoryStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
+import { polygonSplit } from '../../utils/polygonSplit';
 import type { ParcelFeature } from '../../types';
 
 // Default center - nibanupudi village parcels
@@ -37,6 +39,15 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     stopDragging,
     finishEditing,
   } = useEditingStore();
+  const {
+    isSplitting,
+    targetPolygonId: splitTargetId,
+    lineVertices: splitLineVertices,
+    startSplit,
+    addVertex: addSplitVertex,
+    finishSplit,
+    cancelSplit,
+  } = useSplitStore();
   const { pushAction } = useHistoryStore();
   const [cursorPosition, setCursorPosition] = useState<[number, number] | null>(null);
 
@@ -272,6 +283,39 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         },
         filter: ['==', '$type', 'Point'],
       });
+
+      // Add split line source and layers
+      map.current.addSource('split', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Split line
+      map.current.addLayer({
+        id: 'split-line',
+        type: 'line',
+        source: 'split',
+        paint: {
+          'line-color': '#ef4444',
+          'line-width': 3,
+          'line-dasharray': [4, 2],
+        },
+        filter: ['==', '$type', 'LineString'],
+      });
+
+      // Split line vertices
+      map.current.addLayer({
+        id: 'split-points',
+        type: 'circle',
+        source: 'split',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#ef4444',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+        },
+        filter: ['==', '$type', 'Point'],
+      });
     });
 
     // Cleanup on unmount
@@ -391,6 +435,53 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     });
   }, [currentCoordinates]);
 
+  // Update split line preview
+  useEffect(() => {
+    if (!map.current) return;
+
+    const source = map.current.getSource('split') as GeoJSONSource;
+    if (!source) return;
+
+    const features: GeoJSON.Feature[] = [];
+
+    if (splitLineVertices.length > 0) {
+      // Add points for each vertex
+      splitLineVertices.forEach((v) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: v },
+          properties: {},
+        });
+      });
+
+      // Add line connecting vertices (and to cursor if splitting)
+      const lineCoords = [...splitLineVertices];
+      if (cursorPosition && isSplitting) {
+        lineCoords.push(cursorPosition);
+      }
+      if (lineCoords.length >= 2) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: lineCoords },
+          properties: {},
+        });
+      }
+    }
+
+    source.setData({
+      type: 'FeatureCollection',
+      features,
+    });
+  }, [splitLineVertices, cursorPosition, isSplitting]);
+
+  // Start split when entering split mode with a selected polygon
+  useEffect(() => {
+    if (mode === 'split' && selectedIds.size === 1 && !isSplitting) {
+      const selectedId = Array.from(selectedIds)[0];
+      startSplit(selectedId);
+    }
+  }, [mode, selectedIds, isSplitting, startSplit]);
+
   // Start editing when entering edit mode with a selected polygon
   useEffect(() => {
     if (mode === 'edit-vertices' && selectedIds.size === 1 && !editingPolygonId) {
@@ -428,6 +519,13 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
   const handleClick = useCallback(
     (e: MapMouseEvent) => {
       if (!map.current) return;
+
+      // Split mode - add vertex to split line
+      if (mode === 'split' && isSplitting) {
+        const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        addSplitVertex(coords);
+        return;
+      }
 
       // Drawing mode - add vertex on click
       if (mode === 'draw') {
@@ -471,13 +569,20 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         select(clickedId);
       }
     },
-    [mode, selectedIds, select, addToSelection, removeFromSelection, isDrawing, startDrawing, addVertex]
+    [mode, selectedIds, select, addToSelection, removeFromSelection, isDrawing, startDrawing, addVertex, isSplitting, addSplitVertex]
   );
 
   // Handle mouse move for hover, drawing preview, and vertex dragging
   const handleMouseMove = useCallback(
     (e: MapMouseEvent) => {
       if (!map.current) return;
+
+      // Split mode - update cursor position for line preview
+      if (mode === 'split' && isSplitting) {
+        setCursorPosition([e.lngLat.lng, e.lngLat.lat]);
+        map.current.getCanvas().style.cursor = 'crosshair';
+        return;
+      }
 
       // Edit mode - handle vertex dragging
       if (mode === 'edit-vertices') {
@@ -532,12 +637,46 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         map.current.getCanvas().style.cursor = '';
       }
     },
-    [hoveredId, setHovered, mode, isDrawing, isDragging, draggedVertexIndex, updateVertex]
+    [hoveredId, setHovered, mode, isDrawing, isDragging, draggedVertexIndex, updateVertex, isSplitting]
   );
 
-  // Handle double-click to finish drawing
+  // Handle double-click to finish drawing or split
   const handleDoubleClick = useCallback(
     (e: MapMouseEvent) => {
+      // Split mode - execute the split
+      if (mode === 'split' && isSplitting && splitTargetId) {
+        e.preventDefault();
+
+        const splitLine = finishSplit();
+        if (splitLine && splitLine.length >= 2) {
+          const targetParcel = parcels.find((p) => p.properties.id === splitTargetId);
+          if (targetParcel) {
+            const newParcels = polygonSplit(targetParcel, splitLine);
+
+            if (newParcels && newParcels.length >= 2) {
+              // Record history for undo
+              pushAction(createSplitAction(targetParcel, newParcels));
+
+              // Remove original and add new parcels
+              const { splitParcel } = usePolygonStore.getState();
+              splitParcel(splitTargetId, newParcels);
+
+              // Switch back to select mode
+              useModeStore.getState().exitToSelectMode();
+              useSelectionStore.getState().clearSelection();
+            } else {
+              alert('Split failed. Make sure the line crosses through the polygon from one edge to another.');
+              cancelSplit();
+              useModeStore.getState().exitToSelectMode();
+            }
+          }
+        }
+
+        setCursorPosition(null);
+        return;
+      }
+
+      // Draw mode - finish drawing
       if (mode !== 'draw' || !isDrawing) return;
 
       e.preventDefault();
@@ -568,7 +707,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
 
       setCursorPosition(null);
     },
-    [mode, isDrawing, finishDrawing, addParcel, pushAction]
+    [mode, isDrawing, finishDrawing, addParcel, pushAction, isSplitting, splitTargetId, finishSplit, cancelSplit, parcels]
   );
 
   // Handle mousedown for vertex dragging

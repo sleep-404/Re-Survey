@@ -4,6 +4,7 @@ import { useSelectionStore } from './useSelectionStore';
 import { usePolygonStore } from './usePolygonStore';
 import { useHistoryStore, createDeleteAction, createChangeTypeAction, createMergeAction } from './useHistoryStore';
 import { useDrawingStore } from './useDrawingStore';
+import { useSplitStore } from './useSplitStore';
 import { getParcelTypeByShortcut } from '../constants/parcelTypes';
 import { union } from '@turf/turf';
 import type { ParcelFeature } from '../types';
@@ -14,6 +15,7 @@ export function useKeyboardShortcuts() {
   const { parcels, getParcelsByIds, deleteParcels, setParcelsType } = usePolygonStore();
   const { undo, redo, canUndo, canRedo, pushAction } = useHistoryStore();
   const { isDrawing, cancelDrawing } = useDrawingStore();
+  const { isSplitting, cancelSplit } = useSplitStore();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -134,6 +136,9 @@ export function useKeyboardShortcuts() {
           if (isDrawing) {
             cancelDrawing();
           }
+          if (isSplitting) {
+            cancelSplit();
+          }
           if (mode !== 'select') {
             exitToSelectMode();
           } else {
@@ -210,5 +215,7 @@ export function useKeyboardShortcuts() {
     pushAction,
     isDrawing,
     cancelDrawing,
+    isSplitting,
+    cancelSplit,
   ]);
 }
