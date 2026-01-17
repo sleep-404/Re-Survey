@@ -35,12 +35,11 @@ function ToolButton({ mode, currentMode, onClick, disabled, shortcut }: ToolButt
 }
 
 export function ToolPanel() {
-  const { mode, setMode, enterDrawMode, enterEditMode, enterSplitMode, exitToSelectMode } = useModeStore();
+  const { mode, enterDrawMode, enterEditMode, enterSplitMode, exitToSelectMode } = useModeStore();
   const { getSelectionCount } = useSelectionStore();
   const { canUndo, canRedo, undo, redo } = useHistoryStore();
 
   const selectionCount = getSelectionCount();
-  const hasSelection = selectionCount > 0;
   const hasSingleSelection = selectionCount === 1;
 
   return (

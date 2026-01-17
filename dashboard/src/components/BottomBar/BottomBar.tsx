@@ -2,7 +2,6 @@ import { useModeStore, MODE_LABELS, MODE_HINTS } from '../../hooks/useModeStore'
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction } from '../../hooks/useHistoryStore';
-import { PARCEL_TYPES } from '../../constants/parcelTypes';
 
 interface BottomBarProps {
   className?: string;

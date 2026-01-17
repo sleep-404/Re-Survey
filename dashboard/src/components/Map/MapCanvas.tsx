@@ -5,7 +5,6 @@ import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useModeStore } from '../../hooks/useModeStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
-import type { ParcelFeature } from '../../types';
 
 // Default center for Andhra Pradesh (approximate)
 const DEFAULT_CENTER: [number, number] = [80.5, 16.5];

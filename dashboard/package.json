@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^24.10.1",
     "@types/proj4": "^2.5.6",
