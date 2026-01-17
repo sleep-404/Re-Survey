@@ -5,7 +5,8 @@ import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useModeStore } from '../../hooks/useModeStore';
 import { useDrawingStore } from '../../hooks/useDrawingStore';
-import { useHistoryStore, createAddAction } from '../../hooks/useHistoryStore';
+import { useEditingStore } from '../../hooks/useEditingStore';
+import { useHistoryStore, createAddAction, createEditVerticesAction } from '../../hooks/useHistoryStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
 import type { ParcelFeature } from '../../types';
 
@@ -25,6 +26,17 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
   const { selectedIds, hoveredId, setHovered, select, addToSelection, removeFromSelection } = useSelectionStore();
   const { mode } = useModeStore();
   const { isDrawing, vertices, startDrawing, addVertex, finishDrawing } = useDrawingStore();
+  const {
+    editingPolygonId,
+    currentCoordinates,
+    isDragging,
+    draggedVertexIndex,
+    startEditing,
+    updateVertex,
+    startDragging,
+    stopDragging,
+    finishEditing,
+  } = useEditingStore();
   const { pushAction } = useHistoryStore();
   const [cursorPosition, setCursorPosition] = useState<[number, number] | null>(null);
 
@@ -216,6 +228,50 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         },
         filter: ['==', '$type', 'Point'],
       });
+
+      // Add editing source and layers
+      map.current.addSource('editing', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Editing polygon fill
+      map.current.addLayer({
+        id: 'editing-fill',
+        type: 'fill',
+        source: 'editing',
+        paint: {
+          'fill-color': '#06b6d4',
+          'fill-opacity': 0.15,
+        },
+        filter: ['==', '$type', 'Polygon'],
+      });
+
+      // Editing polygon border
+      map.current.addLayer({
+        id: 'editing-line',
+        type: 'line',
+        source: 'editing',
+        paint: {
+          'line-color': '#06b6d4',
+          'line-width': 2,
+        },
+        filter: ['==', '$type', 'Polygon'],
+      });
+
+      // Editing vertex handles
+      map.current.addLayer({
+        id: 'editing-vertices',
+        type: 'circle',
+        source: 'editing',
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#ffffff',
+          'circle-stroke-color': '#06b6d4',
+          'circle-stroke-width': 2,
+        },
+        filter: ['==', '$type', 'Point'],
+      });
     });
 
     // Cleanup on unmount
@@ -299,6 +355,75 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     });
   }, [vertices, cursorPosition, isDrawing]);
 
+  // Update editing preview
+  useEffect(() => {
+    if (!map.current) return;
+
+    const source = map.current.getSource('editing') as GeoJSONSource;
+    if (!source) return;
+
+    const features: GeoJSON.Feature[] = [];
+
+    if (currentCoordinates && currentCoordinates.length > 0) {
+      // Add vertex points
+      currentCoordinates.forEach((coord, index) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: coord },
+          properties: { index },
+        });
+      });
+
+      // Add polygon preview (closed)
+      if (currentCoordinates.length >= 3) {
+        const closedCoords = [...currentCoordinates, currentCoordinates[0]];
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [closedCoords] },
+          properties: {},
+        });
+      }
+    }
+
+    source.setData({
+      type: 'FeatureCollection',
+      features,
+    });
+  }, [currentCoordinates]);
+
+  // Start editing when entering edit mode with a selected polygon
+  useEffect(() => {
+    if (mode === 'edit-vertices' && selectedIds.size === 1 && !editingPolygonId) {
+      const selectedId = Array.from(selectedIds)[0];
+      const parcel = parcels.find((p) => p.properties.id === selectedId);
+      if (parcel && parcel.geometry.type === 'Polygon') {
+        startEditing(selectedId, parcel.geometry.coordinates[0]);
+      }
+    }
+  }, [mode, selectedIds, editingPolygonId, parcels, startEditing]);
+
+  // Save edits when exiting edit mode
+  const saveEdits = useCallback(() => {
+    if (!editingPolygonId) return;
+
+    const parcel = parcels.find((p) => p.properties.id === editingPolygonId);
+    if (!parcel || parcel.geometry.type !== 'Polygon') return;
+
+    const newCoords = finishEditing();
+    if (newCoords) {
+      const oldCoords = parcel.geometry.coordinates[0];
+      pushAction(createEditVerticesAction(editingPolygonId, oldCoords, newCoords));
+      usePolygonStore.getState().updateParcelGeometry(editingPolygonId, newCoords);
+    }
+  }, [editingPolygonId, parcels, finishEditing, pushAction]);
+
+  // Watch for mode changes to save edits
+  useEffect(() => {
+    if (mode !== 'edit-vertices' && editingPolygonId) {
+      saveEdits();
+    }
+  }, [mode, editingPolygonId, saveEdits]);
+
   // Handle click events
   const handleClick = useCallback(
     (e: MapMouseEvent) => {
@@ -349,10 +474,32 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     [mode, selectedIds, select, addToSelection, removeFromSelection, isDrawing, startDrawing, addVertex]
   );
 
-  // Handle mouse move for hover and drawing preview
+  // Handle mouse move for hover, drawing preview, and vertex dragging
   const handleMouseMove = useCallback(
     (e: MapMouseEvent) => {
       if (!map.current) return;
+
+      // Edit mode - handle vertex dragging
+      if (mode === 'edit-vertices') {
+        if (isDragging && draggedVertexIndex !== null) {
+          // Update the vertex position while dragging
+          updateVertex(draggedVertexIndex, [e.lngLat.lng, e.lngLat.lat]);
+          map.current.getCanvas().style.cursor = 'grabbing';
+          return;
+        }
+
+        // Check if hovering over a vertex
+        const vertexFeatures = map.current.queryRenderedFeatures(e.point, {
+          layers: ['editing-vertices'],
+        });
+
+        if (vertexFeatures.length > 0) {
+          map.current.getCanvas().style.cursor = 'grab';
+        } else {
+          map.current.getCanvas().style.cursor = 'default';
+        }
+        return;
+      }
 
       // Update cursor position for drawing preview
       if (mode === 'draw' && isDrawing) {
@@ -385,7 +532,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         map.current.getCanvas().style.cursor = '';
       }
     },
-    [hoveredId, setHovered, mode, isDrawing]
+    [hoveredId, setHovered, mode, isDrawing, isDragging, draggedVertexIndex, updateVertex]
   );
 
   // Handle double-click to finish drawing
@@ -424,6 +571,40 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     [mode, isDrawing, finishDrawing, addParcel, pushAction]
   );
 
+  // Handle mousedown for vertex dragging
+  const handleMouseDown = useCallback(
+    (e: MapMouseEvent) => {
+      if (!map.current || mode !== 'edit-vertices') return;
+
+      // Check if clicking on a vertex
+      const vertexFeatures = map.current.queryRenderedFeatures(e.point, {
+        layers: ['editing-vertices'],
+      });
+
+      if (vertexFeatures.length > 0) {
+        const vertexIndex = vertexFeatures[0].properties?.index;
+        if (typeof vertexIndex === 'number') {
+          e.preventDefault();
+          startDragging(vertexIndex);
+          // Disable map dragging while vertex dragging
+          map.current.dragPan.disable();
+        }
+      }
+    },
+    [mode, startDragging]
+  );
+
+  // Handle mouseup to stop vertex dragging
+  const handleMouseUp = useCallback(() => {
+    if (!map.current) return;
+
+    if (isDragging) {
+      stopDragging();
+      // Re-enable map dragging
+      map.current.dragPan.enable();
+    }
+  }, [isDragging, stopDragging]);
+
   // Attach event handlers
   useEffect(() => {
     if (!map.current) return;
@@ -431,6 +612,8 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     map.current.on('click', handleClick);
     map.current.on('mousemove', handleMouseMove);
     map.current.on('dblclick', handleDoubleClick);
+    map.current.on('mousedown', handleMouseDown);
+    map.current.on('mouseup', handleMouseUp);
 
     // Disable default double-click zoom in draw mode
     if (mode === 'draw') {
@@ -444,9 +627,11 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         map.current.off('click', handleClick);
         map.current.off('mousemove', handleMouseMove);
         map.current.off('dblclick', handleDoubleClick);
+        map.current.off('mousedown', handleMouseDown);
+        map.current.off('mouseup', handleMouseUp);
       }
     };
-  }, [handleClick, handleMouseMove, handleDoubleClick, mode]);
+  }, [handleClick, handleMouseMove, handleDoubleClick, handleMouseDown, handleMouseUp, mode]);
 
   return (
     <div className={`relative ${className}`}>
