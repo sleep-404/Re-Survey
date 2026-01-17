@@ -275,7 +275,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
 
   return (
     <div className={`relative ${className}`}>
-      <div ref={mapContainer} className="absolute inset-0" />
+      <div ref={mapContainer} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
           <div className="flex flex-col items-center gap-2">
