@@ -1,589 +1,484 @@
 # BoundaryAI - UI/UX Design Document
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-01-17
 
 ---
 
-## 1. Design Philosophy
+## 1. Design Principles
 
-### 1.1 Core Principles
-
-1. **Minimal Clicks** - Officers need to correct hundreds of polygons. Every action should be fast.
-2. **Always See Context** - ORI imagery must always be visible as reference.
-3. **Clear Feedback** - User should always know what's selected, what changed, what's wrong.
-4. **Undo Everything** - Any edit can be reversed. No fear of making mistakes.
-
-### 1.2 Key Insight from Transcript
-
-> "there should also be any mechanism to **delete any lines or polygons in a fast manner**"
-
-Speed is critical. The UI must optimize for rapid corrections.
+1. **Speed** - Delete/merge/split in minimal clicks (per transcript: "fast manner")
+2. **Context** - ORI always visible as reference
+3. **Confidence** - Undo everything, auto-save, no fear of mistakes
+4. **Clarity** - Always know what's selected, what tool is active
 
 ---
 
-## 2. Application States
+## 2. Single Screen, Multiple Modes
 
-The application has **one main screen** with different **states**:
+One workspace. No page navigation. The interface changes based on **mode**:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   STATE 1: EMPTY          No ORI loaded                         │
-│              ↓                                                  │
-│   STATE 2: LOADING        Processing ORI / Running AI           │
-│              ↓                                                  │
-│   STATE 3: EDITING        Main workspace (most time here)       │
-│              ↓                                                  │
-│   STATE 4: VALIDATING     Checking topology                     │
-│              ↓                                                  │
-│   STATE 5: EXPORTING      Generating shapefiles                 │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Mode | When Active | Bottom Panel Shows |
+|------|-------------|-------------------|
+| **Default** | Nothing selected | Instructions: "Click polygon to select" |
+| **Selection** | 1+ polygons selected | Selection info + action buttons |
+| **Drawing** | Draw tool active | "Click to place vertices. Double-click to finish." |
+| **Editing** | Editing vertices | "Drag vertices. Click edge to add. Right-click to delete." |
+| **Validation** | After clicking Validate | Error list with fix options |
 
 ---
 
-## 3. Screen Layouts
-
-### 3.1 STATE 1: Empty State
-
-**Purpose:** Prompt user to load ORI file
+## 3. Screen Layout
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  BoundaryAI                                                             │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│                                                                         │
-│                                                                         │
-│                    ┌─────────────────────────────┐                      │
-│                    │                             │                      │
-│                    │      📁 Load ORI File       │                      │
-│                    │                             │                      │
-│                    │   Drag & drop GeoTIFF or    │                      │
-│                    │   click to browse           │                      │
-│                    │                             │                      │
-│                    └─────────────────────────────┘                      │
-│                                                                         │
-│                    Supported: .tif, .tiff (GeoTIFF)                     │
-│                                                                         │
-│                                                                         │
-│                                                                         │
+│  BoundaryAI                                              [Export]       │
+├────────────┬────────────────────────────────────────────────────────────┤
+│            │                                                            │
+│  LAYERS    │                                                            │
+│  ☑ Imagery │                                                            │
+│  ☑ Polygons│                        MAP CANVAS                          │
+│            │                                                            │
+│────────────│         ┌────────────────────────────────────────┐         │
+│            │         │                                        │         │
+│  TOOLS     │         │   • ORI imagery as background          │         │
+│  ┌──────┐  │         │   • Polygons overlaid                  │         │
+│  │Select│  │         │   • Click to select                    │         │
+│  └──────┘  │         │   • Scroll to zoom                     │         │
+│  ┌──────┐  │         │   • Drag to pan                        │         │
+│  │ Draw │  │         │                                        │         │
+│  └──────┘  │         └────────────────────────────────────────┘         │
+│            │                                                            │
+│────────────│    [−]  [+]  [Fit]                    Polygons: 847        │
+│            │                                                            │
+│  TOPOLOGY  ├────────────────────────────────────────────────────────────┤
+│  [Validate]│                                                            │
+│  ✓ Clean   │   Click a polygon to select it                             │
+│            │                                                            │
+└────────────┴────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Modes in Detail
+
+### 4.1 Default Mode (Nothing Selected)
+
+**Bottom Panel:**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Click a polygon to select it. Shift+click to select multiple.          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**User Actions:**
-| Action | Method |
-|--------|--------|
-| Load file | Click button OR drag-drop |
+**User can:**
+- Click polygon → enters Selection mode
+- Click Draw tool → enters Drawing mode
+- Click Validate → enters Validation mode
+- Pan/zoom the map
 
 ---
 
-### 3.2 STATE 2: Loading State
+### 4.2 Selection Mode (1+ Polygons Selected)
 
-**Purpose:** Show progress while AI processes imagery
+**Visual:** Selected polygons highlighted with thick cyan border + light fill
 
+**Bottom Panel (single selection):**
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  BoundaryAI                                                             │
-├─────────────────────────────────────────────────────────────────────────┤
+│  SELECTED: 1 polygon                                                    │
+│  Area: 0.52 acres (2,104 sqm)   Vertices: 12                            │
 │                                                                         │
-│                                                                         │
-│                                                                         │
-│                    ┌─────────────────────────────┐                      │
-│                    │                             │                      │
-│                    │   ████████████░░░░░  67%    │                      │
-│                    │                             │                      │
-│                    │   Extracting parcels...     │                      │
-│                    │                             │                      │
-│                    │   Found 847 polygons        │                      │
-│                    │                             │                      │
-│                    └─────────────────────────────┘                      │
-│                                                                         │
-│                    [Cancel]                                             │
-│                                                                         │
-│                                                                         │
-│                                                                         │
+│  [Delete]  [Split]  [Edit Vertices]                      [Undo] [Redo]  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**User Actions:**
-| Action | Method |
-|--------|--------|
-| Cancel processing | Click Cancel button |
-
----
-
-### 3.3 STATE 3: Editing State (Main Workspace)
-
-**Purpose:** Review and correct AI-extracted polygons
-
-This is where officers spend 95% of their time.
-
+**Bottom Panel (multiple selection):**
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  BoundaryAI - nibhanupudi_ori.tif                    [Export Shapefiles]│
-├─────────┬───────────────────────────────────────────────────────────────┤
-│         │                                                               │
-│ LAYERS  │                                                               │
-│ ☑ ORI   │                      MAP CANVAS                               │
-│ ☑ Polys │                                                               │
-│         │   ┌───────────────────────────────────────────────────────┐   │
-│─────────│   │                                                       │   │
-│         │   │                                                       │   │
-│ TOOLS   │   │     [ORI imagery as background]                       │   │
-│         │   │                                                       │   │
-│ ● Select│   │     [AI polygons overlaid with yellow borders]        │   │
-│ ○ Draw  │   │                                                       │   │
-│ ○ Edit  │   │     [Selected polygon highlighted in cyan]            │   │
-│         │   │                                                       │   │
-│─────────│   │                                                       │   │
-│         │   │                                                       │   │
-│ STATS   │   └───────────────────────────────────────────────────────┘   │
-│         │                                                               │
-│ Total:  │   ← ↑ ↓ →  [Zoom: 100%]  [-] [+]  [Fit]                       │
-│ 847     │                                                               │
-│         ├───────────────────────────────────────────────────────────────┤
-│─────────│  SELECTION: 1 polygon                                         │
-│         │  Area: 0.52 ac (2,104 sqm)  │  Vertices: 12                   │
-│VALIDATE │                                                               │
-│[Check]  │  [Delete]  [Merge]  [Split]  [Edit Vertices]     [Undo][Redo] │
-│         │                                                               │
-└─────────┴───────────────────────────────────────────────────────────────┘
-```
-
-#### 3.3.1 Layout Components
-
-| Component | Position | Purpose |
-|-----------|----------|---------|
-| Header | Top | File name, Export button |
-| Layers Panel | Left sidebar, top | Toggle ORI and polygon visibility |
-| Tools Panel | Left sidebar, middle | Select active tool |
-| Stats Panel | Left sidebar | Polygon count |
-| Validate Panel | Left sidebar, bottom | Topology check button |
-| Map Canvas | Center | Interactive map view |
-| Navigation Bar | Below canvas | Zoom controls, pan |
-| Selection Panel | Bottom | Selected polygon info + action buttons |
-
-#### 3.3.2 User Actions in Editing State
-
-**Map Interactions:**
-| Action | Method |
-|--------|--------|
-| Pan map | Click + drag on empty area |
-| Zoom in | Scroll up OR click [+] |
-| Zoom out | Scroll down OR click [-] |
-| Fit to extent | Click [Fit] |
-| Select polygon | Click on polygon |
-| Multi-select | Shift + click |
-| Deselect | Click empty area OR press Escape |
-
-**Tool: Select (default)**
-| Action | Method |
-|--------|--------|
-| Select single | Click polygon |
-| Add to selection | Shift + click |
-| Box select | Click + drag rectangle |
-
-**Tool: Draw**
-| Action | Method |
-|--------|--------|
-| Start polygon | Click first point |
-| Add vertex | Click next point |
-| Complete polygon | Double-click OR click first point |
-| Cancel drawing | Press Escape |
-
-**Tool: Edit Vertices**
-| Action | Method |
-|--------|--------|
-| Enter edit mode | Select polygon, click "Edit Vertices" |
-| Move vertex | Drag vertex |
-| Add vertex | Click on edge |
-| Delete vertex | Right-click vertex |
-| Exit edit mode | Press Escape OR click outside |
-
-**Polygon Actions (when selected):**
-| Action | Method | Shortcut |
-|--------|--------|----------|
-| Delete | Click [Delete] | D or Delete key |
-| Merge | Select 2+, click [Merge] | M |
-| Split | Click [Split], draw line | S |
-| Edit Vertices | Click [Edit Vertices] | E |
-| Undo | Click [Undo] | Ctrl+Z |
-| Redo | Click [Redo] | Ctrl+Y |
-
----
-
-### 3.4 STATE 4: Validating State
-
-**Purpose:** Show topology errors that need fixing
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  BoundaryAI - nibhanupudi_ori.tif                    [Export Shapefiles]│
-├─────────┬───────────────────────────────────────────────────────────────┤
-│         │                                                               │
-│ LAYERS  │                      MAP CANVAS                               │
-│ ☑ ORI   │                                                               │
-│ ☑ Polys │   ┌───────────────────────────────────────────────────────┐   │
-│ ☑ Errors│   │                                                       │   │
-│         │   │     [Overlaps shown in RED]                           │   │
-│─────────│   │     [Gaps shown in BLUE]                              │   │
-│         │   │                                                       │   │
-│ TOOLS   │   │                                                       │   │
-│         │   │                                                       │   │
-│ ● Select│   │                                                       │   │
-│ ○ Draw  │   │                                                       │   │
-│ ○ Edit  │   │                                                       │   │
-│         │   └───────────────────────────────────────────────────────┘   │
-│─────────│                                                               │
-│         ├───────────────────────────────────────────────────────────────┤
-│VALIDATE │  TOPOLOGY ERRORS: 3 found                                     │
-│         │                                                               │
-│ ⚠ 2 over│  ┌─────────────────────────────────────────────────────────┐ │
-│ ⚠ 1 gap │  │ 1. Overlap between 2 polygons        [View] [Auto-fix]  │ │
-│         │  │ 2. Overlap between 2 polygons        [View] [Auto-fix]  │ │
-│[Recheck]│  │ 3. Gap (0.02 sqm)                    [View] [Auto-fix]  │ │
-│         │  └─────────────────────────────────────────────────────────┘ │
-│         │                                           [Fix All]  [Close] │
-└─────────┴───────────────────────────────────────────────────────────────┘
-```
-
-**User Actions:**
-| Action | Method |
-|--------|--------|
-| View error location | Click [View] - map pans to error |
-| Auto-fix single error | Click [Auto-fix] |
-| Fix all errors | Click [Fix All] |
-| Manually fix | Close panel, use edit tools |
-| Re-validate | Click [Recheck] |
-| Close validation | Click [Close] |
-
----
-
-### 3.5 STATE 5: Export Dialog
-
-**Purpose:** Export shapefiles
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
+│  SELECTED: 3 polygons                                                   │
+│  Combined area: 1.47 acres                                              │
 │                                                                         │
-│   ┌───────────────────────────────────────────────────────────────┐     │
-│   │                                                               │     │
-│   │   EXPORT SHAPEFILES                                     [X]   │     │
-│   │                                                               │     │
-│   │   Output folder:                                              │     │
-│   │   ┌─────────────────────────────────────┐ [Browse]            │     │
-│   │   │ /Users/surveyor/exports/nibhanupudi │                     │     │
-│   │   └─────────────────────────────────────┘                     │     │
-│   │                                                               │     │
-│   │   File name: nibhanupudi_parcels                              │     │
-│   │                                                               │     │
-│   │   Summary:                                                    │     │
-│   │   • 847 polygons                                              │     │
-│   │   • 0 topology errors                                         │     │
-│   │                                                               │     │
-│   │   ⚠ Warning: 2 topology errors remain                         │     │
-│   │     [Fix errors first]  [Export anyway]                       │     │
-│   │                                                               │     │
-│   │                              [Cancel]  [Export]               │     │
-│   │                                                               │     │
-│   └───────────────────────────────────────────────────────────────┘     │
-│                                                                         │
+│  [Delete All]  [Merge]                                   [Undo] [Redo]  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**User Actions:**
-| Action | Method |
-|--------|--------|
-| Choose folder | Click [Browse] |
-| Change filename | Edit text field |
-| Export | Click [Export] |
-| Cancel | Click [Cancel] or [X] |
-| Fix errors first | Click [Fix errors first] (returns to validation) |
+**Actions:**
+
+| Action | Button | Shortcut | Requires |
+|--------|--------|----------|----------|
+| Delete | [Delete] | D | 1+ selected |
+| Split | [Split] | S | 1 selected |
+| Edit Vertices | [Edit Vertices] | E | 1 selected |
+| Merge | [Merge] | M | 2+ adjacent selected |
+
+**To exit:** Click empty area or press Escape
 
 ---
 
-## 4. Complete User Flow
+### 4.3 Drawing Mode (Creating New Polygon)
 
+**Activated by:** Click [Draw] tool in sidebar
+
+**Cursor:** Crosshair
+
+**Bottom Panel:**
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           USER FLOW                                      │
+│  DRAWING: Click to place vertices. Double-click to finish.             │
+│  Vertices placed: 4                                         [Cancel]    │
 └─────────────────────────────────────────────────────────────────────────┘
-
-     ┌──────────┐
-     │  START   │
-     └────┬─────┘
-          │
-          ▼
-     ┌──────────┐
-     │  Load    │◄─────────────────────────────────────┐
-     │  ORI     │                                      │
-     └────┬─────┘                                      │
-          │                                            │
-          ▼                                            │
-     ┌──────────┐                                      │
-     │   AI     │                                      │
-     │ Extract  │                                      │
-     └────┬─────┘                                      │
-          │                                            │
-          ▼                                            │
-     ┌──────────┐      ┌──────────┐                    │
-     │  Review  │─────►│  Delete  │────┐               │
-     │  Output  │      │ Polygon  │    │               │
-     └────┬─────┘      └──────────┘    │               │
-          │                            │               │
-          │            ┌──────────┐    │               │
-          ├───────────►│  Merge   │────┤               │
-          │            │ Polygons │    │               │
-          │            └──────────┘    │               │
-          │                            │               │
-          │            ┌──────────┐    │               │
-          ├───────────►│  Split   │────┤               │
-          │            │ Polygon  │    │               │
-          │            └──────────┘    │               │
-          │                            │               │
-          │            ┌──────────┐    │               │
-          ├───────────►│  Draw    │────┤               │
-          │            │   New    │    │               │
-          │            └──────────┘    │               │
-          │                            │               │
-          │            ┌──────────┐    │               │
-          └───────────►│  Edit    │────┘               │
-                       │ Vertices │                    │
-                       └──────────┘                    │
-                            │                         │
-                            ▼                         │
-                       ┌──────────┐                    │
-                       │ Continue │ Yes               │
-                       │ Editing? │─────────────────►─┘
-                       └────┬─────┘
-                            │ No
-                            ▼
-                       ┌──────────┐
-                       │ Validate │◄────────┐
-                       │ Topology │         │
-                       └────┬─────┘         │
-                            │               │
-                            ▼               │
-                       ┌──────────┐         │
-                       │ Errors?  │ Yes     │
-                       │          │─────────┘
-                       └────┬─────┘   Fix
-                            │ No
-                            ▼
-                       ┌──────────┐
-                       │  Export  │
-                       │Shapefiles│
-                       └────┬─────┘
-                            │
-                            ▼
-                       ┌──────────┐
-                       │   END    │
-                       └──────────┘
 ```
+
+**Behavior:**
+1. Each click adds a vertex
+2. Line shows from last vertex to cursor
+3. Double-click or click first vertex to complete
+4. New polygon created
+5. Returns to Selection mode with new polygon selected
+
+**To cancel:** Press Escape or click [Cancel]
 
 ---
 
-## 5. Interaction Details
+### 4.4 Vertex Editing Mode
 
-### 5.1 Polygon Selection Behavior
+**Activated by:** Select polygon → click [Edit Vertices]
 
-**Visual Feedback:**
-| State | Appearance |
-|-------|------------|
-| Default | Yellow border, transparent fill |
-| Hover | Yellow border, light yellow fill |
-| Selected | Cyan border (thicker), light cyan fill |
-| Multi-selected | Cyan border, dashed |
-
-**Selection Info Display:**
-- Single selection: Show area, perimeter, vertex count
-- Multi-selection: Show count, combined area
-
-### 5.2 Edit Vertices Mode
-
-When editing vertices:
-
+**Visual:**
 ```
-     ○────────○
-    /          \
+     ●────────●          ● = Vertex (draggable)
+    /          \         ─ = Edge (click to add vertex)
    /            \
-  ○              ○───────○
+  ●              ●───────●
   │                      │
-  │    [Polygon fill]    │
   │                      │
-  ○──────────────────────○
-
-  ○ = Draggable vertex (larger circle)
-  ─ = Edge (click to add vertex)
+  ●──────────────────────●
 ```
 
-| Vertex State | Appearance |
-|--------------|------------|
-| Normal | Small white circle, dark border |
-| Hover | Larger circle, highlight color |
-| Dragging | Dashed lines showing connections |
-
-### 5.3 Split Tool Behavior
-
-1. User clicks [Split]
-2. Cursor changes to crosshair
-3. User clicks to start split line
-4. User clicks to end split line (or more points for curved split)
-5. Double-click to complete
-6. Polygon splits into two at the line
-
+**Bottom Panel:**
 ```
-Before:                    After:
-┌────────────────┐         ┌────────┬───────┐
-│                │         │        │       │
-│   Polygon A    │   →     │  A.1   │  A.2  │
-│                │         │        │       │
-└────────────────┘         └────────┴───────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│  EDITING VERTICES: Drag to move. Click edge to add. Right-click to     │
+│  delete vertex.                                            [Done]       │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.4 Merge Tool Behavior
+**Interactions:**
+| Action | Method |
+|--------|--------|
+| Move vertex | Drag it |
+| Add vertex | Click on edge |
+| Delete vertex | Right-click on vertex |
+| Finish editing | Click [Done] or press Escape |
 
-1. User selects 2+ adjacent polygons (Shift+click)
-2. User clicks [Merge]
-3. Polygons combine, shared boundary removed
+**Snapping:** When dragging vertex near another polygon's vertex/edge, it snaps to align (prevents gaps)
+
+---
+
+### 4.5 Split Mode
+
+**Activated by:** Select polygon → click [Split]
+
+**Cursor:** Crosshair with scissors icon
+
+**Bottom Panel:**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  SPLIT: Draw a line across the polygon. Double-click to split.         │
+│                                                            [Cancel]     │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Behavior:**
+1. Click to start split line
+2. Click to add bend points (optional)
+3. Double-click to end and execute split
+4. Polygon divides into two along the line
 
 ```
-Before:                    After:
-┌────────┬───────┐         ┌────────────────┐
-│        │       │         │                │
-│  A.1   │  A.2  │   →     │   Merged A     │
-│        │       │         │                │
-└────────┴───────┘         └────────────────┘
+Before:              Split line:           After:
+┌──────────┐        ┌──────────┐         ┌─────┬────┐
+│          │        │    /     │         │     │    │
+│          │   →    │   /      │    →    │     │    │
+│          │        │  /       │         │     │    │
+└──────────┘        └──────────┘         └─────┴────┘
 ```
 
-### 5.5 Keyboard Shortcuts
+---
+
+### 4.6 Validation Mode
+
+**Activated by:** Click [Validate] in sidebar
+
+**Sidebar updates:**
+```
+┌────────────┐
+│  TOPOLOGY  │
+│            │
+│  ⚠ 2 errors│
+│            │
+│  [Validate]│
+└────────────┘
+```
+
+**Bottom Panel (replaces selection panel):**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  TOPOLOGY ERRORS: 2 found                                               │
+│                                                                         │
+│  1. Overlap (12 sqm)                              [Zoom To] [Auto-fix]  │
+│  2. Gap (0.3 sqm)                                 [Zoom To] [Auto-fix]  │
+│                                                                         │
+│                                            [Fix All]           [Close]  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Visual on map:**
+- Overlaps: Red semi-transparent fill
+- Gaps: Blue semi-transparent fill
+
+**Actions:**
+| Action | Result |
+|--------|--------|
+| [Zoom To] | Map pans/zooms to error location |
+| [Auto-fix] | System attempts automatic repair |
+| [Fix All] | Auto-fix all errors |
+| [Close] | Return to default mode, keep error highlighting |
+
+---
+
+## 5. Map Interactions
+
+### 5.1 Navigation
+
+| Action | Method |
+|--------|--------|
+| Pan | Click + drag on empty area |
+| Zoom in | Scroll up OR click [+] |
+| Zoom out | Scroll down OR click [−] |
+| Fit all | Click [Fit] |
+
+### 5.2 Selection
+
+| Action | Method |
+|--------|--------|
+| Select polygon | Click on it |
+| Add to selection | Shift + click |
+| Deselect | Click empty area OR Escape |
+| Select obscured polygon | Right-click → "Select polygon underneath" |
+
+### 5.3 Context Menu (Right-Click)
+
+On polygon:
+```
+┌─────────────────────┐
+│ Delete              │
+│ Edit Vertices       │
+│ Split               │
+│ ─────────────────── │
+│ Zoom to Polygon     │
+│ Select Underneath   │
+└─────────────────────┘
+```
+
+On empty area:
+```
+┌─────────────────────┐
+│ Draw New Polygon    │
+│ Fit to All          │
+│ ─────────────────── │
+│ Validate Topology   │
+└─────────────────────┘
+```
+
+---
+
+## 6. Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| D / Delete | Delete selected polygon(s) |
-| M | Merge selected polygons |
-| S | Activate Split tool |
-| E | Edit vertices of selected polygon |
-| N | Activate Draw (New polygon) tool |
-| V | Activate Select tool |
-| Escape | Cancel current action / Deselect |
-| Ctrl+Z | Undo |
-| Ctrl+Y | Redo |
+| **Selection** | |
+| Escape | Deselect / Cancel current action |
 | Ctrl+A | Select all polygons |
-| + / = | Zoom in |
-| - | Zoom out |
-| F | Fit map to extent |
-| Space + drag | Pan map |
+| **Editing** | |
+| D | Delete selected |
+| M | Merge selected (if 2+) |
+| S | Split selected (if 1) |
+| E | Edit vertices (if 1) |
+| N | Activate Draw tool |
+| **History** | |
+| Ctrl+Z | Undo |
+| Ctrl+Shift+Z | Redo |
+| **View** | |
+| + | Zoom in |
+| − | Zoom out |
+| F | Fit to extent |
 
 ---
 
-## 6. Responsive Considerations
+## 7. Visual Design
 
-### 6.1 Minimum Screen Size
+### 7.1 Polygon States
 
-- Minimum: 1280 x 720 px
-- Recommended: 1920 x 1080 px
+| State | Border | Fill |
+|-------|--------|------|
+| Default | Orange #F97316, 2px | None |
+| Hover | Orange #F97316, 3px | Orange 10% |
+| Selected | Cyan #06B6D4, 3px | Cyan 15% |
+| Error (overlap) | Red #EF4444, 2px | Red 30% |
+| Error (gap) | Blue #3B82F6, 2px | Blue 30% |
 
-### 6.2 Panel Collapsing
+*Note: Orange chosen over yellow for better visibility on varied terrain*
 
-On smaller screens:
-- Left sidebar can collapse to icons only
-- Bottom panel can minimize to single line
+### 7.2 Cursors
 
----
-
-## 7. Color Scheme
-
-| Element | Color | Hex |
-|---------|-------|-----|
-| Polygon border (default) | Yellow | #F59E0B |
-| Polygon fill (default) | Transparent | - |
-| Polygon border (selected) | Cyan | #06B6D4 |
-| Polygon fill (selected) | Light cyan | #CFFAFE (20% opacity) |
-| Overlap error | Red | #EF4444 |
-| Gap error | Blue | #3B82F6 |
-| Vertex point | White with dark border | #FFFFFF / #374151 |
-| Background | Light gray | #F3F4F6 |
-| Sidebar | White | #FFFFFF |
-| Primary button | Blue | #2563EB |
-| Danger button | Red | #DC2626 |
+| Mode | Cursor |
+|------|--------|
+| Default | Arrow |
+| Over polygon | Pointer (hand) |
+| Drawing | Crosshair |
+| Splitting | Crosshair + scissors |
+| Dragging vertex | Grabbing hand |
+| Panning | Grabbing hand |
 
 ---
 
-## 8. Information Hierarchy
+## 8. Data Safety
 
-### What the user needs to see (priority order):
+### 8.1 Auto-Save
 
-1. **ORI Imagery** - Always visible as reference
-2. **Polygons** - Overlaid on ORI
-3. **Selected polygon info** - Area, vertices
-4. **Available actions** - Based on selection
-5. **Total polygon count** - Progress indicator
-6. **Topology status** - Errors or clean
+- Changes auto-saved every 30 seconds
+- Saved to browser local storage
+- On reload: "Restore unsaved work?" prompt
+
+### 8.2 Confirmations
+
+| Action | Confirmation? |
+|--------|---------------|
+| Delete 1 polygon | No (can undo) |
+| Delete 5+ polygons | Yes: "Delete 7 polygons?" |
+| Close with unsaved changes | Yes: "Export before closing?" |
+| Auto-fix all | Yes: "Auto-fix 12 errors?" |
+
+### 8.3 Undo History
+
+- Unlimited undo within session
+- Undo stack cleared on export
 
 ---
 
-## 9. Error States
+## 9. Export Flow
 
-### 9.1 File Load Error
+**Triggered by:** Click [Export] button
 
+**Dialog:**
 ```
-┌─────────────────────────────────┐
-│ ❌ Could not load file          │
-│                                 │
-│ The file may be corrupted or   │
-│ not a valid GeoTIFF.           │
-│                                 │
-│ [Try Another File]             │
-└─────────────────────────────────┘
-```
-
-### 9.2 Processing Error
-
-```
-┌─────────────────────────────────┐
-│ ❌ AI extraction failed         │
-│                                 │
-│ Error: Out of memory            │
-│                                 │
-│ Try a smaller image area.       │
-│                                 │
-│ [Retry]  [Load Different File] │
-└─────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│  EXPORT SHAPEFILES                                       [X]  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│  Filename: nibhanupudi_parcels                                │
+│                                                               │
+│  Location: ~/Downloads                        [Change]        │
+│                                                               │
+│  ───────────────────────────────────────────────────────────  │
+│                                                               │
+│  Summary:                                                     │
+│  • 847 polygons                                               │
+│  • 0 topology errors  ✓                                       │
+│                                                               │
+│                                     [Cancel]     [Export]     │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-### 9.3 Export Error
-
+**If topology errors exist:**
 ```
-┌─────────────────────────────────┐
-│ ❌ Export failed                │
-│                                 │
-│ Cannot write to selected       │
-│ folder. Check permissions.      │
-│                                 │
-│ [Choose Different Folder]      │
-└─────────────────────────────────┘
+│  • 847 polygons                                               │
+│  • 2 topology errors  ⚠                                       │
+│                                                               │
+│  [Fix Errors First]              [Cancel]  [Export Anyway]    │
 ```
 
 ---
 
-## 10. Summary
+## 10. Initial Load Flow
 
-| Aspect | Count/Detail |
-|--------|--------------|
-| Application States | 5 (Empty, Loading, Editing, Validating, Exporting) |
-| Main Screens | 1 (with state changes) |
-| Tools | 3 (Select, Draw, Edit Vertices) |
-| Polygon Actions | 5 (Delete, Merge, Split, Edit, Undo/Redo) |
-| Keyboard Shortcuts | 15+ |
-| Layer Toggles | 2 (ORI, Polygons) |
+### 10.1 Empty State (First Launch)
 
-**Core Workflow:**
 ```
-Load ORI → AI Extract → Review/Edit → Validate → Export
+┌─────────────────────────────────────────────────────────────────────────┐
+│  BoundaryAI                                                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│                                                                         │
+│                    ┌─────────────────────────────┐                      │
+│                    │                             │                      │
+│                    │     Load ORI Image          │                      │
+│                    │                             │                      │
+│                    │  Drag & drop GeoTIFF here   │                      │
+│                    │  or click to browse         │                      │
+│                    │                             │                      │
+│                    └─────────────────────────────┘                      │
+│                                                                         │
+│                    Supported: .tif, .tiff                               │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-All editing happens in a single workspace. No page navigation required.
+### 10.2 Processing State
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  BoundaryAI                                                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│                                                                         │
+│                    ┌─────────────────────────────┐                      │
+│                    │                             │                      │
+│                    │   ████████████░░░░  72%     │                      │
+│                    │                             │                      │
+│                    │   Extracting parcels...     │                      │
+│                    │   Found: 612 polygons       │                      │
+│                    │                             │                      │
+│                    │         [Cancel]            │                      │
+│                    │                             │                      │
+│                    └─────────────────────────────┘                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.3 Restore Prompt (If Previous Session Exists)
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│  Restore Previous Session?                               [X]  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│  Found unsaved work from: Jan 17, 2026 at 3:45 PM             │
+│  File: nibhanupudi_ori.tif                                    │
+│  Polygons: 847 (23 edits)                                     │
+│                                                               │
+│                        [Discard]          [Restore]           │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 11. Summary
+
+| Component | Details |
+|-----------|---------|
+| Screens | 1 main workspace |
+| Modes | 6 (Default, Selection, Drawing, Editing, Split, Validation) |
+| Tools | 2 in sidebar (Select, Draw) |
+| Actions | 5 (Delete, Merge, Split, Edit Vertices, Validate) |
+| Shortcuts | 12 |
+
+**Core Flow:**
+```
+Load ORI → AI Extracts → Review/Edit → Validate → Export
+            (auto)        (manual)     (check)    (done)
+```
