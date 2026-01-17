@@ -6,9 +6,9 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useModeStore } from '../../hooks/useModeStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
 
-// Default center for Andhra Pradesh (approximate)
-const DEFAULT_CENTER: [number, number] = [80.5, 16.5];
-const DEFAULT_ZOOM = 14;
+// Default center - nibanupudi village parcels
+const DEFAULT_CENTER: [number, number] = [80.98846, 16.27826];
+const DEFAULT_ZOOM = 16;
 
 interface MapCanvasProps {
   className?: string;
