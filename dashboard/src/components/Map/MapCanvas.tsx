@@ -60,17 +60,20 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
       maxZoom: 22, // Allow zooming up to level 22
       style: {
         version: 8,
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
-          // Esri World Imagery as high-res satellite fallback
-          // maxzoom 19 is the tile availability, but we allow overzooming via layer settings
-          'esri-satellite': {
+          // Google Satellite (higher coverage in India)
+          'google-satellite': {
             type: 'raster',
             tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+              'https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+              'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+              'https://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+              'https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
             ],
             tileSize: 256,
-            attribution: '© Esri, Maxar, Earthstar Geographics',
-            maxzoom: 19, // Tiles available up to zoom 19
+            attribution: '© Google',
+            maxzoom: 21,
           },
           // Local ORI tiles (when available, higher priority)
           'ori-tiles': {
@@ -82,12 +85,20 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
           },
         },
         layers: [
+          // Background color fallback
+          {
+            id: 'background',
+            type: 'background',
+            paint: {
+              'background-color': '#1a1a2e',
+            },
+          },
           {
             id: 'satellite-layer',
             type: 'raster',
-            source: 'esri-satellite',
+            source: 'google-satellite',
             minzoom: 0,
-            maxzoom: 24, // Allow overzooming - tiles will be scaled up beyond zoom 19
+            maxzoom: 24,
           },
           {
             id: 'ori-layer',
