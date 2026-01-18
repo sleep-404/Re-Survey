@@ -57,10 +57,12 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
+      maxZoom: 22, // Allow zooming up to level 22
       style: {
         version: 8,
         sources: {
           // Esri World Imagery as high-res satellite fallback
+          // maxzoom 19 is the tile availability, but we allow overzooming via layer settings
           'esri-satellite': {
             type: 'raster',
             tiles: [
@@ -68,7 +70,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
             ],
             tileSize: 256,
             attribution: '© Esri, Maxar, Earthstar Geographics',
-            maxzoom: 19,
+            maxzoom: 19, // Tiles available up to zoom 19
           },
           // Local ORI tiles (when available, higher priority)
           'ori-tiles': {
@@ -85,7 +87,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
             type: 'raster',
             source: 'esri-satellite',
             minzoom: 0,
-            maxzoom: 22,
+            maxzoom: 24, // Allow overzooming - tiles will be scaled up beyond zoom 19
           },
           {
             id: 'ori-layer',
