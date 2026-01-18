@@ -75,13 +75,13 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
             attribution: '© Google',
             maxzoom: 21,
           },
-          // Local ORI tiles (when available, higher priority)
+          // Local ORI tiles (high-res drone imagery, priority over Google)
           'ori-tiles': {
             type: 'raster',
             tiles: ['/tiles/{z}/{x}/{y}.png'],
             tileSize: 256,
-            minzoom: 12,
-            maxzoom: 22,
+            minzoom: 14,
+            maxzoom: 20,
           },
         },
         layers: [
