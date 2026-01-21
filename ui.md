@@ -957,11 +957,340 @@ font-family: 'Noto Sans Telugu', sans-serif;
 
 All existing functionality preserved:
 - `src/components/Map/*` - MapCanvas, ContextMenu, SelectionBox, LassoSelection
-- `src/components/Sidebar/*` - All 9 panels (Tools, Layers, Classify, etc.)
-- `src/components/BottomBar/*` - Status bar
+- `src/components/Sidebar/*` - All 6 tab panels (Tools, Layers, Classify, Validate, ROR, Stats)
+- `src/components/BottomBar/*` - Status bar with mode hints and actions
 - `src/components/Dialogs/*` - Export, Restore dialogs
-- `src/hooks/*` - All 11 existing stores (usePolygonStore, useSelectionStore, etc.)
-- `src/utils/*` - All utilities
+- `src/hooks/*` - All 9 existing stores
+- `src/utils/*` - All utilities (export, topology, accuracy, etc.)
+
+---
+
+## Existing Map Editor Features (Must Remain Working)
+
+This section documents ALL existing features that must continue to work after the UI redesign. Use this as a testing checklist.
+
+### Editing Tools (4 Modes)
+
+| Mode | Shortcut | Features |
+|------|----------|----------|
+| **Select (V)** | V | Click to select, Shift+click to add, Ctrl/Cmd+click to toggle, drag for box select, click empty to clear |
+| **Draw (N)** | N | Click to add vertices, double-click to finish, Escape to cancel, minimum 3 vertices, live preview |
+| **Edit Vertices (E)** | E | Drag vertices to move, right-click to delete vertex (min 3), click edge to add vertex, Escape to finish |
+| **Split (S)** | S | Draw line across polygon, double-click/Enter to cut, red dashed preview, Escape to cancel |
+
+### Selection Operations
+
+| Action | Shortcut | Requirement | Behavior |
+|--------|----------|-------------|----------|
+| Delete | D | 1+ selected | Removes selected parcels, confirmation if >5 |
+| Merge | M | 2+ selected | Combines into one polygon using Turf.js union |
+| Edit Vertices | E | 1 selected | Enters edit-vertices mode |
+| Split | S | 1 selected | Enters split mode |
+
+### Undo/Redo System
+
+| Feature | Details |
+|---------|---------|
+| Stack Size | 100 actions max |
+| Undo | Z or Ctrl+Z |
+| Redo | Shift+Z or Ctrl+Shift+Z |
+| Tracked Actions | Add, Delete, Merge, Split, Edit vertices, Change type |
+
+### Data Sources (Radio Selection in Layers Tab)
+
+| Source | Editable | Description |
+|--------|----------|-------------|
+| Working Layer | ✅ Yes | User's edits, persists to localStorage |
+| SAM AI Output | ❌ No | 12,032 AI-detected parcels |
+| Ground Truth | ❌ No | 105 reference parcels |
+
+### Base Layers & Overlays (Checkboxes in Layers Tab)
+
+| Layer | Default | Description |
+|-------|---------|-------------|
+| ORI Tiles | ON | Local drone imagery (zoom 14-20) |
+| Google Satellite | ON | Global satellite fallback (zoom 0-21) |
+| Show Polygons | ON | Parcel boundary visibility |
+| Ground Truth Overlay | OFF | Dashed red lines showing reference parcels |
+| Conflict Highlighting | OFF | Color parcels by area deviation (green/yellow/red) |
+
+### Area Filter (Layers Tab)
+
+| Feature | Details |
+|---------|---------|
+| Slider Range | 0-1000 m² |
+| Presets | All, 10m², 50m², 100m², 500m² |
+| Display | "Hiding X parcels" count |
+| Stats | Smallest, Median, Largest area values |
+
+### Parcel Classification (8 Types)
+
+| # | Type | Shortcut | Color |
+|---|------|----------|-------|
+| 1 | Agricultural | 1 | Orange |
+| 2 | Gramakantam | 2 | Yellow |
+| 3 | Building | 3 | Red |
+| 4 | Road | 4 | Gray |
+| 5 | Water Body | 5 | Blue |
+| 6 | Open Space | 6 | Green |
+| 7 | Compound | 7 | Purple |
+| 8 | Government Land | 8 | Teal |
+| 0 | Unclassified | 0 | Default |
+
+### Parcel Type Visibility (Layers Tab)
+
+- Toggle visibility for each of 8 types independently
+- "All" / "None" quick buttons
+- Count of parcels per type displayed
+
+### Validation Features (Validate Tab)
+
+**Topology Validation:**
+- Run topology check button
+- Detects overlaps and gaps
+- Auto-fix for fixable errors
+- Clickable error list (zooms to location)
+- Green/red status indicator
+
+**Area Comparison (when parcel selected):**
+- SAM area vs ROR expected area
+- Difference percentage and absolute
+- Match quality badge (Excellent/Good/Fair/Poor)
+- LP number match display
+
+**Accuracy Metrics:**
+- Overall IoU score vs ground truth (target ≥85%)
+- Matched/unmatched parcel counts
+- "Parcels Needing Review" list (top 20)
+- Export accuracy report as text file
+
+### ROR Features (ROR Tab)
+
+| Feature | Details |
+|---------|---------|
+| Load ROR | File upload (XLSX format) |
+| Auto-load | Nibhanupudi ROR on startup |
+| Search | By LP#, Survey#, Land Type |
+| Display | LP number, extent, land type, survey number |
+| Stats | Total records count, total area |
+
+### Statistics Panel (Stats Tab)
+
+| Section | Content |
+|---------|---------|
+| Overview | Total parcel count, Total area (ha/m²) |
+| Area Distribution | Min, Avg, Median, Max |
+| By Parcel Type | Colored bar chart with count, %, area per type |
+
+### Export Features
+
+**Shapefile Export:**
+- Format: ESRI Shapefile (.zip with .shp, .shx, .dbf, .prj)
+- CRS: UTM Zone 44N (EPSG:32644)
+- Pre-export topology validation
+- Export with warnings option
+
+**Accuracy Report:**
+- Text file with metrics summary
+- Priority review list by lowest IoU
+
+### Auto-Save & Session Persistence
+
+| Feature | Details |
+|---------|---------|
+| Auto-save interval | Every 30 seconds |
+| Storage | Browser localStorage |
+| Saved indicator | "Saved ✓" pulse in sidebar header |
+| Restore dialog | Shown on reload if previous session exists |
+| Persisted data | Parcels + undo/redo history |
+
+### Keyboard Shortcuts (Complete Reference)
+
+**Mode Selection:**
+| Key | Action |
+|-----|--------|
+| V | Select mode |
+| N | Draw mode |
+| E | Edit vertices mode (1 parcel) |
+| S | Split mode (1 parcel) |
+
+**Actions:**
+| Key | Action |
+|-----|--------|
+| D or Delete | Delete selected |
+| M | Merge selected (2+) |
+| Z | Quick undo |
+| Ctrl/Cmd+Z | Undo |
+| Ctrl/Cmd+Shift+Z | Redo |
+| Ctrl/Cmd+A | Select all visible |
+| Escape | Cancel/clear selection |
+
+**Classification:**
+| Key | Type |
+|-----|------|
+| 1 | Agricultural |
+| 2 | Gramakantam |
+| 3 | Building |
+| 4 | Road |
+| 5 | Water Body |
+| 6 | Open Space |
+| 7 | Compound |
+| 8 | Government Land |
+| 0 | Unclassified |
+
+### Map Interactions
+
+**Mouse:**
+- Hover: Visual highlight + pointer cursor
+- Click: Select polygon
+- Shift+Click: Add to selection
+- Ctrl/Cmd+Click: Toggle selection
+- Double-click (draw mode): Finish polygon
+- Drag (empty area): Pan map
+- Scroll: Zoom
+
+**Right-Click Context Menu:**
+
+*On empty space:*
+- Draw New Polygon
+- Select All
+- Fit to Extent
+
+*On single parcel:*
+- Select / Add to Selection
+- Zoom to Parcel
+- Edit Vertices
+- Split
+- Delete
+
+*On multiple selected:*
+- Merge N Polygons
+- Zoom to Selection
+- Delete N Polygons
+
+### Bottom Bar Components
+
+| Component | Content |
+|-----------|---------|
+| Mode Badge | Colored pill: SELECT (blue), DRAW (green), EDIT (purple), SPLIT (orange) |
+| Hint Text | Context-sensitive instructions for current mode |
+| Selection Info | "Selected: X parcels • Y.Z m²" |
+| Action Buttons | Delete, Merge, Split, Edit (shown contextually) |
+
+### Visual Feedback
+
+| State | Visual |
+|-------|--------|
+| Parcel hover | Lighter fill, pointer cursor |
+| Parcel selected | Cyan border (3px), lighter fill |
+| Vertex handles | White circles on boundary |
+| Vertex hover | Larger handle, move cursor |
+| Drawing preview | Dashed line following cursor |
+| Split line | Red dashed line |
+
+### State Management (9 Zustand Stores)
+
+| Store | Purpose |
+|-------|---------|
+| usePolygonStore | Parcel data, CRUD, merge/split |
+| useModeStore | Current editing mode |
+| useSelectionStore | Selected/hovered polygon IDs |
+| useLayerStore | Layer visibility, data source, filters |
+| useDrawingStore | Drawing state and vertices |
+| useEditingStore | Vertex editing state |
+| useSplitStore | Split line state |
+| useHistoryStore | Undo/redo stacks |
+| useRORStore | Record of Rights data |
+
+### Integration Notes for MapEditorScreen
+
+When wrapping the existing editor in MapEditorScreen:
+
+1. **Do NOT modify** any existing component functionality
+2. **EditorHeader** is NEW - adds back button, village name, save status, user menu
+3. **Sidebar header** currently shows "Saved ✓" - this moves to EditorHeader
+4. **Data loading** currently in App.tsx - moves to MapEditorScreen
+5. **All keyboard shortcuts** must continue working (not intercepted by new components)
+6. **Auto-save** continues to work with localStorage
+7. **Session restore dialog** still appears when applicable
+
+---
+
+## Map Editor Verification Checklist
+
+After implementing the new UI, verify ALL these features work:
+
+### Tools
+- [ ] Select mode (V) - click, shift+click, ctrl+click, box select
+- [ ] Draw mode (N) - click vertices, double-click finish, escape cancel
+- [ ] Edit vertices mode (E) - drag vertices, add on edge, delete vertex
+- [ ] Split mode (S) - draw line, double-click to cut
+
+### Operations
+- [ ] Delete (D) - single and multiple, confirmation for >5
+- [ ] Merge (M) - combines 2+ polygons
+- [ ] Undo (Z, Ctrl+Z) - reverts last action
+- [ ] Redo (Shift+Z) - restores undone action
+
+### Data Sources
+- [ ] Working Layer - editable, persists
+- [ ] SAM AI Output - loads 12,032 parcels
+- [ ] Ground Truth - loads 105 parcels
+
+### Layers
+- [ ] ORI Tiles - drone imagery shows at zoom 14+
+- [ ] Google Satellite - shows as fallback
+- [ ] Show Polygons toggle - hides/shows all parcels
+- [ ] Ground Truth Overlay - dashed red lines
+- [ ] Conflict Highlighting - green/yellow/red coloring
+
+### Area Filter
+- [ ] Slider changes threshold
+- [ ] Preset buttons work
+- [ ] "Hiding X parcels" updates
+- [ ] Stats display correctly
+
+### Classification
+- [ ] All 8 type buttons work
+- [ ] Keyboard shortcuts 1-8 work
+- [ ] Type visibility toggles work
+- [ ] All/None buttons work
+
+### Validation
+- [ ] Topology check runs and shows results
+- [ ] Auto-fix works for fixable errors
+- [ ] Area comparison shows when parcel selected
+- [ ] Accuracy metrics calculate vs ground truth
+
+### ROR
+- [ ] Auto-loads Nibhanupudi ROR
+- [ ] Search filters records
+- [ ] Click record highlights it
+
+### Stats
+- [ ] Total parcels and area correct
+- [ ] Area distribution shows
+- [ ] Type bar chart renders
+
+### Export
+- [ ] Shapefile export downloads .zip
+- [ ] Pre-export validation runs
+
+### Auto-Save
+- [ ] Saves every 30 seconds
+- [ ] "Saved ✓" indicator shows
+- [ ] Session restore dialog appears on reload
+
+### Context Menu
+- [ ] Right-click on empty space shows options
+- [ ] Right-click on parcel shows options
+- [ ] Right-click on multi-selection shows merge option
+
+### Keyboard Shortcuts
+- [ ] All mode shortcuts (V, N, E, S)
+- [ ] All action shortcuts (D, M, Z, Escape)
+- [ ] All classification shortcuts (0-8)
+- [ ] Ctrl+A selects all
 
 ---
 
