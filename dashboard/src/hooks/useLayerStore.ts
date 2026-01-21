@@ -25,6 +25,9 @@ interface LayerState {
   // Conflict highlighting toggle (color by area mismatch)
   showConflictHighlighting: boolean;
 
+  // Minimum area filter (in square meters, 0 = show all)
+  minAreaThreshold: number;
+
   // Parcel type filter (which types are visible)
   visibleParcelTypes: Set<string>;
 
@@ -35,6 +38,7 @@ interface LayerState {
   setShowGroundTruthOverlay: (show: boolean) => void;
   setShowPolygons: (show: boolean) => void;
   setShowConflictHighlighting: (show: boolean) => void;
+  setMinAreaThreshold: (area: number) => void;
   setVisibleParcelTypes: (types: Set<string>) => void;
   toggleParcelType: (type: string) => void;
 }
@@ -56,6 +60,9 @@ export const useLayerStore = create<LayerState>((set) => ({
   // Conflict highlighting off by default
   showConflictHighlighting: false,
 
+  // No area filter by default
+  minAreaThreshold: 0,
+
   // All parcel types visible by default
   visibleParcelTypes: new Set([
     'agricultural',
@@ -76,6 +83,7 @@ export const useLayerStore = create<LayerState>((set) => ({
   setShowGroundTruthOverlay: (show) => set({ showGroundTruthOverlay: show }),
   setShowPolygons: (show) => set({ showPolygons: show }),
   setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
+  setMinAreaThreshold: (area) => set({ minAreaThreshold: area }),
   setVisibleParcelTypes: (types) => set({ visibleParcelTypes: types }),
   toggleParcelType: (type) =>
     set((state) => {
