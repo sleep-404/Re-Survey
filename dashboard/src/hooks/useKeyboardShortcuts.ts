@@ -6,7 +6,7 @@ import { useHistoryStore, createDeleteAction, createChangeTypeAction, createMerg
 import { useDrawingStore } from './useDrawingStore';
 import { useSplitStore } from './useSplitStore';
 import { getParcelTypeByShortcut } from '../constants/parcelTypes';
-import { union } from '@turf/turf';
+import { union, featureCollection } from '@turf/turf';
 import type { ParcelFeature } from '../types';
 
 export function useKeyboardShortcuts() {
@@ -75,16 +75,14 @@ export function useKeyboardShortcuts() {
 
             try {
               // Merge all selected polygons using turf union
-              let mergedGeometry = parcelsToMerge[0];
-              for (let i = 1; i < parcelsToMerge.length; i++) {
-                const result = union(mergedGeometry, parcelsToMerge[i]);
-                if (result) {
-                  mergedGeometry = result as unknown as ParcelFeature;
-                }
-              }
+              const mergedResult = union(featureCollection(
+                parcelsToMerge.map(p => ({
+                  type: 'Feature' as const,
+                  properties: {},
+                  geometry: p.geometry,
+                }))
+              ));
 
-              // Handle the merged result
-              const mergedResult = mergedGeometry as GeoJSON.Feature;
               if (!mergedResult || !mergedResult.geometry) {
                 alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
                 return;

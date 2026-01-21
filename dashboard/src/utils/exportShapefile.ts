@@ -40,26 +40,25 @@ export async function exportShapefile(
   }
 
   // Transform features to UTM coordinates and prepare properties
-  const transformedFeatures = parcels.map((parcel) => {
-    if (parcel.geometry.type !== 'Polygon') {
-      console.warn(`Skipping non-polygon feature: ${parcel.properties.id}`);
-      return null;
-    }
+  const transformedFeatures = parcels
+    .filter((parcel) => parcel.geometry.type === 'Polygon')
+    .map((parcel) => {
+      // Type assertion since we've filtered above
+      const polygonGeom = parcel.geometry as { type: 'Polygon'; coordinates: number[][][] };
 
-    return {
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: transformPolygon(parcel.geometry.coordinates),
-      },
-      properties: {
-        id: parcel.properties.id,
-        parcelType: parcel.properties.parcelType,
-        area: parcel.properties.area || 0,
-        originalId: parcel.properties.originalId || '',
-      },
-    };
-  }).filter(Boolean);
+      return {
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: transformPolygon(polygonGeom.coordinates),
+        },
+        properties: {
+          id: parcel.properties.id,
+          parcelType: parcel.properties.parcelType,
+          area: parcel.properties.area || 0,
+        },
+      };
+    });
 
   // Create GeoJSON FeatureCollection
   const geojson = {

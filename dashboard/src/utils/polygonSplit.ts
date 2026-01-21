@@ -1,4 +1,4 @@
-import { polygon, lineString, buffer, difference, booleanPointInPolygon, point, centroid } from '@turf/turf';
+import { polygon, lineString, buffer, difference, booleanPointInPolygon, point, featureCollection } from '@turf/turf';
 import type { Position } from 'geojson';
 import type { ParcelFeature } from '../types';
 
@@ -33,9 +33,9 @@ export function polygonSplit(
     const originalPolygon = polygon(parcel.geometry.coordinates);
 
     // Calculate the "difference" - this gives us one side
-    const side1 = difference(originalPolygon, bufferedLine);
+    const side1 = difference(featureCollection([originalPolygon, bufferedLine]));
 
-    if (!side1 || side1.geometry.type === 'Point' || side1.geometry.type === 'LineString') {
+    if (!side1) {
       console.error('Split resulted in invalid geometry');
       return null;
     }
