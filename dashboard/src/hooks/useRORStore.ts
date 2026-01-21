@@ -93,27 +93,71 @@ export const useRORStore = create<RORStore>((set, get) => ({
   // Load from URL (for pre-bundled data)
   loadFromUrl: async (url: string) => {
     set({ isLoading: true, error: null });
+    console.log('[ROR] Starting load from URL:', url);
 
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
 
       const arrayBuffer = await response.arrayBuffer();
+      console.log('[ROR] Fetched', arrayBuffer.byteLength, 'bytes');
+
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const records: RORRecord[] = [];
-      for (const row of jsonData) {
-        const record = parseRow(row);
-        if (record) records.push(record);
+      // Parse as raw arrays to handle the header structure
+      const rawData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      console.log('[ROR] Parsed', rawData.length, 'rows');
+
+      // Find the header row (contains "LP" somewhere)
+      let headerRowIndex = -1;
+      for (let i = 0; i < Math.min(10, rawData.length); i++) {
+        const row = rawData[i];
+        if (row && row.some((cell: any) => String(cell).includes('LP') && String(cell).includes('Number'))) {
+          headerRowIndex = i;
+          break;
+        }
       }
 
+      if (headerRowIndex === -1) {
+        throw new Error('Could not find header row with LP Number column');
+      }
+
+      const headers = rawData[headerRowIndex];
+      console.log('[ROR] Found headers at row', headerRowIndex, ':', headers.slice(0, 5));
+
+      // Find column indices
+      const lpNumberCol = headers.findIndex((h: any) => String(h).includes('LP') && String(h).includes('Number'));
+      const extentCol = headers.findIndex((h: any) => String(h).includes('Extent'));
+      const ulpinCol = headers.findIndex((h: any) => String(h).toUpperCase().includes('ULPIN'));
+
+      console.log('[ROR] Column indices - LP:', lpNumberCol, 'Extent:', extentCol, 'ULPIN:', ulpinCol);
+
+      // Parse data rows (skip header and any sub-header rows)
+      const records: RORRecord[] = [];
+      for (let i = headerRowIndex + 2; i < rawData.length; i++) {
+        const row = rawData[i];
+        if (!row || row.length === 0) continue;
+
+        const lpNumber = parseInt(row[lpNumberCol]);
+        const extentAcres = parseFloat(row[extentCol]);
+
+        if (isNaN(lpNumber) || lpNumber <= 0 || isNaN(extentAcres)) continue;
+
+        records.push({
+          lpNumber,
+          extentAcres,
+          extentHectares: acresToHectares(extentAcres),
+          extentSqm: acresToSqm(extentAcres),
+          ulpin: ulpinCol >= 0 ? String(row[ulpinCol] || '') : undefined,
+        });
+      }
+
+      console.log('[ROR] Parsed', records.length, 'valid records');
       set({ records, isLoading: false });
-      console.log(`Loaded ${records.length} ROR records from URL`);
     } catch (err) {
-      console.error('Error loading ROR from URL:', err);
+      console.error('[ROR] Error loading from URL:', err);
       set({ error: err instanceof Error ? err.message : 'Failed to load ROR data', isLoading: false });
     }
   },
