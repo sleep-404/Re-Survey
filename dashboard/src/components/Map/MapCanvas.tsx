@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { Map, MapMouseEvent, GeoJSONSource } from 'maplibre-gl';
+import type { FeatureCollection } from 'geojson';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useModeStore } from '../../hooks/useModeStore';
@@ -8,6 +9,7 @@ import { useDrawingStore } from '../../hooks/useDrawingStore';
 import { useEditingStore } from '../../hooks/useEditingStore';
 import { useSplitStore } from '../../hooks/useSplitStore';
 import { useHistoryStore, createAddAction, createEditVerticesAction, createSplitAction } from '../../hooks/useHistoryStore';
+import { useLayerStore } from '../../hooks/useLayerStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
 import { polygonSplit } from '../../utils/polygonSplit';
 import type { ParcelFeature } from '../../types';
@@ -50,6 +52,11 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
   } = useSplitStore();
   const { pushAction } = useHistoryStore();
   const [cursorPosition, setCursorPosition] = useState<[number, number] | null>(null);
+  const [groundTruthData, setGroundTruthData] = useState<FeatureCollection | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Get layer visibility from store
+  const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons } = useLayerStore();
 
   // Initialize map
   useEffect(() => {
@@ -85,12 +92,12 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
           },
         },
         layers: [
-          // Background color fallback
+          // Background color fallback (dark color for areas with no tiles)
           {
             id: 'background',
             type: 'background',
             paint: {
-              'background-color': '#1a1a2e',
+              'background-color': '#2d3748',
             },
           },
           {
@@ -329,6 +336,38 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         },
         filter: ['==', '$type', 'Point'],
       });
+
+      // Ground truth overlay source (starts empty, populated when toggled)
+      map.current.addSource('ground-truth-overlay', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Ground truth fill (very subtle)
+      map.current.addLayer({
+        id: 'ground-truth-fill',
+        type: 'fill',
+        source: 'ground-truth-overlay',
+        paint: {
+          'fill-color': '#ef4444',
+          'fill-opacity': 0.05,
+        },
+      });
+
+      // Ground truth border (dashed red lines)
+      map.current.addLayer({
+        id: 'ground-truth-border',
+        type: 'line',
+        source: 'ground-truth-overlay',
+        paint: {
+          'line-color': '#ef4444',
+          'line-width': 3,
+          'line-dasharray': [4, 2],
+        },
+      });
+
+      // Mark map as loaded
+      setMapLoaded(true);
     });
 
     // Cleanup on unmount
@@ -339,6 +378,68 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
       }
     };
   }, []);
+
+  // Load ground truth data on mount
+  useEffect(() => {
+    fetch('/data/ground_truth.geojson')
+      .then((res) => res.json())
+      .then((data: FeatureCollection) => {
+        console.log(`Loaded ${data.features.length} ground truth features`);
+        setGroundTruthData(data);
+      })
+      .catch((err) => console.warn('Failed to load ground truth:', err));
+  }, []);
+
+  // Update ground truth overlay when toggle changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('ground-truth-overlay') as GeoJSONSource;
+    if (!source) return;
+
+    if (showGroundTruthOverlay && groundTruthData) {
+      source.setData(groundTruthData);
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }, [showGroundTruthOverlay, groundTruthData, mapLoaded]);
+
+  // Control base tile layer visibility
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // ORI tiles layer
+    if (map.current.getLayer('ori-layer')) {
+      map.current.setLayoutProperty(
+        'ori-layer',
+        'visibility',
+        showOriTiles ? 'visible' : 'none'
+      );
+    }
+
+    // Google satellite layer
+    if (map.current.getLayer('satellite-layer')) {
+      map.current.setLayoutProperty(
+        'satellite-layer',
+        'visibility',
+        showSatellite ? 'visible' : 'none'
+      );
+    }
+  }, [showOriTiles, showSatellite, mapLoaded]);
+
+  // Control polygon layer visibility
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const visibility = showPolygons ? 'visible' : 'none';
+
+    if (map.current.getLayer('parcels-fill')) {
+      map.current.setLayoutProperty('parcels-fill', 'visibility', visibility);
+    }
+    if (map.current.getLayer('parcels-border')) {
+      map.current.setLayoutProperty('parcels-border', 'visibility', visibility);
+    }
+  }, [showPolygons, mapLoaded]);
 
   // Update parcels data when it changes
   useEffect(() => {
