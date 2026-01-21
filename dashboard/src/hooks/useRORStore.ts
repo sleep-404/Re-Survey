@@ -19,17 +19,33 @@ const acresToHectares = (acres: number) => acres * 0.404686;
 const acresToSqm = (acres: number) => acres * 4046.86;
 
 // Parse XLSX row to RORRecord
+// The XLSX has mixed Telugu/English headers with newlines
 function parseRow(row: any): RORRecord | null {
-  // Try different column name variations
-  const lpNumber = row['LP Number'] || row['lp_no'] || row['LP_Number'] || row['lpNumber'];
-  const extentAcres = row['LP Extent'] || row['extent_ac'] || row['LP_Extent'] || row['Extent (Acres)'];
+  // Try different column name variations - including newlines and mixed formats
+  const lpNumber =
+    row['LP Number'] ||
+    row['LP\nNumber'] ||
+    row['lp_no'] ||
+    row['LP_Number'] ||
+    row['lpNumber'];
+
+  const extentAcres =
+    row['LP Extent'] ||
+    row['L.P Extent (Acres-Cents)'] ||
+    row['extent_ac'] ||
+    row['LP_Extent'] ||
+    row['Extent (Acres)'];
 
   if (!lpNumber || !extentAcres) return null;
+
+  // Skip header rows (non-numeric LP numbers)
+  const lpNum = parseInt(lpNumber);
+  if (isNaN(lpNum) || lpNum <= 0) return null;
 
   const acres = parseFloat(extentAcres) || 0;
 
   return {
-    lpNumber: parseInt(lpNumber) || 0,
+    lpNumber: lpNum,
     extentAcres: acres,
     extentHectares: acresToHectares(acres),
     extentSqm: acresToSqm(acres),
