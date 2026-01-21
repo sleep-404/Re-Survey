@@ -3,9 +3,89 @@
 ## Project Context
 
 **Application Name:** BoundaryAI - Land Parcel Boundary Editor
-**Target Users:** Government Survey Officers, Revenue Department Officials
+**Department:** Andhra Pradesh Survey & Land Records Department
 **Purpose:** AI-assisted land parcel boundary verification and editing for Andhra Pradesh Re-Survey Project
 **Tech Stack:** React + TypeScript + MapLibre GL JS + Tailwind CSS
+
+---
+
+## Target Users: Government Officials
+
+This application is designed exclusively for **Government of Andhra Pradesh employees** working on the statewide land resurvey project. The UI must reflect the formal, professional nature of government work while being efficient for field operations.
+
+### User Roles & Hierarchy
+
+| Role | Responsibility | System Access |
+|------|----------------|---------------|
+| **Village Surveyor** | Primary user - digitizes parcels from ORI, conducts ground truthing | Full editing access |
+| **Mandal Surveyor** | Reviews 20% of surveyor work, approves corrections | Review + Edit access |
+| **District Inspector (DIA)** | Reviews 10% of data, quality assurance | Review access |
+| **District Surveyor (DSL)** | Reviews 5% of data, final district-level check | Review access |
+| **VRO (Village Revenue Officer)** | Uploads classification data, links LP numbers | Data entry access |
+| **Tahsildar** | Approves parcel data before draft publication | Approval access |
+| **RDO (Revenue Divisional Officer)** | Verification and corrections authority | Admin access |
+| **Joint Collector** | Final approval before 30-notification | Final approval |
+
+### Key Government Requirements
+
+1. **Audit Trail** - All actions must be logged and traceable
+2. **Role-Based Access** - Different permissions per user role
+3. **Official Branding** - AP Government and Survey Department logos
+4. **Data Security** - Sensitive land records must be protected
+5. **Offline Capability** - Field surveyors may have limited connectivity
+
+---
+
+## Use Case: Resurvey Problem Statement
+
+### The Challenge
+
+The AP Resurvey project involves digitizing **16,816 villages** covering **1.26 lakh sq km**. Currently:
+- Manual digitization of land parcels from Ortho-Rectified Images (ORI)
+- Time-consuming ground truthing with GNSS rovers
+- Manual conflict detection (overlaps, gaps)
+- 20%/10%/5% manual review hierarchy
+
+### AI Opportunity
+
+The SAM (Segment Anything Model) can automatically detect parcel boundaries from ORI images, but produces:
+
+#### Over-Segmentation (Too Many Parcels)
+- **Problem**: AI detects false bunds, irrigation channels, or shadows as boundaries
+- **Result**: Single parcel split into multiple fragments
+- **Solution**: **MERGE tool** - Officers combine fragments back into single parcel
+- **UI Need**: Quick multi-select + one-click merge
+
+#### Under-Segmentation (Too Few Parcels)
+- **Problem**: AI misses faint bunds or merges adjacent parcels
+- **Result**: Multiple parcels shown as one large polygon
+- **Solution**: **SPLIT tool** - Officers draw line to divide parcel
+- **UI Need**: Intuitive split line drawing with snapping
+
+### Success Criteria
+
+From the hackathon requirements:
+- **85% accuracy** when benchmarked against manual audits
+- **No topology errors**: Zero overlaps, zero gaps between parcels
+- **Common boundaries**: Adjacent parcels must share exact boundary line
+- **Field-ready validation**: Prioritized review lists for ground truthing teams
+
+---
+
+## Land Parcel Classifications
+
+As specified in the resurvey requirements, the tool must support these land types:
+
+| Type | Color | Description | Use Case |
+|------|-------|-------------|----------|
+| **Agricultural** | Orange | Farm land with visible bunds | Primary resurvey target |
+| **Gramakantam** | Yellow | Abadi/habitation area outer boundary | Village settlement boundary |
+| **Building** | Red | Building footprint (Swamitva program) | Individual structure polygon |
+| **Compound** | Purple | Compound wall boundary | Property enclosure |
+| **Road** | Gray | Road polygon (double-line, not centerline) | Infrastructure |
+| **Water Body** | Blue | Tank, pond, canal, stream | Natural features |
+| **Open Space** | Green | Open space within Gramakantam | Parks, vacant plots |
+| **Government Land** | Teal | Government-owned parcel | Public property |
 
 ---
 
@@ -352,11 +432,26 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
 - Current land type classification
 - Dropdown to change type (with color swatches)
 
-**Panel 5: Area Comparison**
-- Side-by-side comparison: SAM area vs ROR (Record of Rights) area
-- Difference in m² and percentage
-- Visual progress bar indicating match quality
-- Color-coded: Green (excellent), Yellow (fair), Red (poor)
+**Panel 5: Area Comparison (ROR Integration)**
+
+This panel is critical for validating AI-detected parcels against official land records.
+
+- **ROR Data**: Record of Rights from WebLand database
+- **LP Number**: Land Parcel unique identifier assigned during resurvey
+- **Comparison**: SAM-detected area vs ROR-recorded area
+- **Tolerance**: ±5% is permissible (as per department guidelines)
+- **Visual indicator**: Progress bar showing match quality
+
+| Match Quality | Color | Criteria |
+|---------------|-------|----------|
+| Excellent | Green | Within 5% of ROR area |
+| Fair | Yellow | 5-15% deviation |
+| Poor | Red | >15% deviation - needs field verification |
+
+**Why this matters**: Area mismatches indicate either:
+1. **Over-segmentation**: AI split one parcel into many (total AI area > ROR area)
+2. **Under-segmentation**: AI merged parcels (AI area > individual ROR areas)
+3. **Boundary error**: Need ground truthing with GNSS rover
 
 **Panel 6: Topology Validation** (in Validate tab)
 - "Validate" button to check for topology errors
@@ -370,18 +465,24 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
 - Total overlap/gap area summary
 
 **Panel 7: Accuracy Metrics** (in Validate tab)
+
+**CRITICAL**: The hackathon success criteria requires **85% accuracy** when benchmarked against manual audits.
+
 - Ground truth status: loaded/not loaded with polygon count
-- "Calculate" button to compute IoU metrics
-- Overall IoU score (large display) with 85% target threshold
-- Color-coded pass/fail based on target
+- "Calculate" button to compute IoU (Intersection over Union) metrics
+- **Overall IoU score** (large, prominent display)
+  - Target: ≥85% (PASS - green background)
+  - Below target: <85% (FAIL - red background)
 - Statistics grid:
-  - Matched count
-  - Unmatched count
-  - Above 85% count
-  - Below 85% count
-- "Parcels Needing Review" list (sorted by lowest IoU)
-- "Export List" button for priority review report
-- Click parcel to zoom to location
+  - Matched parcels (AI polygon matched to ground truth)
+  - Unmatched parcels (no corresponding ground truth)
+  - Above 85% threshold count
+  - Below 85% threshold count
+- **"Parcels Needing Review"** list - prioritized for field teams
+  - Sorted by lowest IoU first (worst matches at top)
+  - Click to zoom to parcel location
+  - Shows parcel ID and IoU percentage
+- "Export Priority List" button - generates report for Mandal Surveyor review
 
 **Panel 8: Min Area Filter** (in Layers tab)
 - Slider: 0 to 1000 m² threshold
@@ -696,6 +797,7 @@ Triggered when clicking "Export Shapefile" button.
 - "Export Anyway" button (yellow) for exporting with errors
 - "Export" button (blue) for clean export
 - Download as ZIP file containing .shp, .shx, .dbf, .prj
+- **Output CRS**: EPSG:32644 (UTM Zone 44N) - standard for AP Survey
 
 #### Restore Session Dialog
 Shown on page load if unsaved session exists.
@@ -745,10 +847,53 @@ Shown when deleting 5+ parcels.
 
 ---
 
+## Government Review Workflow
+
+The tool must support the hierarchical review process mandated by the AP Survey Department:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    RESURVEY APPROVAL WORKFLOW                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐        │
+│  │   SURVEYOR   │ ──▶ │   MANDAL     │ ──▶ │    DIA       │        │
+│  │  (Creates)   │     │   SURVEYOR   │     │  (Reviews    │        │
+│  │              │     │ (20% Check)  │     │   10%)       │        │
+│  └──────────────┘     └──────────────┘     └──────────────┘        │
+│                                                    │                 │
+│                                                    ▼                 │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐        │
+│  │    JOINT     │ ◀── │     RDO      │ ◀── │    DSL       │        │
+│  │  COLLECTOR   │     │ (Verifies)   │     │ (5% Review)  │        │
+│  │  (Approves)  │     │              │     │              │        │
+│  └──────────────┘     └──────────────┘     └──────────────┘        │
+│         │                                                            │
+│         ▼                                                            │
+│  ┌──────────────┐                                                   │
+│  │  SECTION 30  │  ──▶  FINAL LAND REGISTER                         │
+│  │ NOTIFICATION │                                                   │
+│  └──────────────┘                                                   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Workflow Features
+
+1. **Progress Tracking**: Show village completion status across the hierarchy
+2. **Review Queue**: Mandal Surveyors see list of villages pending their 20% review
+3. **Audit Log**: Every edit is logged with user ID, timestamp, and action
+4. **Escalation**: Flag parcels with issues for higher-level review
+5. **Approval Status**: Visual indicators for each approval stage
+
+---
+
 ## Screen 4: Review Summary
 
 ### Purpose
-Final review before submission, showing validation results and export options.
+Final review before submission to Mandal Surveyor, showing validation results and export options.
+
+**Note**: This screen is critical for the government workflow. The Village Surveyor must verify all quality checks pass before submitting for the 20% review.
 
 ### Layout
 ```
