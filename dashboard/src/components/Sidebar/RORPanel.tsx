@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRORStore } from '../../hooks/useRORStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import type { RORRecord } from '../../types/ror';
@@ -23,10 +23,12 @@ export function RORPanel({ onSelectParcel }: RORPanelProps) {
 
   const { parcels } = usePolygonStore();
   const [showUpload, setShowUpload] = useState(false);
+  const hasAttemptedLoad = useRef(false);
 
-  // Auto-load Nibanupudi ROR on mount
+  // Auto-load Nibanupudi ROR on mount (only once)
   useEffect(() => {
-    if (records.length === 0 && !isLoading) {
+    if (!hasAttemptedLoad.current && records.length === 0 && !isLoading) {
+      hasAttemptedLoad.current = true;
       loadFromUrl('/data/Nibhanupudi-annonymized ROR.xlsx').catch(() => {
         // If URL fails, user can upload manually
         console.log('ROR file not found at default location');
