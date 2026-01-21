@@ -2,8 +2,13 @@ import { useState } from 'react';
 import { ToolPanel } from './ToolPanel';
 import { LayerPanel } from './LayerPanel';
 import { ParcelTypePanel } from './ParcelTypePanel';
+import { TopologyPanel } from './TopologyPanel';
+import { AccuracyPanel } from './AccuracyPanel';
+import { RORPanel } from './RORPanel';
+import { ExportDialog } from '../Dialogs/ExportDialog';
+import { useAutoSave } from '../../hooks/useAutoSave';
 
-type TabId = 'tools' | 'layers' | 'classify';
+type TabId = 'tools' | 'layers' | 'classify' | 'validate' | 'ror';
 
 interface Tab {
   id: TabId;
@@ -14,6 +19,8 @@ const TABS: Tab[] = [
   { id: 'tools', label: 'Tools' },
   { id: 'layers', label: 'Layers' },
   { id: 'classify', label: 'Classify' },
+  { id: 'validate', label: 'Validate' },
+  { id: 'ror', label: 'ROR' },
 ];
 
 interface SidebarProps {
@@ -22,12 +29,19 @@ interface SidebarProps {
 
 export function Sidebar({ className = '' }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabId>('tools');
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const { showSavedIndicator } = useAutoSave();
 
   return (
     <div className={`flex h-full flex-col bg-gray-900 ${className}`}>
       {/* Header */}
       <div className="border-b border-gray-700 px-4 py-3">
-        <h1 className="text-lg font-semibold text-gray-100">BoundaryAI</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-gray-100">BoundaryAI</h1>
+          {showSavedIndicator && (
+            <span className="text-xs text-green-400 animate-pulse">Saved ✓</span>
+          )}
+        </div>
         <p className="text-xs text-gray-500">Land Parcel Editor</p>
       </div>
 
@@ -49,18 +63,34 @@ export function Sidebar({ className = '' }: SidebarProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === 'tools' && <ToolPanel />}
-        {activeTab === 'layers' && <LayerPanel />}
-        {activeTab === 'classify' && <ParcelTypePanel />}
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === 'tools' && <div className="p-4"><ToolPanel /></div>}
+        {activeTab === 'layers' && <div className="p-4"><LayerPanel /></div>}
+        {activeTab === 'classify' && <div className="p-4"><ParcelTypePanel /></div>}
+        {activeTab === 'validate' && (
+          <div>
+            <TopologyPanel />
+            <AccuracyPanel />
+          </div>
+        )}
+        {activeTab === 'ror' && <div className="p-4"><RORPanel /></div>}
       </div>
 
       {/* Footer */}
       <div className="border-t border-gray-700 p-3">
-        <button className="w-full rounded bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-700">
+        <button
+          onClick={() => setShowExportDialog(true)}
+          className="w-full rounded bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-700"
+        >
           Export Shapefile
         </button>
       </div>
+
+      {/* Export Dialog */}
+      <ExportDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+      />
     </div>
   );
 }
