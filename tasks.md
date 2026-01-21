@@ -1603,7 +1603,7 @@ git commit -m "feat: Add area comparison panel for ROR vs drawn area"
 
 ---
 
-## Task 7: Conflict Highlighting
+## Task 7: Conflict Highlighting ✅ DONE
 
 ### Goal
 Add visual highlighting on the map to show polygons with area mismatches. Color-code by difference percentage with a toggle in LayerPanel.
