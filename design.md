@@ -1,9 +1,12 @@
 # BoundaryAI - UI/UX Design Specification
 
+> **Design Rationale:** Every design decision is documented with reasoning in [`design-rationale.md`](./design-rationale.md)
+
 ## Overview
 
 **Application:** BoundaryAI - AI-Assisted Land Parcel Editor
 **Users:** Government Survey Officers (Andhra Pradesh Re-Survey Project)
+**Target Audience:** Non-technical government officials (demo jury)
 **Core Value:** AI auto-detects 12,000+ parcel boundaries from drone imagery. Officers verify, fix mistakes, and export. 10x faster than manual tracing.
 
 ---
@@ -30,6 +33,8 @@ Login → Dashboard (select village) → Map Editor (verify & edit) → Export
 ---
 
 ## Screen 1: Login
+
+**Theme:** Light (government portal convention)
 
 ### Purpose
 Simple, professional authentication with government branding. Establishes trust and authority.
@@ -94,6 +99,8 @@ Simple, professional authentication with government branding. Establishes trust 
 ---
 
 ## Screen 2: Dashboard
+
+**Theme:** Light (government portal convention)
 
 ### Purpose
 Village selection screen. Shows assigned villages with progress status. Provides at-a-glance overview of workload.
@@ -195,6 +202,8 @@ Each card displays:
 ---
 
 ## Screen 3: Map Editor (Core Interface)
+
+**Theme:** Dark (GIS application convention - reduces eye strain with satellite imagery)
 
 ### Purpose
 Full-featured parcel editing interface. This is where all real work happens. Officers verify AI boundaries, fix mistakes, classify land types, and export.
@@ -706,31 +715,40 @@ On load, offer to restore previous unsaved work.
 
 ## Color Palette
 
-### Primary Colors (Government-appropriate)
+> **Note:** See `design-rationale.md` for detailed reasoning behind each color choice.
+
+### Login & Dashboard (Light Theme)
+Government portal convention - light backgrounds convey trust and transparency.
 
 | Name | Hex | Usage |
 |------|-----|-------|
-| Primary Blue | #1e40af | Buttons, links, active states |
-| Primary Light | #3b82f6 | Hover states |
-| Cyan | #06b6d4 | Selection, highlights |
+| Background | #ffffff | Page background |
+| Surface | #f8fafc | Cards, form containers |
+| Border | #e2e8f0 | Input borders, dividers |
+| Text Primary | #1e293b | Main text (dark on light) |
+| Text Muted | #64748b | Secondary text, labels |
+| Primary Blue | #1e40af | Buttons, links |
+| Primary Hover | #1d4ed8 | Button hover state |
 
-### Semantic Colors
-
-| Name | Hex | Usage |
-|------|-----|-------|
-| Success | #059669 | Confirmations, good match |
-| Warning | #d97706 | Fair match, attention needed |
-| Error | #dc2626 | Poor match, errors |
-
-### UI Colors
+### Map Editor (Dark Theme)
+GIS convention - dark interface reduces eye strain when viewing satellite imagery.
 
 | Name | Hex | Usage |
 |------|-----|-------|
-| Background | #111827 | Sidebar background (dark) |
-| Surface | #1f2937 | Cards, panels |
+| Background | #111827 | Sidebar background |
+| Surface | #1f2937 | Panels, cards |
 | Border | #374151 | Dividers, borders |
-| Text Primary | #f3f4f6 | Main text (light) |
+| Text Primary | #f3f4f6 | Main text (light on dark) |
 | Text Muted | #9ca3af | Secondary text |
+| Accent | #06b6d4 | Selection highlights, active states |
+
+### Semantic Colors (Both Themes)
+
+| Name | Hex | Usage |
+|------|-----|-------|
+| Success | #059669 | Confirmations, good match, completed |
+| Warning | #d97706 | Fair match, attention needed |
+| Error | #dc2626 | Poor match, errors, required fields |
 
 ### Parcel Type Colors
 
@@ -757,15 +775,37 @@ On load, offer to restore previous unsaved work.
 
 ## Typography
 
+### Login & Dashboard (Light Theme)
+
 | Element | Size | Weight | Color |
 |---------|------|--------|-------|
-| App Title | 18px | 600 | White |
-| Tab Label | 14px | 500 | Gray/Cyan |
-| Section Header | 12px | 600 | Gray (uppercase) |
-| Body Text | 14px | 400 | Light gray |
-| Stat Value | 24px | 700 | Cyan |
-| Stat Label | 12px | 400 | Gray |
-| Button | 14px | 500 | White |
+| Page Title | 24px | 700 | #1e293b |
+| Section Header | 18px | 600 | #1e293b |
+| Card Title | 16px | 600 | #1e293b |
+| Body Text | 14px | 400 | #1e293b |
+| Muted Text | 14px | 400 | #64748b |
+| Button Text | 14px | 500 | #ffffff |
+
+### Map Editor (Dark Theme)
+
+| Element | Size | Weight | Color |
+|---------|------|--------|-------|
+| App Title | 18px | 600 | #f3f4f6 |
+| Tab Label | 14px | 500 | #9ca3af / #06b6d4 (active) |
+| Section Header | 12px | 600 | #9ca3af (uppercase) |
+| Body Text | 14px | 400 | #e5e7eb |
+| Stat Value | 24px | 700 | #06b6d4 |
+| Stat Label | 12px | 400 | #9ca3af |
+| Button Text | 14px | 500 | #ffffff |
+
+### Font Stack
+```css
+/* Latin text */
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+/* Telugu text */
+font-family: 'Noto Sans Telugu', sans-serif;
+```
 
 ---
 
