@@ -6,7 +6,8 @@ Land parcel boundary editing tool for Andhra Pradesh resurvey project. React + T
 ## Development Practices
 
 ### Commit Strategy
-- **Commit every file as you create or update it**
+- **Commit every file IMMEDIATELY after you create or update it** - DO NOT wait until the end
+- Never batch multiple file changes into one commit unless they are tightly coupled
 - Use descriptive commit messages following conventional commits:
   - `feat:` for new features
   - `fix:` for bug fixes
@@ -14,6 +15,7 @@ Land parcel boundary editing tool for Andhra Pradesh resurvey project. React + T
   - `docs:` for documentation
   - `chore:` for tooling/config changes
 - Keep commits atomic and focused
+- If implementing multiple tasks, commit after completing each task
 
 ### Code Style
 - TypeScript strict mode
