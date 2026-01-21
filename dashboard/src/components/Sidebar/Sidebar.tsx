@@ -4,6 +4,7 @@ import { LayerPanel } from './LayerPanel';
 import { ParcelTypePanel } from './ParcelTypePanel';
 import { TopologyPanel } from './TopologyPanel';
 import { AccuracyPanel } from './AccuracyPanel';
+import { AreaComparisonPanel } from './AreaComparisonPanel';
 import { RORPanel } from './RORPanel';
 import { ExportDialog } from '../Dialogs/ExportDialog';
 import { useAutoSave } from '../../hooks/useAutoSave';
@@ -69,6 +70,7 @@ export function Sidebar({ className = '' }: SidebarProps) {
         {activeTab === 'classify' && <div className="p-4"><ParcelTypePanel /></div>}
         {activeTab === 'validate' && (
           <div>
+            <AreaComparisonPanel />
             <TopologyPanel />
             <AccuracyPanel />
           </div>
