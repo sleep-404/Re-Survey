@@ -1606,27 +1606,125 @@ git commit -m "feat: Add area comparison panel for ROR vs drawn area"
 ### Goal
 Add visual highlighting on the map to show polygons with area mismatches. Color-code by difference percentage with a toggle in LayerPanel.
 
-### Step 7.1: Add conflict state to useLayerStore
+### Step 7.1: Update useLayerStore with conflict toggle
 
 **MODIFY FILE:** `dashboard/src/hooks/useLayerStore.ts`
 
-Add to the interface:
+**FIND this interface (around line 7-25):**
 ```typescript
-// Add to LayerState interface
-showConflictHighlighting: boolean;
-setShowConflictHighlighting: (show: boolean) => void;
+interface LayerState {
+  // Base tile layer visibility
+  showOriTiles: boolean;
+  showSatellite: boolean;
+
+  // Data source selection (radio - only one active at a time)
+  activeDataSource: DataSource;
+
+  // Overlay toggle (can show GT overlay on top of any data source)
+  showGroundTruthOverlay: boolean;
+
+  // Polygon layer visibility
+  showPolygons: boolean;
+
+  // Parcel type filter (which types are visible)
+  visibleParcelTypes: Set<string>;
+
+  // Actions
+  setShowOriTiles: (show: boolean) => void;
+  setShowSatellite: (show: boolean) => void;
+  setActiveDataSource: (source: DataSource) => void;
+  setShowGroundTruthOverlay: (show: boolean) => void;
+  setShowPolygons: (show: boolean) => void;
+  setVisibleParcelTypes: (types: Set<string>) => void;
+  toggleParcelType: (type: string) => void;
+}
 ```
 
-Add to the store:
+**REPLACE WITH:**
 ```typescript
-// Add to create() initial state
-showConflictHighlighting: false,
+interface LayerState {
+  // Base tile layer visibility
+  showOriTiles: boolean;
+  showSatellite: boolean;
 
-// Add to actions
-setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
+  // Data source selection (radio - only one active at a time)
+  activeDataSource: DataSource;
+
+  // Overlay toggle (can show GT overlay on top of any data source)
+  showGroundTruthOverlay: boolean;
+
+  // Polygon layer visibility
+  showPolygons: boolean;
+
+  // Conflict highlighting toggle
+  showConflictHighlighting: boolean;
+
+  // Parcel type filter (which types are visible)
+  visibleParcelTypes: Set<string>;
+
+  // Actions
+  setShowOriTiles: (show: boolean) => void;
+  setShowSatellite: (show: boolean) => void;
+  setActiveDataSource: (source: DataSource) => void;
+  setShowGroundTruthOverlay: (show: boolean) => void;
+  setShowPolygons: (show: boolean) => void;
+  setShowConflictHighlighting: (show: boolean) => void;
+  setVisibleParcelTypes: (types: Set<string>) => void;
+  toggleParcelType: (type: string) => void;
+}
 ```
 
-### Step 7.2: Add conflict data store
+**FIND this store creation (around line 30-45):**
+```typescript
+export const useLayerStore = create<LayerState>((set) => ({
+  // Initial state - ORI tiles on, satellite off
+  showOriTiles: true,
+  showSatellite: true,
+
+  // Start with SAM data loaded (matches current App.tsx behavior)
+  activeDataSource: 'sam',
+
+  // Ground truth overlay off by default
+  showGroundTruthOverlay: false,
+
+  // Polygons visible by default
+  showPolygons: true,
+```
+
+**REPLACE WITH:**
+```typescript
+export const useLayerStore = create<LayerState>((set) => ({
+  // Initial state - ORI tiles on, satellite off
+  showOriTiles: true,
+  showSatellite: true,
+
+  // Start with SAM data loaded (matches current App.tsx behavior)
+  activeDataSource: 'sam',
+
+  // Ground truth overlay off by default
+  showGroundTruthOverlay: false,
+
+  // Polygons visible by default
+  showPolygons: true,
+
+  // Conflict highlighting off by default
+  showConflictHighlighting: false,
+```
+
+**FIND this actions section (around line 60-65):**
+```typescript
+  setShowPolygons: (show) => set({ showPolygons: show }),
+  setVisibleParcelTypes: (types) => set({ visibleParcelTypes: types }),
+```
+
+**REPLACE WITH:**
+```typescript
+  setShowPolygons: (show) => set({ showPolygons: show }),
+  setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
+  setVisibleParcelTypes: (types) => set({ visibleParcelTypes: types }),
+```
+
+### Step 7.2: Create useConflictStore
 
 **CREATE FILE:** `dashboard/src/hooks/useConflictStore.ts`
 
@@ -1662,139 +1760,157 @@ export const useConflictStore = create<ConflictState>((set, get) => ({
 
 **MODIFY FILE:** `dashboard/src/components/Sidebar/AreaComparisonPanel.tsx`
 
-Add import:
+**FIND these imports at the top:**
 ```typescript
+import { useState, useCallback } from 'react';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import { useRORStore } from '../../hooks/useRORStore';
+import { useSelectionStore } from '../../hooks/useSelectionStore';
+```
+
+**REPLACE WITH:**
+```typescript
+import { useState, useCallback } from 'react';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import { useRORStore } from '../../hooks/useRORStore';
+import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { useConflictStore } from '../../hooks/useConflictStore';
 ```
 
-Update handleCompare to store results:
+**FIND this handleCompare function:**
 ```typescript
-const { setComparisons: storeComparisons } = useConflictStore();
+  const handleCompare = useCallback(async () => {
+    setIsComparing(true);
+    await new Promise(resolve => setTimeout(resolve, 10));
 
-const handleCompare = useCallback(async () => {
-  setIsComparing(true);
-  await new Promise(resolve => setTimeout(resolve, 10));
-
-  const results = compareAllPolygons(parcels, rorRecords);
-  // Sort by difference (worst first)
-  results.sort((a, b) => {
-    if (a.differencePercent === null) return 1;
-    if (b.differencePercent === null) return -1;
-    return Math.abs(b.differencePercent) - Math.abs(a.differencePercent);
-  });
-  setComparisons(results);
-  storeComparisons(results); // Store for map highlighting
-  setIsComparing(false);
-}, [parcels, rorRecords, storeComparisons]);
+    const results = compareAllPolygons(parcels, rorRecords);
+    // Sort by difference (worst first)
+    results.sort((a, b) => {
+      if (a.differencePercent === null) return 1;
+      if (b.differencePercent === null) return -1;
+      return Math.abs(b.differencePercent) - Math.abs(a.differencePercent);
+    });
+    setComparisons(results);
+    setIsComparing(false);
+  }, [parcels, rorRecords]);
 ```
 
-### Step 7.4: Add conflict highlighting layer to MapCanvas
+**REPLACE WITH:**
+```typescript
+  const { setComparisons: storeComparisons } = useConflictStore();
+
+  const handleCompare = useCallback(async () => {
+    setIsComparing(true);
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const results = compareAllPolygons(parcels, rorRecords);
+    // Sort by difference (worst first)
+    results.sort((a, b) => {
+      if (a.differencePercent === null) return 1;
+      if (b.differencePercent === null) return -1;
+      return Math.abs(b.differencePercent) - Math.abs(a.differencePercent);
+    });
+    setComparisons(results);
+    storeComparisons(results); // Store for map highlighting
+    setIsComparing(false);
+  }, [parcels, rorRecords, storeComparisons]);
+```
+
+### Step 7.4: Add conflict overlay layer to MapCanvas
 
 **MODIFY FILE:** `dashboard/src/components/Map/MapCanvas.tsx`
 
-Add imports:
+**FIND these imports (around line 14-15, after useLayerStore import you added in Task 2):**
 ```typescript
-import { useConflictStore } from '../../hooks/useConflictStore';
-import { getMatchQualityColor } from '../../utils/areaComparison';
+import { useLayerStore } from '../../hooks/useLayerStore';
+import type { FeatureCollection } from 'geojson';
 ```
 
-Add to useLayerStore destructuring:
+**REPLACE WITH:**
+```typescript
+import { useLayerStore } from '../../hooks/useLayerStore';
+import { useConflictStore } from '../../hooks/useConflictStore';
+import { getMatchQualityColor } from '../../utils/areaComparison';
+import type { FeatureCollection } from 'geojson';
+```
+
+**FIND this useLayerStore line (around line 55):**
+```typescript
+const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons } = useLayerStore();
+```
+
+**REPLACE WITH:**
 ```typescript
 const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons, showConflictHighlighting } = useLayerStore();
 const { comparisons } = useConflictStore();
 ```
 
-Add useEffect to update polygon colors based on conflicts (after the parcels update useEffect):
+**FIND this ground-truth-border layer code inside map.on('load') (around line 440-450):**
 ```typescript
-// Update polygon colors when conflict highlighting is toggled
-useEffect(() => {
-  if (!map.current || !mapLoaded) return;
+      // Ground truth border (dashed red lines)
+      map.current.addLayer({
+        id: 'ground-truth-border',
+        type: 'line',
+        source: 'ground-truth-overlay',
+        paint: {
+          'line-color': '#ef4444',
+          'line-width': 3,
+          'line-dasharray': [4, 2],
+        },
+      });
 
-  // If conflict highlighting is off, revert to type-based colors
-  if (!showConflictHighlighting || comparisons.size === 0) {
-    // Reset to default paint - already handled by parcels update
-    return;
-  }
-
-  // Update parcels source with conflict data
-  const source = map.current.getSource('parcels') as GeoJSONSource;
-  if (!source) return;
-
-  const currentParcels = usePolygonStore.getState().parcels;
-  const featuresWithConflict = currentParcels.map((p) => {
-    const comparison = comparisons.get(p.properties.id);
-    return {
-      ...p,
-      properties: {
-        ...p.properties,
-        conflictColor: comparison ? getMatchQualityColor(comparison.matchQuality) : null,
-        hasConflictData: !!comparison,
-      },
-    };
-  });
-
-  source.setData({
-    type: 'FeatureCollection',
-    features: featuresWithConflict,
-  });
-}, [showConflictHighlighting, comparisons, mapLoaded]);
+      // Mark map as loaded
+      setMapLoaded(true);
 ```
 
-Update the parcels-fill paint expression inside map.on('load'):
-
-Find the `parcels-fill` layer paint and modify to support conflict colors:
+**REPLACE WITH:**
 ```typescript
-// In map.on('load'), update parcels-fill layer paint:
-paint: {
-  'fill-color': [
-    'case',
-    // If conflict highlighting is on and has conflict data, use conflict color
-    ['boolean', ['get', 'hasConflictData'], false],
-    ['get', 'conflictColor'],
-    // Otherwise use type-based colors (existing logic)
-    [
-      'match',
-      ['get', 'parcelType'],
-      'agricultural', PARCEL_TYPES.agricultural.fillColor,
-      // ... rest of existing match expression
-    ],
-  ],
-  // ... rest of paint
-}
+      // Ground truth border (dashed red lines)
+      map.current.addLayer({
+        id: 'ground-truth-border',
+        type: 'line',
+        source: 'ground-truth-overlay',
+        paint: {
+          'line-color': '#ef4444',
+          'line-width': 3,
+          'line-dasharray': [4, 2],
+        },
+      });
+
+      // Conflict highlighting overlay source
+      map.current.addSource('conflict-overlay', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Conflict fill layer
+      map.current.addLayer({
+        id: 'conflict-fill',
+        type: 'fill',
+        source: 'conflict-overlay',
+        paint: {
+          'fill-color': ['get', 'conflictColor'],
+          'fill-opacity': 0.4,
+        },
+      });
+
+      // Conflict border layer
+      map.current.addLayer({
+        id: 'conflict-border',
+        type: 'line',
+        source: 'conflict-overlay',
+        paint: {
+          'line-color': ['get', 'conflictColor'],
+          'line-width': 3,
+        },
+      });
+
+      // Mark map as loaded
+      setMapLoaded(true);
 ```
 
-**Note:** The above requires modifying existing paint expressions. A simpler approach is to add a separate conflict overlay layer:
+**ADD this useEffect after the polygon visibility useEffect (around line 520, after the `}, [showPolygons, mapLoaded]);` line):**
 
-Add after ground-truth-border layer in map.on('load'):
-```typescript
-// Conflict highlighting overlay
-map.current.addSource('conflict-overlay', {
-  type: 'geojson',
-  data: { type: 'FeatureCollection', features: [] },
-});
-
-map.current.addLayer({
-  id: 'conflict-fill',
-  type: 'fill',
-  source: 'conflict-overlay',
-  paint: {
-    'fill-color': ['get', 'conflictColor'],
-    'fill-opacity': 0.4,
-  },
-});
-
-map.current.addLayer({
-  id: 'conflict-border',
-  type: 'line',
-  source: 'conflict-overlay',
-  paint: {
-    'line-color': ['get', 'conflictColor'],
-    'line-width': 3,
-  },
-});
-```
-
-Add useEffect to update conflict overlay:
 ```typescript
 // Update conflict overlay when highlighting is toggled
 useEffect(() => {
@@ -1833,32 +1949,94 @@ useEffect(() => {
 
 **MODIFY FILE:** `dashboard/src/components/Sidebar/LayerPanel.tsx`
 
-Add to useLayerStore destructuring:
+**FIND this useLayerStore destructuring:**
 ```typescript
-const {
-  // ... existing
-  showConflictHighlighting,
-  setShowConflictHighlighting,
-} = useLayerStore();
+  const {
+    showOriTiles,
+    setShowOriTiles,
+    showSatellite,
+    setShowSatellite,
+    showPolygons,
+    setShowPolygons,
+    activeDataSource,
+    setActiveDataSource,
+    showGroundTruthOverlay,
+    setShowGroundTruthOverlay,
+    visibleParcelTypes,
+    toggleParcelType,
+    setVisibleParcelTypes,
+  } = useLayerStore();
 ```
 
-Add checkbox after GT overlay toggle:
-```tsx
-{/* Conflict Highlighting Toggle */}
-<div className="border-t border-gray-700 pt-3">
-  <label className="flex cursor-pointer items-center gap-2">
-    <input
-      type="checkbox"
-      checked={showConflictHighlighting}
-      onChange={(e) => setShowConflictHighlighting(e.target.checked)}
-      className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-gray-900"
-    />
-    <span className="text-sm text-gray-300">Show Area Conflicts</span>
-  </label>
-  <p className="mt-1 pl-6 text-xs text-gray-500">
-    Color-code by ROR area mismatch
-  </p>
-</div>
+**REPLACE WITH:**
+```typescript
+  const {
+    showOriTiles,
+    setShowOriTiles,
+    showSatellite,
+    setShowSatellite,
+    showPolygons,
+    setShowPolygons,
+    activeDataSource,
+    setActiveDataSource,
+    showGroundTruthOverlay,
+    setShowGroundTruthOverlay,
+    showConflictHighlighting,
+    setShowConflictHighlighting,
+    visibleParcelTypes,
+    toggleParcelType,
+    setVisibleParcelTypes,
+  } = useLayerStore();
+```
+
+**FIND this Ground Truth Overlay section:**
+```typescript
+      {/* Ground Truth Overlay Toggle */}
+      <div className="border-t border-gray-700 pt-3">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showGroundTruthOverlay}
+            onChange={(e) => setShowGroundTruthOverlay(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-gray-900"
+          />
+          <span className="text-sm text-gray-300">Show GT Overlay</span>
+          <span className="ml-auto text-xs text-red-400">(dashed red)</span>
+        </label>
+      </div>
+```
+
+**REPLACE WITH:**
+```typescript
+      {/* Ground Truth Overlay Toggle */}
+      <div className="border-t border-gray-700 pt-3">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showGroundTruthOverlay}
+            onChange={(e) => setShowGroundTruthOverlay(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-gray-900"
+          />
+          <span className="text-sm text-gray-300">Show GT Overlay</span>
+          <span className="ml-auto text-xs text-red-400">(dashed red)</span>
+        </label>
+      </div>
+
+      {/* Conflict Highlighting Toggle */}
+      <div className="border-t border-gray-700 pt-3">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showConflictHighlighting}
+            onChange={(e) => setShowConflictHighlighting(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-gray-900"
+          />
+          <span className="text-sm text-gray-300">Show Area Conflicts</span>
+        </label>
+        <p className="mt-1 pl-6 text-xs text-gray-500">
+          Color-code by ROR area mismatch (run Compare first)
+        </p>
+      </div>
 ```
 
 ### Step 7.6: Verify Task 7
@@ -1869,11 +2047,11 @@ cd dashboard && npx tsc --noEmit
 
 **Browser checks:**
 1. Load ROR data in "ROR" tab
-2. Go to "Validate" tab, click "Compare"
+2. Go to "Validate" tab, click "Compare" in Area Comparison section
 3. Go to "Layers" tab
 4. Check "Show Area Conflicts"
-5. Map should color-code polygons: green (≤5%), yellow (≤20%), red (>20%)
-6. Uncheck - colors should revert to type-based
+5. Map should show color overlay: green (≤5%), lime (≤10%), yellow (≤20%), red (>20%)
+6. Uncheck - overlay should disappear
 
 ### Step 7.7: Commit
 
@@ -1895,24 +2073,78 @@ git commit -m "feat: Add conflict highlighting with color-coded area mismatches"
 ### Goal
 Add a slider to filter out small SAM segments below a minimum area threshold. SAM over-segments into tiny pieces (avg 66 sqm), so filtering helps reduce visual clutter.
 
-### Step 8.1: Add filter state to useLayerStore
+### Step 8.1: Update useLayerStore with area filter state
 
 **MODIFY FILE:** `dashboard/src/hooks/useLayerStore.ts`
 
-Add to the interface:
+**FIND this interface (which you updated in Task 7):**
 ```typescript
-// Add to LayerState interface
-minAreaThreshold: number; // in square meters
-setMinAreaThreshold: (area: number) => void;
+  // Conflict highlighting toggle
+  showConflictHighlighting: boolean;
+
+  // Parcel type filter (which types are visible)
+  visibleParcelTypes: Set<string>;
 ```
 
-Add to the store:
+**REPLACE WITH:**
 ```typescript
-// Add to create() initial state
-minAreaThreshold: 0, // 0 = show all
+  // Conflict highlighting toggle
+  showConflictHighlighting: boolean;
 
-// Add to actions
-setMinAreaThreshold: (area) => set({ minAreaThreshold: area }),
+  // Minimum area filter (in square meters, 0 = show all)
+  minAreaThreshold: number;
+
+  // Parcel type filter (which types are visible)
+  visibleParcelTypes: Set<string>;
+```
+
+**FIND this actions section in the interface:**
+```typescript
+  setShowConflictHighlighting: (show: boolean) => void;
+  setVisibleParcelTypes: (types: Set<string>) => void;
+  toggleParcelType: (type: string) => void;
+```
+
+**REPLACE WITH:**
+```typescript
+  setShowConflictHighlighting: (show: boolean) => void;
+  setMinAreaThreshold: (area: number) => void;
+  setVisibleParcelTypes: (types: Set<string>) => void;
+  toggleParcelType: (type: string) => void;
+```
+
+**FIND this initial state section:**
+```typescript
+  // Conflict highlighting off by default
+  showConflictHighlighting: false,
+
+  // All parcel types visible by default
+  visibleParcelTypes: new Set([
+```
+
+**REPLACE WITH:**
+```typescript
+  // Conflict highlighting off by default
+  showConflictHighlighting: false,
+
+  // No area filter by default
+  minAreaThreshold: 0,
+
+  // All parcel types visible by default
+  visibleParcelTypes: new Set([
+```
+
+**FIND this actions implementation:**
+```typescript
+  setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
+  setVisibleParcelTypes: (types) => set({ visibleParcelTypes: types }),
+```
+
+**REPLACE WITH:**
+```typescript
+  setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
+  setMinAreaThreshold: (area) => set({ minAreaThreshold: area }),
+  setVisibleParcelTypes: (types) => set({ visibleParcelTypes: types }),
 ```
 
 ### Step 8.2: Create AreaFilterSlider component
@@ -2035,95 +2267,174 @@ export function AreaFilterSlider() {
 }
 ```
 
-### Step 8.3: Add filter to MapCanvas
+### Step 8.3: Update MapCanvas to apply area filter
 
 **MODIFY FILE:** `dashboard/src/components/Map/MapCanvas.tsx`
 
-Add to useLayerStore destructuring:
+**FIND this imports section (which you updated in Task 7):**
 ```typescript
-const { ..., minAreaThreshold } = useLayerStore();
+import { useLayerStore } from '../../hooks/useLayerStore';
+import { useConflictStore } from '../../hooks/useConflictStore';
+import { getMatchQualityColor } from '../../utils/areaComparison';
+import type { FeatureCollection } from 'geojson';
 ```
 
-Add useEffect to apply area filter (after parcels update):
+**REPLACE WITH:**
 ```typescript
-// Apply minimum area filter
+import { useLayerStore } from '../../hooks/useLayerStore';
+import { useConflictStore } from '../../hooks/useConflictStore';
+import { getMatchQualityColor } from '../../utils/areaComparison';
+import * as turf from '@turf/turf';
+import type { FeatureCollection, Feature, Polygon } from 'geojson';
+```
+
+**FIND this useLayerStore line (which you updated in Task 7):**
+```typescript
+const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons, showConflictHighlighting } = useLayerStore();
+```
+
+**REPLACE WITH:**
+```typescript
+const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons, showConflictHighlighting, minAreaThreshold } = useLayerStore();
+```
+
+**ADD this useEffect after the conflict overlay useEffect you added in Task 7 (after the `}, [showConflictHighlighting, comparisons, mapLoaded]);` line):**
+
+```typescript
+// Apply minimum area filter to parcels layer
 useEffect(() => {
   if (!map.current || !mapLoaded) return;
 
   if (minAreaThreshold === 0) {
-    // No filter - show all
+    // No filter - show all polygons
     map.current.setFilter('parcels-fill', null);
     map.current.setFilter('parcels-border', null);
   } else {
-    // Filter by area property (requires area in properties)
-    // For polygons without area property, calculate on the fly
-    const filter = ['>=', ['get', 'area'], minAreaThreshold];
+    // Filter: only show polygons with area >= threshold
+    const filter: any = ['>=', ['get', 'area'], minAreaThreshold];
     map.current.setFilter('parcels-fill', filter);
     map.current.setFilter('parcels-border', filter);
   }
 }, [minAreaThreshold, mapLoaded]);
 ```
 
-**Note:** This requires polygons to have an `area` property. Update the parcels source update to include calculated area:
-
-Modify the parcels update useEffect:
+**FIND this parcels update useEffect (look for the comment about updating parcels data):**
 ```typescript
-// Update parcels data when it changes
-useEffect(() => {
-  if (!map.current) return;
+  // Update parcels layer when data changes
+  useEffect(() => {
+    if (!map.current) return;
 
-  const source = map.current.getSource('parcels') as GeoJSONSource;
-  if (!source) return;
+    const source = map.current.getSource('parcels') as GeoJSONSource;
+    if (!source) return;
 
-  // Update features with selection/hover state AND calculated area
-  const featuresWithState = parcels.map((p) => {
-    let area = p.properties.area;
-    if (!area) {
-      try {
-        area = turf.area(p as Feature<Polygon>);
-      } catch {
-        area = 0;
-      }
-    }
-
-    return {
+    // Update features with selection/hover state
+    const featuresWithState = parcels.map((p) => ({
       ...p,
       properties: {
         ...p.properties,
-        area, // Ensure area is always present
         isSelected: selectedIds.has(p.properties.id),
         isHovered: p.properties.id === hoveredId,
       },
-    };
-  });
+    }));
 
-  source.setData({
-    type: 'FeatureCollection',
-    features: featuresWithState,
-  });
-}, [parcels, selectedIds, hoveredId]);
+    source.setData({
+      type: 'FeatureCollection',
+      features: featuresWithState,
+    });
+  }, [parcels, selectedIds, hoveredId]);
 ```
 
-Add turf import at top if not present:
+**REPLACE WITH:**
 ```typescript
-import * as turf from '@turf/turf';
+  // Update parcels layer when data changes
+  useEffect(() => {
+    if (!map.current) return;
+
+    const source = map.current.getSource('parcels') as GeoJSONSource;
+    if (!source) return;
+
+    // Update features with selection/hover state AND calculated area for filtering
+    const featuresWithState = parcels.map((p) => {
+      // Calculate area if not already present
+      let area = p.properties.area;
+      if (area === undefined || area === null) {
+        try {
+          area = turf.area(p as Feature<Polygon>);
+        } catch {
+          area = 0;
+        }
+      }
+
+      return {
+        ...p,
+        properties: {
+          ...p.properties,
+          area, // Ensure area is always present for filtering
+          isSelected: selectedIds.has(p.properties.id),
+          isHovered: p.properties.id === hoveredId,
+        },
+      };
+    });
+
+    source.setData({
+      type: 'FeatureCollection',
+      features: featuresWithState,
+    });
+  }, [parcels, selectedIds, hoveredId]);
 ```
 
-### Step 8.4: Add to LayerPanel
+### Step 8.4: Add AreaFilterSlider to LayerPanel
 
 **MODIFY FILE:** `dashboard/src/components/Sidebar/LayerPanel.tsx`
 
-Add import:
+**FIND these imports at the top:**
 ```typescript
-import { AreaFilterSlider } from './AreaFilterSlider';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import { useLayerStore } from '../../hooks/useLayerStore';
+import { PARCEL_TYPES, PARCEL_TYPE_ORDER } from '../../constants/parcelTypes';
+import type { ParcelType } from '../../types';
 ```
 
-Add after Parcel Types section:
-```tsx
-{/* Area Filter */}
-<div className="border-t border-gray-700 pt-3">
-  <AreaFilterSlider />
-</div>
+**REPLACE WITH:**
+```typescript
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import { useLayerStore } from '../../hooks/useLayerStore';
+import { PARCEL_TYPES, PARCEL_TYPE_ORDER } from '../../constants/parcelTypes';
+import { AreaFilterSlider } from './AreaFilterSlider';
+import type { ParcelType } from '../../types';
+```
+
+**FIND this Total Count section at the bottom of the return:**
+```typescript
+      {/* Total Count */}
+      <div className="border-t border-gray-700 pt-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-400">Total Parcels</span>
+          <span className="font-medium text-gray-200">{parcels.length}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**REPLACE WITH:**
+```typescript
+      {/* Area Filter */}
+      <div className="border-t border-gray-700 pt-3">
+        <AreaFilterSlider />
+      </div>
+
+      {/* Total Count */}
+      <div className="border-t border-gray-700 pt-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-400">Total Parcels</span>
+          <span className="font-medium text-gray-200">{parcels.length}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 ```
 
 ### Step 8.5: Verify Task 8
@@ -2133,12 +2444,15 @@ cd dashboard && npx tsc --noEmit
 ```
 
 **Browser checks:**
-1. Load SAM segments (12,032)
+1. Load SAM segments (should show 12,032)
 2. Go to "Layers" tab
-3. Use slider to set minimum area to 100m²
-4. Many small segments should disappear from map
-5. "Hiding X" count should update
-6. Set back to 0 - all segments visible again
+3. Find the "Min Area Filter" section with slider
+4. Drag slider to set minimum area to 100m²
+5. Many small segments should disappear from map
+6. "Hiding X" count should show how many are hidden
+7. Click preset buttons (10m², 50m², etc.) to quickly change filter
+8. Click "All" preset - all segments should be visible again
+9. Area stats (Min, Med, Max) should display below presets
 
 ### Step 8.6: Commit
 
