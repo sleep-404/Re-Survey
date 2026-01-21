@@ -374,10 +374,11 @@ Add a dedicated map layer that shows ground truth boundaries as dashed red lines
 
 **MODIFY FILE:** `dashboard/src/components/Map/MapCanvas.tsx`
 
-**ADD these imports at the top (after existing imports around line 1-13):**
+**ADD these imports at the top (after existing imports, around line 13):**
 
 ```typescript
-// ADD after line 13 (after existing imports)
+// ADD after line 13 (after the existing imports)
+// NOTE: GeoJSONSource is already imported at line 3
 import { useLayerStore } from '../../hooks/useLayerStore';
 import type { FeatureCollection } from 'geojson';
 ```
@@ -385,7 +386,7 @@ import type { FeatureCollection } from 'geojson';
 **ADD state for ground truth data (after line 52, inside the component):**
 
 ```typescript
-// ADD after line 52 (after const [cursorPosition, setCursorPosition] = ...)
+// ADD after line 52 (after const [cursorPosition, setCursorPosition] = useState...)
 const [groundTruthData, setGroundTruthData] = useState<FeatureCollection | null>(null);
 const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -393,10 +394,10 @@ const [mapLoaded, setMapLoaded] = useState(false);
 const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons } = useLayerStore();
 ```
 
-**ADD ground truth data loading (after the map initialization useEffect, around line 341):**
+**ADD ground truth data loading (after the map initialization useEffect, around line 342):**
 
 ```typescript
-// ADD after line 341 (after the map initialization useEffect's closing });)
+// ADD after line 342 (after the map initialization useEffect's closing });)
 
 // Load ground truth data on mount
 useEffect(() => {
@@ -414,7 +415,7 @@ useEffect(() => {
 
 Find the section starting around line 126 that says `map.current.on('load', () => {`.
 
-**ADD at the end of the load callback, just before the closing `});` (around line 331):**
+**ADD at the end of the load callback, just before the closing `});` (around line 332):**
 
 ```typescript
       // ADD before the closing }); of map.on('load', ...)
@@ -520,24 +521,25 @@ useEffect(() => {
 Here's where each addition goes in the file structure:
 
 ```
-MapCanvas.tsx structure:
-├── Lines 1-13: Existing imports
+MapCanvas.tsx structure (802 lines total):
+├── Lines 1-13: Existing imports (GeoJSONSource already at line 3)
 ├── Line 14: ADD useLayerStore import
-├── Line 15: ADD FeatureCollection type import
-├── Lines 16-22: Constants (DEFAULT_CENTER, etc.)
-├── Lines 23-52: Component start, existing state
+├── Line 15: ADD FeatureCollection type import from 'geojson'
+├── Lines 16-22: Constants (DEFAULT_CENTER, DEFAULT_ZOOM)
+├── Lines 23-52: Component start, existing state declarations
 ├── Line 53: ADD groundTruthData state
 ├── Line 54: ADD mapLoaded state
 ├── Line 55: ADD useLayerStore destructuring
 ├── Lines 56-341: Existing map initialization useEffect
-│   └── Inside map.on('load', ...) before closing:
+│   └── map.on('load', ...) runs from line 126 to 332
+│   └── Inside map.on('load', ...) before closing });:
 │       ADD ground-truth-overlay source and layers
 │       ADD setMapLoaded(true)
-├── Line 342: ADD ground truth data loading useEffect
-├── Line 352: ADD ground truth overlay update useEffect
-├── Line 365: ADD base layer visibility useEffect
-├── Line 385: ADD polygon visibility useEffect
-├── Remaining: Existing event handlers and JSX
+├── Line 343: ADD ground truth data loading useEffect
+├── Line 353: ADD ground truth overlay update useEffect
+├── Line 366: ADD base layer visibility useEffect
+├── Line 386: ADD polygon visibility useEffect
+├── Remaining: Existing event handlers and JSX (lines 343-802)
 ```
 
 ### Step 2.3: Verify Task 2
@@ -856,33 +858,1593 @@ npm run dev
 
 ## P1 Tasks (Nice to Have)
 
-These are lower priority and less detailed. Complete P0 first.
+These are lower priority. Complete P0 first.
 
-### Task 5: ROR Data Panel
-- Create `useRORStore.ts` for loading XLSX
-- Create `RORPanel.tsx` component
-- Add ROR tab to Sidebar
-- Display records, search by LP number
+---
 
-### Task 6: Area Comparison Display
-- Show drawn area vs ROR expected area
-- Color code by difference percentage
+## Task 5: ROR Data Panel
 
-### Task 7: Conflict Highlighting
-- Add MapLibre paint expression for area mismatch colors
-- Toggle in LayerPanel
+### Goal
+Load ROR (Record of Rights) data from XLSX files and display it in a searchable panel. Allow comparing parcel areas against ROR expected areas.
+
+### Step 5.1: Install xlsx package
+
+```bash
+cd dashboard && npm install xlsx
+```
+
+### Step 5.2: Create ROR types
+
+**CREATE FILE:** `dashboard/src/types/ror.ts`
+
+```typescript
+/**
+ * ROR (Record of Rights) data types
+ * Based on Nibhanupudi-annonymized ROR.xlsx structure
+ */
+
+export interface RORRecord {
+  lpNumber: number;           // LP Number (official parcel ID)
+  extentAcres: number;        // LP Extent in acres
+  extentHectares: number;     // Calculated from acres
+  extentSqm: number;          // Calculated from acres
+  ulpin?: string;             // Unique Land Parcel Identification Number
+  oldSurveyNumber?: string;   // Old Survey Number
+  landType?: string;          // Land classification
+  ownerName?: string;         // Owner name (anonymized)
+  village?: string;           // Village name
+}
+
+export interface RORState {
+  records: RORRecord[];
+  isLoading: boolean;
+  error: string | null;
+  searchQuery: string;
+  selectedLpNumber: number | null;
+}
+```
+
+### Step 5.3: Create useRORStore
+
+**CREATE FILE:** `dashboard/src/hooks/useRORStore.ts`
+
+```typescript
+import { create } from 'zustand';
+import * as XLSX from 'xlsx';
+import type { RORRecord, RORState } from '../types/ror';
+
+interface RORStoreActions {
+  loadFromFile: (file: File) => Promise<void>;
+  loadFromUrl: (url: string) => Promise<void>;
+  setSearchQuery: (query: string) => void;
+  selectLpNumber: (lpNumber: number | null) => void;
+  getFilteredRecords: () => RORRecord[];
+  getRecordByLpNumber: (lpNumber: number) => RORRecord | undefined;
+  clearRecords: () => void;
+}
+
+type RORStore = RORState & RORStoreActions;
+
+// Convert acres to other units
+const acresToHectares = (acres: number) => acres * 0.404686;
+const acresToSqm = (acres: number) => acres * 4046.86;
+
+// Parse XLSX row to RORRecord
+function parseRow(row: any): RORRecord | null {
+  // Try different column name variations
+  const lpNumber = row['LP Number'] || row['lp_no'] || row['LP_Number'] || row['lpNumber'];
+  const extentAcres = row['LP Extent'] || row['extent_ac'] || row['LP_Extent'] || row['Extent (Acres)'];
+
+  if (!lpNumber || !extentAcres) return null;
+
+  const acres = parseFloat(extentAcres) || 0;
+
+  return {
+    lpNumber: parseInt(lpNumber) || 0,
+    extentAcres: acres,
+    extentHectares: acresToHectares(acres),
+    extentSqm: acresToSqm(acres),
+    ulpin: row['ULPIN'] || row['ulpin'] || undefined,
+    oldSurveyNumber: row['Old Survey Number'] || row['old_survey_no'] || undefined,
+    landType: row['Land Type'] || row['land_type'] || undefined,
+    ownerName: row['Owner'] || row['owner_name'] || undefined,
+    village: row['Village'] || row['village'] || undefined,
+  };
+}
+
+export const useRORStore = create<RORStore>((set, get) => ({
+  // Initial state
+  records: [],
+  isLoading: false,
+  error: null,
+  searchQuery: '',
+  selectedLpNumber: null,
+
+  // Load from File object (for file input)
+  loadFromFile: async (file: File) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      const records: RORRecord[] = [];
+      for (const row of jsonData) {
+        const record = parseRow(row);
+        if (record) records.push(record);
+      }
+
+      set({ records, isLoading: false });
+      console.log(`Loaded ${records.length} ROR records from file`);
+    } catch (err) {
+      console.error('Error loading ROR file:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load ROR file', isLoading: false });
+    }
+  },
+
+  // Load from URL (for pre-bundled data)
+  loadFromUrl: async (url: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      const records: RORRecord[] = [];
+      for (const row of jsonData) {
+        const record = parseRow(row);
+        if (record) records.push(record);
+      }
+
+      set({ records, isLoading: false });
+      console.log(`Loaded ${records.length} ROR records from URL`);
+    } catch (err) {
+      console.error('Error loading ROR from URL:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load ROR data', isLoading: false });
+    }
+  },
+
+  setSearchQuery: (query: string) => set({ searchQuery: query }),
+
+  selectLpNumber: (lpNumber: number | null) => set({ selectedLpNumber: lpNumber }),
+
+  getFilteredRecords: () => {
+    const { records, searchQuery } = get();
+    if (!searchQuery.trim()) return records;
+
+    const query = searchQuery.toLowerCase().trim();
+    return records.filter((r) =>
+      r.lpNumber.toString().includes(query) ||
+      r.oldSurveyNumber?.toLowerCase().includes(query) ||
+      r.landType?.toLowerCase().includes(query)
+    );
+  },
+
+  getRecordByLpNumber: (lpNumber: number) => {
+    return get().records.find((r) => r.lpNumber === lpNumber);
+  },
+
+  clearRecords: () => set({ records: [], searchQuery: '', selectedLpNumber: null }),
+}));
+```
+
+### Step 5.4: Create RORPanel component
+
+**CREATE FILE:** `dashboard/src/components/Sidebar/RORPanel.tsx`
+
+```tsx
+import { useState, useCallback, useEffect } from 'react';
+import { useRORStore } from '../../hooks/useRORStore';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import type { RORRecord } from '../../types/ror';
+
+interface RORPanelProps {
+  onSelectParcel?: (lpNumber: number) => void;
+}
+
+export function RORPanel({ onSelectParcel }: RORPanelProps) {
+  const {
+    records,
+    isLoading,
+    error,
+    searchQuery,
+    selectedLpNumber,
+    loadFromUrl,
+    loadFromFile,
+    setSearchQuery,
+    selectLpNumber,
+    getFilteredRecords,
+  } = useRORStore();
+
+  const { parcels } = usePolygonStore();
+  const [showUpload, setShowUpload] = useState(false);
+
+  // Auto-load Nibanupudi ROR on mount
+  useEffect(() => {
+    if (records.length === 0 && !isLoading) {
+      loadFromUrl('/data/Nibhanupudi-annonymized ROR.xlsx').catch(() => {
+        // If URL fails, user can upload manually
+        console.log('ROR file not found at default location');
+      });
+    }
+  }, [records.length, isLoading, loadFromUrl]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      loadFromFile(file);
+      setShowUpload(false);
+    }
+  }, [loadFromFile]);
+
+  const handleRecordClick = useCallback((record: RORRecord) => {
+    selectLpNumber(record.lpNumber);
+    onSelectParcel?.(record.lpNumber);
+  }, [selectLpNumber, onSelectParcel]);
+
+  const filteredRecords = getFilteredRecords();
+
+  // Format area display
+  const formatArea = (sqm: number) => {
+    if (sqm < 10000) return `${sqm.toFixed(0)} m²`;
+    return `${(sqm / 10000).toFixed(2)} ha`;
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Header with upload option */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          ROR Data
+        </h3>
+        <button
+          onClick={() => setShowUpload(!showUpload)}
+          className="text-xs text-cyan-500 hover:text-cyan-400"
+        >
+          {showUpload ? 'Cancel' : 'Upload'}
+        </button>
+      </div>
+
+      {/* File upload */}
+      {showUpload && (
+        <div className="rounded border border-dashed border-gray-600 p-2">
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileUpload}
+            className="w-full text-xs text-gray-400 file:mr-2 file:rounded file:border-0
+                       file:bg-gray-700 file:px-2 file:py-1 file:text-xs file:text-gray-300"
+          />
+          <p className="mt-1 text-xs text-gray-500">Upload ROR Excel file</p>
+        </div>
+      )}
+
+      {/* Status */}
+      {isLoading && (
+        <div className="text-xs text-gray-400">Loading ROR data...</div>
+      )}
+      {error && (
+        <div className="text-xs text-red-400">{error}</div>
+      )}
+
+      {/* Search */}
+      {records.length > 0 && (
+        <div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search LP#, Survey#, Type..."
+            className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1.5
+                       text-sm text-gray-200 placeholder-gray-500 focus:border-cyan-500
+                       focus:outline-none"
+          />
+        </div>
+      )}
+
+      {/* Stats */}
+      {records.length > 0 && (
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <span>{filteredRecords.length} of {records.length} records</span>
+          <span>
+            Total: {formatArea(records.reduce((sum, r) => sum + r.extentSqm, 0))}
+          </span>
+        </div>
+      )}
+
+      {/* Records list */}
+      {records.length > 0 && (
+        <div className="max-h-64 space-y-1 overflow-y-auto">
+          {filteredRecords.slice(0, 50).map((record) => (
+            <div
+              key={record.lpNumber}
+              onClick={() => handleRecordClick(record)}
+              className={`cursor-pointer rounded p-2 text-xs transition-colors ${
+                selectedLpNumber === record.lpNumber
+                  ? 'bg-cyan-900/50 border border-cyan-500'
+                  : 'bg-gray-800 hover:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-200">
+                  LP# {record.lpNumber}
+                </span>
+                <span className="text-gray-400">
+                  {formatArea(record.extentSqm)}
+                </span>
+              </div>
+              {record.landType && (
+                <div className="mt-1 text-gray-500">{record.landType}</div>
+              )}
+              {record.oldSurveyNumber && (
+                <div className="text-gray-500">Survey: {record.oldSurveyNumber}</div>
+              )}
+            </div>
+          ))}
+          {filteredRecords.length > 50 && (
+            <div className="py-2 text-center text-xs text-gray-500">
+              +{filteredRecords.length - 50} more records...
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && records.length === 0 && !error && (
+        <div className="py-4 text-center text-xs text-gray-500">
+          No ROR data loaded. Click Upload to load an Excel file.
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Step 5.5: Add ROR tab to Sidebar
+
+**MODIFY FILE:** `dashboard/src/components/Sidebar/Sidebar.tsx`
+
+Add import at the top:
+```typescript
+import { RORPanel } from './RORPanel';
+```
+
+Add new tab option in the tabs array (find where tabs are defined):
+```typescript
+// Add 'ror' to the tabs array, e.g.:
+const tabs = ['tools', 'layers', 'validate', 'ror'] as const;
+```
+
+Add the panel rendering in the tab content section:
+```tsx
+{activeTab === 'ror' && <RORPanel />}
+```
+
+### Step 5.6: Copy ROR file to public folder
+
+```bash
+cp "Resurvey/Nibhanupudi-annonymized ROR.xlsx" dashboard/public/data/
+```
+
+### Step 5.7: Verify Task 5
+
+```bash
+cd dashboard && npx tsc --noEmit
+```
+
+**Browser checks:**
+1. Refresh http://localhost:5173
+2. Click "ROR" tab in sidebar
+3. Should auto-load and show ~850 records
+4. Search for "824" - should filter to matching LP numbers
+5. Click a record - should highlight it
+6. No console errors
+
+### Step 5.8: Commit
+
+```bash
+git add dashboard/src/types/ror.ts dashboard/src/hooks/useRORStore.ts dashboard/src/components/Sidebar/RORPanel.tsx dashboard/src/components/Sidebar/Sidebar.tsx dashboard/public/data/
+git commit -m "feat: Add ROR data panel with XLSX loading and search"
+```
+
+---
+
+## Task 6: Area Comparison Display
+
+### Goal
+Show comparison between drawn polygon area and ROR expected area. Display difference percentage and color-code by match quality.
+
+### Step 6.1: Add area comparison utility
+
+**CREATE FILE:** `dashboard/src/utils/areaComparison.ts`
+
+```typescript
+import * as turf from '@turf/turf';
+import type { Feature, Polygon } from 'geojson';
+import type { RORRecord } from '../types/ror';
+import type { ParcelFeature } from '../types';
+
+export interface AreaComparison {
+  polygonId: string;
+  lpNumber: number | null;
+  drawnAreaSqm: number;
+  expectedAreaSqm: number | null;
+  differenceSqm: number | null;
+  differencePercent: number | null;
+  matchQuality: 'excellent' | 'good' | 'fair' | 'poor' | 'no-match';
+}
+
+/**
+ * Calculate drawn area of a polygon in square meters
+ */
+export function calculateArea(polygon: Feature<Polygon>): number {
+  try {
+    return turf.area(polygon);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Determine match quality based on percentage difference
+ * Based on 5% permissible error from requirements
+ */
+export function getMatchQuality(differencePercent: number | null): AreaComparison['matchQuality'] {
+  if (differencePercent === null) return 'no-match';
+  const absDiff = Math.abs(differencePercent);
+  if (absDiff <= 5) return 'excellent';   // Within 5% - meets requirement
+  if (absDiff <= 10) return 'good';       // Within 10%
+  if (absDiff <= 20) return 'fair';       // Within 20%
+  return 'poor';                           // Over 20% difference
+}
+
+/**
+ * Get color for match quality
+ */
+export function getMatchQualityColor(quality: AreaComparison['matchQuality']): string {
+  switch (quality) {
+    case 'excellent': return '#22c55e'; // green-500
+    case 'good': return '#84cc16';      // lime-500
+    case 'fair': return '#eab308';      // yellow-500
+    case 'poor': return '#ef4444';      // red-500
+    case 'no-match': return '#6b7280';  // gray-500
+  }
+}
+
+/**
+ * Compare a polygon against ROR record by LP number
+ */
+export function comparePolygonToROR(
+  polygon: ParcelFeature,
+  rorRecords: RORRecord[]
+): AreaComparison {
+  const polygonId = polygon.properties.id;
+  const drawnAreaSqm = calculateArea(polygon as Feature<Polygon>);
+
+  // Try to find matching ROR record by lp_no property
+  const lpNo = polygon.properties.lp_no || polygon.properties.lpNumber;
+  const rorRecord = lpNo ? rorRecords.find(r => r.lpNumber === lpNo) : null;
+
+  if (!rorRecord) {
+    return {
+      polygonId,
+      lpNumber: lpNo || null,
+      drawnAreaSqm,
+      expectedAreaSqm: null,
+      differenceSqm: null,
+      differencePercent: null,
+      matchQuality: 'no-match',
+    };
+  }
+
+  const expectedAreaSqm = rorRecord.extentSqm;
+  const differenceSqm = drawnAreaSqm - expectedAreaSqm;
+  const differencePercent = (differenceSqm / expectedAreaSqm) * 100;
+
+  return {
+    polygonId,
+    lpNumber: rorRecord.lpNumber,
+    drawnAreaSqm,
+    expectedAreaSqm,
+    differenceSqm,
+    differencePercent,
+    matchQuality: getMatchQuality(differencePercent),
+  };
+}
+
+/**
+ * Compare all polygons against ROR records
+ */
+export function compareAllPolygons(
+  polygons: ParcelFeature[],
+  rorRecords: RORRecord[]
+): AreaComparison[] {
+  return polygons.map(p => comparePolygonToROR(p, rorRecords));
+}
+
+/**
+ * Generate area comparison summary
+ */
+export function generateAreaComparisonSummary(comparisons: AreaComparison[]): {
+  total: number;
+  excellent: number;
+  good: number;
+  fair: number;
+  poor: number;
+  noMatch: number;
+  avgDifferencePercent: number | null;
+} {
+  const matched = comparisons.filter(c => c.differencePercent !== null);
+
+  return {
+    total: comparisons.length,
+    excellent: comparisons.filter(c => c.matchQuality === 'excellent').length,
+    good: comparisons.filter(c => c.matchQuality === 'good').length,
+    fair: comparisons.filter(c => c.matchQuality === 'fair').length,
+    poor: comparisons.filter(c => c.matchQuality === 'poor').length,
+    noMatch: comparisons.filter(c => c.matchQuality === 'no-match').length,
+    avgDifferencePercent: matched.length > 0
+      ? matched.reduce((sum, c) => sum + Math.abs(c.differencePercent!), 0) / matched.length
+      : null,
+  };
+}
+```
+
+### Step 6.2: Create AreaComparisonPanel component
+
+**CREATE FILE:** `dashboard/src/components/Sidebar/AreaComparisonPanel.tsx`
+
+```tsx
+import { useState, useCallback } from 'react';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import { useRORStore } from '../../hooks/useRORStore';
+import { useSelectionStore } from '../../hooks/useSelectionStore';
+import {
+  compareAllPolygons,
+  generateAreaComparisonSummary,
+  getMatchQualityColor,
+  type AreaComparison,
+} from '../../utils/areaComparison';
+
+export function AreaComparisonPanel() {
+  const { parcels } = usePolygonStore();
+  const { records: rorRecords } = useRORStore();
+  const { select } = useSelectionStore();
+
+  const [comparisons, setComparisons] = useState<AreaComparison[]>([]);
+  const [isComparing, setIsComparing] = useState(false);
+
+  const handleCompare = useCallback(async () => {
+    setIsComparing(true);
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const results = compareAllPolygons(parcels, rorRecords);
+    // Sort by difference (worst first)
+    results.sort((a, b) => {
+      if (a.differencePercent === null) return 1;
+      if (b.differencePercent === null) return -1;
+      return Math.abs(b.differencePercent) - Math.abs(a.differencePercent);
+    });
+    setComparisons(results);
+    setIsComparing(false);
+  }, [parcels, rorRecords]);
+
+  const handleSelectPolygon = useCallback((polygonId: string) => {
+    select(polygonId);
+  }, [select]);
+
+  const summary = comparisons.length > 0 ? generateAreaComparisonSummary(comparisons) : null;
+
+  const formatArea = (sqm: number) => {
+    if (sqm < 10000) return `${sqm.toFixed(0)} m²`;
+    return `${(sqm / 10000).toFixed(2)} ha`;
+  };
+
+  const formatPercent = (pct: number | null) => {
+    if (pct === null) return 'N/A';
+    const sign = pct >= 0 ? '+' : '';
+    return `${sign}${pct.toFixed(1)}%`;
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Area Comparison
+        </h3>
+        <button
+          onClick={handleCompare}
+          disabled={isComparing || rorRecords.length === 0}
+          className="rounded bg-blue-600 px-2 py-1 text-xs font-medium
+                     hover:bg-blue-700 disabled:bg-gray-600"
+        >
+          {isComparing ? 'Comparing...' : 'Compare'}
+        </button>
+      </div>
+
+      {rorRecords.length === 0 && (
+        <p className="text-xs text-gray-500">
+          Load ROR data first to enable area comparison.
+        </p>
+      )}
+
+      {/* Summary */}
+      {summary && (
+        <div className="space-y-2">
+          <div className={`rounded p-2 text-center ${
+            summary.avgDifferencePercent !== null && summary.avgDifferencePercent <= 5
+              ? 'bg-green-900/50'
+              : 'bg-yellow-900/50'
+          }`}>
+            <div className="text-lg font-bold text-gray-200">
+              {summary.avgDifferencePercent !== null
+                ? `${summary.avgDifferencePercent.toFixed(1)}%`
+                : 'N/A'}
+            </div>
+            <div className="text-xs text-gray-400">Avg. Difference</div>
+          </div>
+
+          <div className="grid grid-cols-5 gap-1 text-center text-xs">
+            <div className="rounded bg-green-900/30 p-1">
+              <div className="font-medium text-green-400">{summary.excellent}</div>
+              <div className="text-gray-500">≤5%</div>
+            </div>
+            <div className="rounded bg-lime-900/30 p-1">
+              <div className="font-medium text-lime-400">{summary.good}</div>
+              <div className="text-gray-500">≤10%</div>
+            </div>
+            <div className="rounded bg-yellow-900/30 p-1">
+              <div className="font-medium text-yellow-400">{summary.fair}</div>
+              <div className="text-gray-500">≤20%</div>
+            </div>
+            <div className="rounded bg-red-900/30 p-1">
+              <div className="font-medium text-red-400">{summary.poor}</div>
+              <div className="text-gray-500">&gt;20%</div>
+            </div>
+            <div className="rounded bg-gray-800 p-1">
+              <div className="font-medium text-gray-400">{summary.noMatch}</div>
+              <div className="text-gray-500">None</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comparison list */}
+      {comparisons.length > 0 && (
+        <div className="max-h-48 space-y-1 overflow-y-auto">
+          {comparisons.slice(0, 30).map((c) => (
+            <div
+              key={c.polygonId}
+              onClick={() => handleSelectPolygon(c.polygonId)}
+              className="flex cursor-pointer items-center justify-between rounded
+                         bg-gray-800 p-2 text-xs hover:bg-gray-700"
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: getMatchQualityColor(c.matchQuality) }}
+                />
+                <span className="font-mono text-gray-300">
+                  {c.lpNumber ? `LP#${c.lpNumber}` : c.polygonId.slice(0, 8)}
+                </span>
+              </div>
+              <div className="text-right">
+                <div style={{ color: getMatchQualityColor(c.matchQuality) }}>
+                  {formatPercent(c.differencePercent)}
+                </div>
+                <div className="text-gray-500">
+                  {formatArea(c.drawnAreaSqm)}
+                </div>
+              </div>
+            </div>
+          ))}
+          {comparisons.length > 30 && (
+            <div className="py-1 text-center text-xs text-gray-500">
+              +{comparisons.length - 30} more...
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Step 6.3: Add to Validate tab in Sidebar
+
+**MODIFY FILE:** `dashboard/src/components/Sidebar/Sidebar.tsx`
+
+Add import:
+```typescript
+import { AreaComparisonPanel } from './AreaComparisonPanel';
+```
+
+Add to the validate tab content (after TopologyPanel or AccuracyPanel):
+```tsx
+{activeTab === 'validate' && (
+  <>
+    <TopologyPanel />
+    <AccuracyPanel />
+    <AreaComparisonPanel />
+  </>
+)}
+```
+
+### Step 6.4: Verify Task 6
+
+```bash
+cd dashboard && npx tsc --noEmit
+```
+
+**Browser checks:**
+1. Load ROR data in "ROR" tab
+2. Go to "Validate" tab
+3. Click "Compare" in Area Comparison panel
+4. Should see summary with percentages
+5. Click a row to select that polygon on map
+
+### Step 6.5: Commit
+
+```bash
+git add dashboard/src/utils/areaComparison.ts dashboard/src/components/Sidebar/AreaComparisonPanel.tsx
+git commit -m "feat: Add area comparison panel for ROR vs drawn area"
+```
+
+---
+
+## Task 7: Conflict Highlighting
+
+### Goal
+Add visual highlighting on the map to show polygons with area mismatches. Color-code by difference percentage with a toggle in LayerPanel.
+
+### Step 7.1: Add conflict state to useLayerStore
+
+**MODIFY FILE:** `dashboard/src/hooks/useLayerStore.ts`
+
+Add to the interface:
+```typescript
+// Add to LayerState interface
+showConflictHighlighting: boolean;
+setShowConflictHighlighting: (show: boolean) => void;
+```
+
+Add to the store:
+```typescript
+// Add to create() initial state
+showConflictHighlighting: false,
+
+// Add to actions
+setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
+```
+
+### Step 7.2: Add conflict data store
+
+**CREATE FILE:** `dashboard/src/hooks/useConflictStore.ts`
+
+```typescript
+import { create } from 'zustand';
+import type { AreaComparison } from '../utils/areaComparison';
+
+interface ConflictState {
+  comparisons: Map<string, AreaComparison>; // polygonId -> comparison
+  setComparisons: (comparisons: AreaComparison[]) => void;
+  getComparison: (polygonId: string) => AreaComparison | undefined;
+  clearComparisons: () => void;
+}
+
+export const useConflictStore = create<ConflictState>((set, get) => ({
+  comparisons: new Map(),
+
+  setComparisons: (comparisons: AreaComparison[]) => {
+    const map = new Map<string, AreaComparison>();
+    comparisons.forEach(c => map.set(c.polygonId, c));
+    set({ comparisons: map });
+  },
+
+  getComparison: (polygonId: string) => {
+    return get().comparisons.get(polygonId);
+  },
+
+  clearComparisons: () => set({ comparisons: new Map() }),
+}));
+```
+
+### Step 7.3: Update AreaComparisonPanel to store results
+
+**MODIFY FILE:** `dashboard/src/components/Sidebar/AreaComparisonPanel.tsx`
+
+Add import:
+```typescript
+import { useConflictStore } from '../../hooks/useConflictStore';
+```
+
+Update handleCompare to store results:
+```typescript
+const { setComparisons: storeComparisons } = useConflictStore();
+
+const handleCompare = useCallback(async () => {
+  setIsComparing(true);
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  const results = compareAllPolygons(parcels, rorRecords);
+  // Sort by difference (worst first)
+  results.sort((a, b) => {
+    if (a.differencePercent === null) return 1;
+    if (b.differencePercent === null) return -1;
+    return Math.abs(b.differencePercent) - Math.abs(a.differencePercent);
+  });
+  setComparisons(results);
+  storeComparisons(results); // Store for map highlighting
+  setIsComparing(false);
+}, [parcels, rorRecords, storeComparisons]);
+```
+
+### Step 7.4: Add conflict highlighting layer to MapCanvas
+
+**MODIFY FILE:** `dashboard/src/components/Map/MapCanvas.tsx`
+
+Add imports:
+```typescript
+import { useConflictStore } from '../../hooks/useConflictStore';
+import { getMatchQualityColor } from '../../utils/areaComparison';
+```
+
+Add to useLayerStore destructuring:
+```typescript
+const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons, showConflictHighlighting } = useLayerStore();
+const { comparisons } = useConflictStore();
+```
+
+Add useEffect to update polygon colors based on conflicts (after the parcels update useEffect):
+```typescript
+// Update polygon colors when conflict highlighting is toggled
+useEffect(() => {
+  if (!map.current || !mapLoaded) return;
+
+  // If conflict highlighting is off, revert to type-based colors
+  if (!showConflictHighlighting || comparisons.size === 0) {
+    // Reset to default paint - already handled by parcels update
+    return;
+  }
+
+  // Update parcels source with conflict data
+  const source = map.current.getSource('parcels') as GeoJSONSource;
+  if (!source) return;
+
+  const currentParcels = usePolygonStore.getState().parcels;
+  const featuresWithConflict = currentParcels.map((p) => {
+    const comparison = comparisons.get(p.properties.id);
+    return {
+      ...p,
+      properties: {
+        ...p.properties,
+        conflictColor: comparison ? getMatchQualityColor(comparison.matchQuality) : null,
+        hasConflictData: !!comparison,
+      },
+    };
+  });
+
+  source.setData({
+    type: 'FeatureCollection',
+    features: featuresWithConflict,
+  });
+}, [showConflictHighlighting, comparisons, mapLoaded]);
+```
+
+Update the parcels-fill paint expression inside map.on('load'):
+
+Find the `parcels-fill` layer paint and modify to support conflict colors:
+```typescript
+// In map.on('load'), update parcels-fill layer paint:
+paint: {
+  'fill-color': [
+    'case',
+    // If conflict highlighting is on and has conflict data, use conflict color
+    ['boolean', ['get', 'hasConflictData'], false],
+    ['get', 'conflictColor'],
+    // Otherwise use type-based colors (existing logic)
+    [
+      'match',
+      ['get', 'parcelType'],
+      'agricultural', PARCEL_TYPES.agricultural.fillColor,
+      // ... rest of existing match expression
+    ],
+  ],
+  // ... rest of paint
+}
+```
+
+**Note:** The above requires modifying existing paint expressions. A simpler approach is to add a separate conflict overlay layer:
+
+Add after ground-truth-border layer in map.on('load'):
+```typescript
+// Conflict highlighting overlay
+map.current.addSource('conflict-overlay', {
+  type: 'geojson',
+  data: { type: 'FeatureCollection', features: [] },
+});
+
+map.current.addLayer({
+  id: 'conflict-fill',
+  type: 'fill',
+  source: 'conflict-overlay',
+  paint: {
+    'fill-color': ['get', 'conflictColor'],
+    'fill-opacity': 0.4,
+  },
+});
+
+map.current.addLayer({
+  id: 'conflict-border',
+  type: 'line',
+  source: 'conflict-overlay',
+  paint: {
+    'line-color': ['get', 'conflictColor'],
+    'line-width': 3,
+  },
+});
+```
+
+Add useEffect to update conflict overlay:
+```typescript
+// Update conflict overlay when highlighting is toggled
+useEffect(() => {
+  if (!map.current || !mapLoaded) return;
+
+  const source = map.current.getSource('conflict-overlay') as GeoJSONSource;
+  if (!source) return;
+
+  if (!showConflictHighlighting || comparisons.size === 0) {
+    source.setData({ type: 'FeatureCollection', features: [] });
+    return;
+  }
+
+  const currentParcels = usePolygonStore.getState().parcels;
+  const conflictFeatures = currentParcels
+    .filter(p => comparisons.has(p.properties.id))
+    .map(p => {
+      const comparison = comparisons.get(p.properties.id)!;
+      return {
+        ...p,
+        properties: {
+          ...p.properties,
+          conflictColor: getMatchQualityColor(comparison.matchQuality),
+        },
+      };
+    });
+
+  source.setData({
+    type: 'FeatureCollection',
+    features: conflictFeatures,
+  });
+}, [showConflictHighlighting, comparisons, mapLoaded]);
+```
+
+### Step 7.5: Add toggle to LayerPanel
+
+**MODIFY FILE:** `dashboard/src/components/Sidebar/LayerPanel.tsx`
+
+Add to useLayerStore destructuring:
+```typescript
+const {
+  // ... existing
+  showConflictHighlighting,
+  setShowConflictHighlighting,
+} = useLayerStore();
+```
+
+Add checkbox after GT overlay toggle:
+```tsx
+{/* Conflict Highlighting Toggle */}
+<div className="border-t border-gray-700 pt-3">
+  <label className="flex cursor-pointer items-center gap-2">
+    <input
+      type="checkbox"
+      checked={showConflictHighlighting}
+      onChange={(e) => setShowConflictHighlighting(e.target.checked)}
+      className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-gray-900"
+    />
+    <span className="text-sm text-gray-300">Show Area Conflicts</span>
+  </label>
+  <p className="mt-1 pl-6 text-xs text-gray-500">
+    Color-code by ROR area mismatch
+  </p>
+</div>
+```
+
+### Step 7.6: Verify Task 7
+
+```bash
+cd dashboard && npx tsc --noEmit
+```
+
+**Browser checks:**
+1. Load ROR data in "ROR" tab
+2. Go to "Validate" tab, click "Compare"
+3. Go to "Layers" tab
+4. Check "Show Area Conflicts"
+5. Map should color-code polygons: green (≤5%), yellow (≤20%), red (>20%)
+6. Uncheck - colors should revert to type-based
+
+### Step 7.7: Commit
+
+```bash
+git add dashboard/src/hooks/useConflictStore.ts dashboard/src/hooks/useLayerStore.ts dashboard/src/components/Map/MapCanvas.tsx dashboard/src/components/Sidebar/LayerPanel.tsx dashboard/src/components/Sidebar/AreaComparisonPanel.tsx
+git commit -m "feat: Add conflict highlighting with color-coded area mismatches"
+```
+
+---
 
 ---
 
 ## P2 Tasks (If Time Permits)
 
-### Task 8: Segment Filtering by Area
-- Add slider for minimum area threshold
-- Filter small SAM segments
+---
 
-### Task 9: Statistics Summary Panel
-- Show parcel counts by type/status
-- Simple bar chart visualization
+## Task 8: Segment Filtering by Area
+
+### Goal
+Add a slider to filter out small SAM segments below a minimum area threshold. SAM over-segments into tiny pieces (avg 66 sqm), so filtering helps reduce visual clutter.
+
+### Step 8.1: Add filter state to useLayerStore
+
+**MODIFY FILE:** `dashboard/src/hooks/useLayerStore.ts`
+
+Add to the interface:
+```typescript
+// Add to LayerState interface
+minAreaThreshold: number; // in square meters
+setMinAreaThreshold: (area: number) => void;
+```
+
+Add to the store:
+```typescript
+// Add to create() initial state
+minAreaThreshold: 0, // 0 = show all
+
+// Add to actions
+setMinAreaThreshold: (area) => set({ minAreaThreshold: area }),
+```
+
+### Step 8.2: Create AreaFilterSlider component
+
+**CREATE FILE:** `dashboard/src/components/Sidebar/AreaFilterSlider.tsx`
+
+```tsx
+import { useMemo } from 'react';
+import { useLayerStore } from '../../hooks/useLayerStore';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import * as turf from '@turf/turf';
+import type { Feature, Polygon } from 'geojson';
+
+export function AreaFilterSlider() {
+  const { minAreaThreshold, setMinAreaThreshold } = useLayerStore();
+  const { parcels } = usePolygonStore();
+
+  // Calculate area statistics
+  const areaStats = useMemo(() => {
+    if (parcels.length === 0) return null;
+
+    const areas = parcels.map(p => {
+      try {
+        return turf.area(p as Feature<Polygon>);
+      } catch {
+        return 0;
+      }
+    }).sort((a, b) => a - b);
+
+    return {
+      min: areas[0],
+      max: areas[areas.length - 1],
+      median: areas[Math.floor(areas.length / 2)],
+      p10: areas[Math.floor(areas.length * 0.1)],
+      p25: areas[Math.floor(areas.length * 0.25)],
+    };
+  }, [parcels]);
+
+  // Count how many would be filtered
+  const filteredCount = useMemo(() => {
+    if (minAreaThreshold === 0) return 0;
+    return parcels.filter(p => {
+      try {
+        return turf.area(p as Feature<Polygon>) < minAreaThreshold;
+      } catch {
+        return false;
+      }
+    }).length;
+  }, [parcels, minAreaThreshold]);
+
+  const formatArea = (sqm: number) => {
+    if (sqm < 1000) return `${sqm.toFixed(0)} m²`;
+    return `${(sqm / 10000).toFixed(2)} ha`;
+  };
+
+  // Preset values for quick selection
+  const presets = [
+    { label: 'All', value: 0 },
+    { label: '10m²', value: 10 },
+    { label: '50m²', value: 50 },
+    { label: '100m²', value: 100 },
+    { label: '500m²', value: 500 },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-medium text-gray-400">Min Area Filter</h4>
+        <span className="text-xs text-gray-500">
+          {filteredCount > 0 && `Hiding ${filteredCount}`}
+        </span>
+      </div>
+
+      {/* Slider */}
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          min="0"
+          max="1000"
+          step="10"
+          value={minAreaThreshold}
+          onChange={(e) => setMinAreaThreshold(Number(e.target.value))}
+          className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700
+                     [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4
+                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full
+                     [&::-webkit-slider-thumb]:bg-cyan-500"
+        />
+        <span className="w-16 text-right text-xs text-gray-300">
+          {formatArea(minAreaThreshold)}
+        </span>
+      </div>
+
+      {/* Presets */}
+      <div className="flex flex-wrap gap-1">
+        {presets.map((preset) => (
+          <button
+            key={preset.value}
+            onClick={() => setMinAreaThreshold(preset.value)}
+            className={`rounded px-2 py-0.5 text-xs transition-colors ${
+              minAreaThreshold === preset.value
+                ? 'bg-cyan-600 text-white'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Stats */}
+      {areaStats && (
+        <div className="mt-2 grid grid-cols-3 gap-1 text-xs text-gray-500">
+          <div>Min: {formatArea(areaStats.min)}</div>
+          <div>Med: {formatArea(areaStats.median)}</div>
+          <div>Max: {formatArea(areaStats.max)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Step 8.3: Add filter to MapCanvas
+
+**MODIFY FILE:** `dashboard/src/components/Map/MapCanvas.tsx`
+
+Add to useLayerStore destructuring:
+```typescript
+const { ..., minAreaThreshold } = useLayerStore();
+```
+
+Add useEffect to apply area filter (after parcels update):
+```typescript
+// Apply minimum area filter
+useEffect(() => {
+  if (!map.current || !mapLoaded) return;
+
+  if (minAreaThreshold === 0) {
+    // No filter - show all
+    map.current.setFilter('parcels-fill', null);
+    map.current.setFilter('parcels-border', null);
+  } else {
+    // Filter by area property (requires area in properties)
+    // For polygons without area property, calculate on the fly
+    const filter = ['>=', ['get', 'area'], minAreaThreshold];
+    map.current.setFilter('parcels-fill', filter);
+    map.current.setFilter('parcels-border', filter);
+  }
+}, [minAreaThreshold, mapLoaded]);
+```
+
+**Note:** This requires polygons to have an `area` property. Update the parcels source update to include calculated area:
+
+Modify the parcels update useEffect:
+```typescript
+// Update parcels data when it changes
+useEffect(() => {
+  if (!map.current) return;
+
+  const source = map.current.getSource('parcels') as GeoJSONSource;
+  if (!source) return;
+
+  // Update features with selection/hover state AND calculated area
+  const featuresWithState = parcels.map((p) => {
+    let area = p.properties.area;
+    if (!area) {
+      try {
+        area = turf.area(p as Feature<Polygon>);
+      } catch {
+        area = 0;
+      }
+    }
+
+    return {
+      ...p,
+      properties: {
+        ...p.properties,
+        area, // Ensure area is always present
+        isSelected: selectedIds.has(p.properties.id),
+        isHovered: p.properties.id === hoveredId,
+      },
+    };
+  });
+
+  source.setData({
+    type: 'FeatureCollection',
+    features: featuresWithState,
+  });
+}, [parcels, selectedIds, hoveredId]);
+```
+
+Add turf import at top if not present:
+```typescript
+import * as turf from '@turf/turf';
+```
+
+### Step 8.4: Add to LayerPanel
+
+**MODIFY FILE:** `dashboard/src/components/Sidebar/LayerPanel.tsx`
+
+Add import:
+```typescript
+import { AreaFilterSlider } from './AreaFilterSlider';
+```
+
+Add after Parcel Types section:
+```tsx
+{/* Area Filter */}
+<div className="border-t border-gray-700 pt-3">
+  <AreaFilterSlider />
+</div>
+```
+
+### Step 8.5: Verify Task 8
+
+```bash
+cd dashboard && npx tsc --noEmit
+```
+
+**Browser checks:**
+1. Load SAM segments (12,032)
+2. Go to "Layers" tab
+3. Use slider to set minimum area to 100m²
+4. Many small segments should disappear from map
+5. "Hiding X" count should update
+6. Set back to 0 - all segments visible again
+
+### Step 8.6: Commit
+
+```bash
+git add dashboard/src/components/Sidebar/AreaFilterSlider.tsx dashboard/src/hooks/useLayerStore.ts dashboard/src/components/Map/MapCanvas.tsx dashboard/src/components/Sidebar/LayerPanel.tsx
+git commit -m "feat: Add area filter slider to hide small segments"
+```
+
+---
+
+## Task 9: Statistics Summary Panel
+
+### Goal
+Create a comprehensive statistics panel showing parcel counts by type, total areas, and a simple bar chart visualization.
+
+### Step 9.1: Create StatisticsPanel component
+
+**CREATE FILE:** `dashboard/src/components/Sidebar/StatisticsPanel.tsx`
+
+```tsx
+import { useMemo } from 'react';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
+import { PARCEL_TYPES, PARCEL_TYPE_ORDER } from '../../constants/parcelTypes';
+import * as turf from '@turf/turf';
+import type { Feature, Polygon } from 'geojson';
+import type { ParcelType } from '../../types';
+
+interface TypeStats {
+  type: ParcelType;
+  count: number;
+  areaSqm: number;
+  percentage: number;
+}
+
+export function StatisticsPanel() {
+  const { parcels } = usePolygonStore();
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    if (parcels.length === 0) return null;
+
+    // Calculate areas
+    const areasById: Record<string, number> = {};
+    let totalArea = 0;
+
+    parcels.forEach((p) => {
+      let area = p.properties.area;
+      if (!area) {
+        try {
+          area = turf.area(p as Feature<Polygon>);
+        } catch {
+          area = 0;
+        }
+      }
+      areasById[p.properties.id] = area;
+      totalArea += area;
+    });
+
+    // Count by type
+    const byType: TypeStats[] = PARCEL_TYPE_ORDER.map((type) => {
+      const ofType = parcels.filter((p) => p.properties.parcelType === type);
+      const areaSqm = ofType.reduce((sum, p) => sum + (areasById[p.properties.id] || 0), 0);
+      return {
+        type,
+        count: ofType.length,
+        areaSqm,
+        percentage: parcels.length > 0 ? (ofType.length / parcels.length) * 100 : 0,
+      };
+    });
+
+    // Add unclassified
+    const unclassified = parcels.filter((p) => p.properties.parcelType === 'unclassified');
+    const unclassifiedArea = unclassified.reduce((sum, p) => sum + (areasById[p.properties.id] || 0), 0);
+    byType.push({
+      type: 'unclassified',
+      count: unclassified.length,
+      areaSqm: unclassifiedArea,
+      percentage: parcels.length > 0 ? (unclassified.length / parcels.length) * 100 : 0,
+    });
+
+    // Area statistics
+    const areas = Object.values(areasById).sort((a, b) => a - b);
+    const minArea = areas[0] || 0;
+    const maxArea = areas[areas.length - 1] || 0;
+    const medianArea = areas[Math.floor(areas.length / 2)] || 0;
+    const avgArea = totalArea / parcels.length;
+
+    return {
+      totalCount: parcels.length,
+      totalArea,
+      byType: byType.filter((t) => t.count > 0), // Only show types with parcels
+      minArea,
+      maxArea,
+      medianArea,
+      avgArea,
+    };
+  }, [parcels]);
+
+  const formatArea = (sqm: number) => {
+    if (sqm < 1000) return `${sqm.toFixed(0)} m²`;
+    if (sqm < 10000) return `${(sqm / 1000).toFixed(1)}k m²`;
+    return `${(sqm / 10000).toFixed(2)} ha`;
+  };
+
+  const formatLargeArea = (sqm: number) => {
+    if (sqm < 10000) return `${sqm.toFixed(0)} m²`;
+    return `${(sqm / 10000).toFixed(2)} ha`;
+  };
+
+  if (!stats) {
+    return (
+      <div className="p-3 text-xs text-gray-500">
+        No parcels loaded. Load data to see statistics.
+      </div>
+    );
+  }
+
+  // Find max count for bar scaling
+  const maxCount = Math.max(...stats.byType.map((t) => t.count));
+
+  return (
+    <div className="space-y-4">
+      {/* Overview */}
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Overview
+        </h3>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded bg-gray-800 p-2">
+            <div className="text-lg font-bold text-cyan-400">
+              {stats.totalCount.toLocaleString()}
+            </div>
+            <div className="text-xs text-gray-400">Total Parcels</div>
+          </div>
+          <div className="rounded bg-gray-800 p-2">
+            <div className="text-lg font-bold text-cyan-400">
+              {formatLargeArea(stats.totalArea)}
+            </div>
+            <div className="text-xs text-gray-400">Total Area</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Area Statistics */}
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Area Distribution
+        </h3>
+        <div className="grid grid-cols-4 gap-1 text-xs">
+          <div className="rounded bg-gray-800 p-1.5 text-center">
+            <div className="font-medium text-gray-300">{formatArea(stats.minArea)}</div>
+            <div className="text-gray-500">Min</div>
+          </div>
+          <div className="rounded bg-gray-800 p-1.5 text-center">
+            <div className="font-medium text-gray-300">{formatArea(stats.avgArea)}</div>
+            <div className="text-gray-500">Avg</div>
+          </div>
+          <div className="rounded bg-gray-800 p-1.5 text-center">
+            <div className="font-medium text-gray-300">{formatArea(stats.medianArea)}</div>
+            <div className="text-gray-500">Median</div>
+          </div>
+          <div className="rounded bg-gray-800 p-1.5 text-center">
+            <div className="font-medium text-gray-300">{formatArea(stats.maxArea)}</div>
+            <div className="text-gray-500">Max</div>
+          </div>
+        </div>
+      </div>
+
+      {/* By Type - Bar Chart */}
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          By Type
+        </h3>
+        <div className="space-y-1.5">
+          {stats.byType.map((t) => {
+            const config = PARCEL_TYPES[t.type];
+            const barWidth = maxCount > 0 ? (t.count / maxCount) * 100 : 0;
+
+            return (
+              <div key={t.type} className="text-xs">
+                <div className="mb-0.5 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="h-2.5 w-2.5 rounded-sm"
+                      style={{ backgroundColor: config.borderColor }}
+                    />
+                    <span className="text-gray-300">{config.label}</span>
+                  </div>
+                  <span className="text-gray-400">
+                    {t.count.toLocaleString()} ({t.percentage.toFixed(1)}%)
+                  </span>
+                </div>
+                {/* Bar */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${barWidth}%`,
+                      backgroundColor: config.borderColor,
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Export Stats Button */}
+      <div className="border-t border-gray-700 pt-3">
+        <button
+          onClick={() => {
+            const text = [
+              'Parcel Statistics',
+              '=================',
+              `Total Parcels: ${stats.totalCount}`,
+              `Total Area: ${formatLargeArea(stats.totalArea)}`,
+              '',
+              'By Type:',
+              ...stats.byType.map(
+                (t) => `- ${PARCEL_TYPES[t.type].label}: ${t.count} (${t.percentage.toFixed(1)}%)`
+              ),
+              '',
+              'Area Distribution:',
+              `- Min: ${formatArea(stats.minArea)}`,
+              `- Avg: ${formatArea(stats.avgArea)}`,
+              `- Median: ${formatArea(stats.medianArea)}`,
+              `- Max: ${formatArea(stats.maxArea)}`,
+            ].join('\n');
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'parcel_statistics.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="w-full rounded bg-gray-700 px-3 py-1.5 text-xs font-medium
+                     text-gray-300 hover:bg-gray-600"
+        >
+          Export Statistics
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Step 9.2: Add Statistics tab to Sidebar
+
+**MODIFY FILE:** `dashboard/src/components/Sidebar/Sidebar.tsx`
+
+Add import:
+```typescript
+import { StatisticsPanel } from './StatisticsPanel';
+```
+
+Add to tabs array:
+```typescript
+const tabs = ['tools', 'layers', 'validate', 'ror', 'stats'] as const;
+```
+
+Add tab button (with icon):
+```tsx
+<button
+  onClick={() => setActiveTab('stats')}
+  className={`... ${activeTab === 'stats' ? 'active-styles' : ''}`}
+>
+  Stats
+</button>
+```
+
+Add panel rendering:
+```tsx
+{activeTab === 'stats' && <StatisticsPanel />}
+```
+
+### Step 9.3: Verify Task 9
+
+```bash
+cd dashboard && npx tsc --noEmit
+```
+
+**Browser checks:**
+1. Load SAM segments
+2. Click "Stats" tab in sidebar
+3. Should see:
+   - Overview: Total count, total area
+   - Area distribution: Min, Avg, Median, Max
+   - By Type: Bar chart showing count by parcel type
+4. Click "Export Statistics" - should download text file
+5. Switch to Ground Truth (105 parcels) - stats should update
+
+### Step 9.4: Commit
+
+```bash
+git add dashboard/src/components/Sidebar/StatisticsPanel.tsx dashboard/src/components/Sidebar/Sidebar.tsx
+git commit -m "feat: Add statistics panel with parcel counts and area distribution"
+```
+
+---
+
+## Final Integration
+
+After completing all tasks, run the full integration test from Task 4 to ensure everything works together.
 
 ---
 
