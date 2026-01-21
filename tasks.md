@@ -2070,7 +2070,7 @@ git commit -m "feat: Add conflict highlighting with color-coded area mismatches"
 
 ---
 
-## Task 8: Segment Filtering by Area
+## Task 8: Segment Filtering by Area ✅ DONE
 
 ### Goal
 Add a slider to filter out small SAM segments below a minimum area threshold. SAM over-segments into tiny pieces (avg 66 sqm), so filtering helps reduce visual clutter.
