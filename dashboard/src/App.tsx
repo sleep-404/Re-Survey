@@ -1,27 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapCanvas } from './components/Map/MapCanvas';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { BottomBar } from './components/BottomBar/BottomBar';
 import { usePolygonStore } from './hooks/usePolygonStore';
+import { useLayerStore, type DataSource } from './hooks/useLayerStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import type { ParcelFeature } from './types';
 
 function App() {
   const { setParcels, setLoading, setError } = usePolygonStore();
+  const { activeDataSource } = useLayerStore();
 
-  // Load sample data on mount
+  // Track working layer data separately so it persists when switching away and back
+  const workingLayerRef = useRef<ParcelFeature[] | null>(null);
+
+  // Load data based on active data source
   useEffect(() => {
     async function loadData() {
+      // If switching TO working layer, restore saved data
+      if (activeDataSource === 'working') {
+        if (workingLayerRef.current) {
+          setParcels(workingLayerRef.current);
+        }
+        // If no working layer saved yet, keep current parcels
+        return;
+      }
+
+      // Before loading new data, save current parcels as working layer
+      const currentParcels = usePolygonStore.getState().parcels;
+      if (currentParcels.length > 0) {
+        workingLayerRef.current = currentParcels;
+      }
+
       setLoading(true);
 
+      // Map data source to file path
+      const urlMap: Record<Exclude<DataSource, 'working'>, string> = {
+        sam: '/data/sam_segments.geojson',
+        ground_truth: '/data/ground_truth.geojson',
+      };
+
+      const url = urlMap[activeDataSource as Exclude<DataSource, 'working'>];
+
       try {
-        const response = await fetch('/data/sam_segments.geojson');
+        const response = await fetch(url);
 
         if (!response.ok) {
-          // If no data file exists, load with empty array
-          console.warn('No sam_segments.geojson found, starting with empty data');
-          setParcels([]);
-          return;
+          throw new Error(`Failed to load ${url}: ${response.status}`);
         }
 
         const geojson = await response.json();
@@ -31,7 +56,7 @@ function App() {
           (f: any, index: number) => ({
             ...f,
             properties: {
-              id: f.properties?.id ?? `parcel-${index}`,
+              id: f.properties?.id ?? `${activeDataSource}-${index}`,
               parcelType: f.properties?.parcelType ?? 'unclassified',
               area: f.properties?.area_sqm ?? f.properties?.area,
               ...f.properties,
@@ -40,16 +65,17 @@ function App() {
         );
 
         setParcels(features);
-        console.log(`Loaded ${features.length} parcels`);
+        console.log(
+          `Loaded ${features.length} parcels from ${activeDataSource}`
+        );
       } catch (err) {
         console.error('Error loading data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
-        setParcels([]);
       }
     }
 
     loadData();
-  }, [setParcels, setLoading, setError]);
+  }, [activeDataSource, setParcels, setLoading, setError]);
 
   // Register keyboard shortcuts
   useKeyboardShortcuts();
