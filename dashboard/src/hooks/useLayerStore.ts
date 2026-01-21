@@ -22,6 +22,9 @@ interface LayerState {
   // Polygon layer visibility
   showPolygons: boolean;
 
+  // Conflict highlighting toggle (color by area mismatch)
+  showConflictHighlighting: boolean;
+
   // Parcel type filter (which types are visible)
   visibleParcelTypes: Set<string>;
 
@@ -31,6 +34,7 @@ interface LayerState {
   setActiveDataSource: (source: DataSource) => void;
   setShowGroundTruthOverlay: (show: boolean) => void;
   setShowPolygons: (show: boolean) => void;
+  setShowConflictHighlighting: (show: boolean) => void;
   setVisibleParcelTypes: (types: Set<string>) => void;
   toggleParcelType: (type: string) => void;
 }
@@ -48,6 +52,9 @@ export const useLayerStore = create<LayerState>((set) => ({
 
   // Polygons visible by default
   showPolygons: true,
+
+  // Conflict highlighting off by default
+  showConflictHighlighting: false,
 
   // All parcel types visible by default
   visibleParcelTypes: new Set([
@@ -68,6 +75,7 @@ export const useLayerStore = create<LayerState>((set) => ({
   setActiveDataSource: (source) => set({ activeDataSource: source }),
   setShowGroundTruthOverlay: (show) => set({ showGroundTruthOverlay: show }),
   setShowPolygons: (show) => set({ showPolygons: show }),
+  setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),
   setVisibleParcelTypes: (types) => set({ visibleParcelTypes: types }),
   toggleParcelType: (type) =>
     set((state) => {
