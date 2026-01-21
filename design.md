@@ -4,7 +4,7 @@
 
 **Application:** BoundaryAI - AI-Assisted Land Parcel Editor
 **Users:** Government Survey Officers (Andhra Pradesh Re-Survey Project)
-**Core Value:** AI does the heavy lifting - auto-detects boundaries, officers verify and correct. 10x faster than manual tracing.
+**Core Value:** AI auto-detects 12,000+ parcel boundaries from drone imagery. Officers verify, fix mistakes, and export. 10x faster than manual tracing.
 
 ---
 
@@ -12,486 +12,863 @@
 
 **Without AI:** Officers manually trace every parcel boundary from drone images. Slow, tedious, error-prone.
 
-**With BoundaryAI:** AI (SAM) auto-detects 12,000+ parcel boundaries in seconds. Officers review, fix mistakes, and export. Massive productivity boost.
-
-### Two Common AI Mistakes Officers Fix:
+**With BoundaryAI:** SAM (Segment Anything Model) auto-detects boundaries. Officers review and fix two common AI mistakes:
 
 | Problem | What Happened | Officer Action |
 |---------|---------------|----------------|
 | **Over-segmentation** | AI saw shadow/channel as boundary, created extra parcels | Select fragments → **Merge (M)** |
-| **Under-segmentation** | AI missed a faint bund, merged two parcels | Select parcel → **Split (S)** → draw line |
+| **Under-segmentation** | AI missed a faint bund, merged two parcels | Select parcel → **Split (S)** → draw dividing line |
 
 ---
 
 ## Demo Flow
 
 ```
-Login → Dashboard (select village) → Map Editor (verify & edit parcels) → Export
+Login → Dashboard (select village) → Map Editor (verify & edit) → Export
 ```
-
-**Three screens. One focused workflow.**
 
 ---
 
 ## Screen 1: Login
 
-Simple authentication with government branding. Clean, professional, minimal.
+### Purpose
+Simple, professional authentication with government branding. Establishes trust and authority.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│        [AP Government Logo]  [Survey Dept Logo]         │
-│                                                         │
-│              ┌─────────────────────────┐                │
-│              │                         │                │
-│              │      BoundaryAI         │                │
-│              │   Land Parcel Editor    │                │
-│              │                         │                │
-│              │  ┌───────────────────┐  │                │
-│              │  │ Employee ID       │  │                │
-│              │  └───────────────────┘  │                │
-│              │                         │                │
-│              │  ┌───────────────────┐  │                │
-│              │  │ Password ******   │  │                │
-│              │  └───────────────────┘  │                │
-│              │                         │                │
-│              │  [      Sign In      ]  │                │
-│              │                         │                │
-│              └─────────────────────────┘                │
-│                                                         │
-│      Andhra Pradesh Survey & Land Records Department    │
-└─────────────────────────────────────────────────────────┘
-```
+### Required Elements
 
-### Elements
-- AP Government emblem/logo
-- Survey Department logo
-- Application name and tagline
-- Employee ID input
-- Password input
-- Sign In button
-- Department name footer
+| Element | Description | Notes |
+|---------|-------------|-------|
+| **Government Logo** | AP State emblem/logo | Top-left or centered |
+| **Department Logo** | Survey & Land Records logo | Adjacent to govt logo |
+| **Application Title** | "BoundaryAI" with tagline "Land Parcel Editor" | Prominent, professional font |
+| **Employee ID Input** | Text field with label | Required field |
+| **Password Input** | Password field with show/hide toggle | Required field |
+| **Sign In Button** | Primary action button | Full-width within form |
+| **Language Selector** | Dropdown: English, తెలుగు (Telugu) | Top-right corner |
+| **Department Footer** | "Andhra Pradesh Survey & Land Records Department" | Bottom of screen |
+
+### User Actions
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Enter credentials | Type in fields | Enable Sign In when both filled |
+| Toggle password visibility | Click eye icon | Show/hide password text |
+| Change language | Select from dropdown | UI text changes to selected language |
+| Submit login | Click Sign In or press Enter | Validate → Navigate to Dashboard |
+
+### States
+
+| State | Visual Indicator |
+|-------|------------------|
+| Empty fields | Sign In button disabled (grayed) |
+| Valid input | Sign In button enabled (primary blue) |
+| Loading | Button shows spinner, fields disabled |
+| Error | Red border on field, error message below |
+| Success | Navigate to Dashboard |
+
+### Error Messages
+- "Employee ID is required"
+- "Password is required"
+- "Invalid credentials. Please try again."
+- "Network error. Please check your connection."
+
+### Accessibility
+- Tab order: Language → Employee ID → Password → Sign In
+- All inputs have visible labels (not just placeholders)
+- Error messages linked to inputs via aria-describedby
+- Minimum touch target: 44x44px for all buttons
 
 ### Placeholders
 ```html
-<img id="govt-logo" src="{{GOVT_LOGO}}" alt="Government of AP" />
-<img id="dept-logo" src="{{DEPT_LOGO}}" alt="Survey Department" />
-<input id="employee-id" placeholder="Employee ID" />
-<input id="password" type="password" placeholder="Password" />
-<button id="login-btn">Sign In</button>
+<select id="language-selector">
+  <option value="en">English</option>
+  <option value="te">తెలుగు</option>
+</select>
+<img id="govt-logo" src="{{GOVT_LOGO_URL}}" alt="Government of Andhra Pradesh" />
+<img id="dept-logo" src="{{DEPT_LOGO_URL}}" alt="Survey Department" />
+<input id="employee-id" placeholder="Employee ID" aria-required="true" />
+<input id="password" type="password" placeholder="Password" aria-required="true" />
+<button id="login-btn" type="submit">Sign In</button>
 ```
 
 ---
 
 ## Screen 2: Dashboard
 
-Village selection screen. Shows assigned villages with status and parcel counts.
+### Purpose
+Village selection screen. Shows assigned villages with progress status. Provides at-a-glance overview of workload.
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  [Logo] BoundaryAI                                    [👤 Sri Ramesh ▼] │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  Welcome, Sri Ramesh                                                    │
-│  Survey Officer • Guntur District                                       │
-│                                                                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                     │
-│  │     12      │  │      8      │  │      4      │                     │
-│  │  Assigned   │  │  Completed  │  │   Pending   │                     │
-│  │  Villages   │  │             │  │             │                     │
-│  └─────────────┘  └─────────────┘  └─────────────┘                     │
-│                                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  Your Villages                                    [🔍 Search]   │   │
-│  ├─────────────────────────────────────────────────────────────────┤   │
-│  │                                                                 │   │
-│  │  ┌─────────────────────────────────────────────────────────┐   │   │
-│  │  │  📍 Nibhanupudi                                         │   │   │
-│  │  │  Pedakurapadu Mandal • 12,032 parcels                   │   │   │
-│  │  │  ████████████████████░░░░ 78% verified                  │   │   │
-│  │  │                                          [Open →]       │   │   │
-│  │  └─────────────────────────────────────────────────────────┘   │   │
-│  │                                                                 │   │
-│  │  ┌─────────────────────────────────────────────────────────┐   │   │
-│  │  │  📍 Kondepadu                                           │   │   │
-│  │  │  Pedakurapadu Mandal • 8,456 parcels                    │   │   │
-│  │  │  ████████████████████████████ 100% verified ✓           │   │   │
-│  │  │                                          [View →]       │   │   │
-│  │  └─────────────────────────────────────────────────────────┘   │   │
-│  │                                                                 │   │
-│  │  ┌─────────────────────────────────────────────────────────┐   │   │
-│  │  │  📍 Manchala                                            │   │   │
-│  │  │  Sattenapalli Mandal • 5,234 parcels                    │   │   │
-│  │  │  ░░░░░░░░░░░░░░░░░░░░░░░░ Not started                   │   │   │
-│  │  │                                          [Start →]      │   │   │
-│  │  └─────────────────────────────────────────────────────────┘   │   │
-│  │                                                                 │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+### Required Elements
 
-### Elements
-- Header with logo and user dropdown
-- Welcome message with officer name and district
-- Summary stats cards (Assigned, Completed, Pending)
-- Village cards showing:
-  - Village name
-  - Mandal name
-  - Parcel count
-  - Progress bar with percentage
-  - Action button (Open/View/Start)
-- Search box to filter villages
+| Element | Description | Notes |
+|---------|-------------|-------|
+| **Header Bar** | Logo, app name, user menu | Fixed at top |
+| **User Menu** | Officer name + dropdown (Logout) | Top-right |
+| **Welcome Section** | "Welcome, [Name]" with role & district | Below header |
+| **Summary Cards** | 3 cards: Assigned, Completed, Pending | Horizontal row |
+| **Search Box** | Filter villages by name | Above village list |
+| **Sort Dropdown** | Sort by: Name, Progress, Parcels | Next to search |
+| **Village List** | Cards showing village details | Main content area |
+| **Village Card** | Name, mandal, parcels, progress, action | Repeated per village |
+
+### Summary Cards
+
+| Card | Content | Color |
+|------|---------|-------|
+| **Assigned** | Total villages count | Blue |
+| **Completed** | 100% verified count | Green |
+| **Pending** | Not started + in-progress count | Amber |
+
+### Village Card Content
+
+Each card displays:
+- **Village Name** (primary text, bold)
+- **Mandal Name** (secondary text, muted)
+- **Parcel Count** (e.g., "12,032 parcels")
+- **Progress Bar** (visual percentage)
+- **Progress Text** (e.g., "78% verified" or "Not started")
+- **Action Button** ("Open →", "Continue →", "Start →", or "View →" for completed)
+
+### User Actions
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Search villages | Type in search box | Filter list in real-time |
+| Sort villages | Select sort option | Reorder village list |
+| View summary | Glance at cards | Understand workload |
+| Open village | Click village card or "Open →" | Navigate to Map Editor |
+| Logout | Click user menu → Logout | Return to Login |
+
+### States
+
+| State | Visual Indicator |
+|-------|------------------|
+| Loading villages | Skeleton cards with shimmer |
+| No results | "No villages match your search" message |
+| Empty list | "No villages assigned" message |
+| Village 100% | Green checkmark, "View →" button |
+| Village 0% | Gray progress bar, "Start →" button |
+| Village in-progress | Partial progress bar, "Continue →" button |
+
+### Responsive Behavior
+- **Desktop (>1200px):** 3 summary cards in row, 2-3 village cards per row
+- **Tablet (768-1200px):** 3 summary cards, 2 village cards per row
+- **Mobile (<768px):** Summary cards stack vertically, 1 village card per row
+
+### Accessibility
+- Tab order: Search → Sort → Summary Cards → Village Cards
+- Village cards are keyboard navigable (Enter to open)
+- Progress bars have aria-valuenow for screen readers
+- Summary card values announced with context ("12 Assigned Villages")
 
 ### Placeholders
 ```html
 <!-- Header -->
-<span id="user-name">{{USER_NAME}}</span>
-<span id="user-district">{{DISTRICT}}</span>
+<span id="user-name">{{USER_DISPLAY_NAME}}</span>
+<span id="user-role">Survey Officer</span>
+<span id="user-district">{{DISTRICT_NAME}} District</span>
 
-<!-- Stats -->
-<div id="stat-assigned">{{ASSIGNED_COUNT}}</div>
-<div id="stat-completed">{{COMPLETED_COUNT}}</div>
-<div id="stat-pending">{{PENDING_COUNT}}</div>
-
-<!-- Village card template -->
-<div class="village-card" data-village-id="{{VILLAGE_ID}}">
-  <h3>{{VILLAGE_NAME}}</h3>
-  <p>{{MANDAL_NAME}} • {{PARCEL_COUNT}} parcels</p>
-  <div class="progress-bar" style="--progress: {{PERCENT}}%"></div>
-  <span>{{PERCENT}}% verified</span>
-  <button class="open-village">Open →</button>
+<!-- Summary Cards -->
+<div class="summary-card" aria-label="Assigned Villages">
+  <span class="count">{{ASSIGNED_COUNT}}</span>
+  <span class="label">Assigned</span>
 </div>
+
+<!-- Village Card Template -->
+<article class="village-card" data-village-id="{{VILLAGE_ID}}" tabindex="0">
+  <h3 class="village-name">{{VILLAGE_NAME}}</h3>
+  <p class="mandal">{{MANDAL_NAME}}</p>
+  <p class="parcels">{{PARCEL_COUNT}} parcels</p>
+  <div class="progress-bar" role="progressbar" aria-valuenow="{{PERCENT}}" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-fill" style="width: {{PERCENT}}%"></div>
+  </div>
+  <span class="progress-text">{{PERCENT}}% verified</span>
+  <button class="action-btn">{{ACTION_TEXT}} →</button>
+</article>
 ```
 
 ### Integration Notes
-- For demo, clicking "Open →" on Nibhanupudi navigates to Map Editor
-- Village data is static/mock - we only have Nibhanupudi data loaded
-- Progress percentage can be calculated from parcel classification status
+- For demo: Only "Nibhanupudi" has real data (12,032 parcels)
+- Other villages are mock data for visual completeness
+- Progress percentage calculated from classified parcel count
 
 ---
 
 ## Screen 3: Map Editor (Core Interface)
 
-**This is where ALL the real functionality lives.** Everything documented here is implemented and uses real data.
+### Purpose
+Full-featured parcel editing interface. This is where all real work happens. Officers verify AI boundaries, fix mistakes, classify land types, and export.
 
-### Layout
+### Layout Structure
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  [←] Nibhanupudi, Pedakurapadu                        [Saved ✓] [Ramesh ▼] │
-├────────────────────────┬────────────────────────────────────────────────────┤
-│                        │                                                    │
-│  [Tools][Layers]       │                                                    │
-│  [Classify][Validate]  │                                                    │
-│  [ROR][Stats]          │                                                    │
-│                        │                                                    │
-│  ┌──────────────────┐  │                  INTERACTIVE MAP                   │
-│  │                  │  │                                                    │
-│  │                  │  │            ┌──────────────────────┐                │
-│  │   Active Tab     │  │            │  Drone imagery with  │                │
-│  │   Content        │  │            │  AI-detected parcel  │                │
-│  │                  │  │            │  boundaries overlay  │                │
-│  │                  │  │            └──────────────────────┘                │
-│  │                  │  │                                                    │
-│  │                  │  │                                                    │
-│  │                  │  │                                                    │
-│  └──────────────────┘  │                                                    │
-│                        │                                                    │
-│  [Export Shapefile]    │                                                    │
-│                        │                                                    │
-├────────────────────────┴────────────────────────────────────────────────────┤
-│  Mode: SELECT │ "Click to select, Shift+click for multi" │ Selected: 0     │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  HEADER: [← Back] Village Name, Mandal    [Auto-saved ✓] [User ▼]  │
+├──────────────────┬──────────────────────────────────────────────────┤
+│                  │                                                  │
+│     SIDEBAR      │                                                  │
+│     (280px)      │                 MAP CANVAS                       │
+│                  │              (remaining width)                   │
+│  ┌────────────┐  │                                                  │
+│  │ Tab Bar    │  │     Drone imagery with parcel boundaries         │
+│  ├────────────┤  │                                                  │
+│  │            │  │                                                  │
+│  │  Active    │  │                                                  │
+│  │  Tab       │  │                                                  │
+│  │  Content   │  │                                                  │
+│  │            │  │                                                  │
+│  │            │  │                                                  │
+│  └────────────┘  │                                                  │
+│                  │                                                  │
+│  [Export Button] │                                                  │
+│                  │                                                  │
+├──────────────────┴──────────────────────────────────────────────────┤
+│  BOTTOM BAR: Mode Badge │ Hint Text │ Selection Info │ Actions     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+### Header Bar Elements
+
+| Element | Description | User Action |
+|---------|-------------|-------------|
+| **Back Button** | "←" icon | Returns to Dashboard |
+| **Village Title** | "Nibhanupudi, Pedakurapadu" | Display only |
+| **Save Status** | "Saved ✓" or "Saving..." | Auto-updates |
+| **User Menu** | Officer name + dropdown | Logout option |
 
 ---
 
-## Sidebar Tabs (All Implemented)
+## Sidebar: Tab Navigation
 
-### Tab 1: Tools
+Six tabs providing different functionality panels.
 
-Editing tools for parcel manipulation.
+| Tab | Label | Purpose |
+|-----|-------|---------|
+| 1 | **Tools** | Editing tools and actions |
+| 2 | **Layers** | Data sources and visibility controls |
+| 3 | **Classify** | Land type assignment |
+| 4 | **Validate** | Quality checks and accuracy |
+| 5 | **ROR** | Record of Rights data |
+| 6 | **Stats** | Summary statistics |
 
-| Tool | Shortcut | Description |
-|------|----------|-------------|
-| Select | V | Click to select parcels. Shift+click for multi-select. Drag for box select. |
-| Draw | N | Draw new parcel. Click to add points, double-click to finish. |
-| Edit Vertices | E | Drag vertex handles to reshape selected parcel boundary. |
-| Split | S | Draw a line across parcel to divide it into two. |
-
-| Action | Shortcut | Description |
-|--------|----------|-------------|
-| Undo | Z or Ctrl+Z | Undo last action |
-| Redo | Shift+Z | Redo undone action |
-| Delete | D | Delete selected parcel(s) |
-| Merge | M | Merge 2+ selected parcels into one |
+### Tab Visual States
+- **Inactive:** Gray text
+- **Active:** Cyan text with bottom border highlight
+- **Hover:** Lighter text color
 
 ---
 
-### Tab 2: Layers
+## Tab 1: Tools Panel
 
-Data source selection and layer visibility controls.
+### Purpose
+Primary editing tools for parcel manipulation.
 
-**Data Source** (Radio buttons)
-| Source | Description |
-|--------|-------------|
-| SAM AI Output | AI-detected boundaries (12,032 parcels) |
-| Ground Truth | Manually digitized reference (105 parcels) |
-| Working Layer | Your edits (auto-saved) |
+### Tool Buttons (Mode Selection)
 
-**Layer Toggles** (Checkboxes)
+| Tool | Icon | Shortcut | Description | Cursor |
+|------|------|----------|-------------|--------|
+| **Select** | Arrow | V | Click parcels to select | Default arrow |
+| **Draw** | Pen | N | Create new parcel polygon | Crosshair |
+| **Edit Vertices** | Dots | E | Reshape selected parcel | Move cursor on vertices |
+| **Split** | Scissors | S | Divide parcel with a line | Crosshair |
+
+### Action Buttons
+
+| Action | Icon | Shortcut | Description | Enabled When |
+|--------|------|----------|-------------|--------------|
+| **Undo** | ↶ | Z or Ctrl+Z | Revert last action | History has items |
+| **Redo** | ↷ | Shift+Z | Restore undone action | Redo stack has items |
+| **Delete** | Trash | D or Delete | Remove selected parcels | Parcel(s) selected |
+| **Merge** | Union | M | Combine selected parcels | 2+ parcels selected |
+
+### Tool States
+
+| State | Visual Indicator |
+|-------|------------------|
+| Active tool | Button highlighted with cyan background |
+| Disabled action | Grayed out, not clickable |
+| Hover | Lighter background |
+
+### User Actions in Tool Panel
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Switch tool | Click tool button or press shortcut | Mode changes, cursor updates, hint updates |
+| Undo | Click or Ctrl+Z | Last action reverted, "Undone" toast shown |
+| Redo | Click or Shift+Z | Undone action restored |
+| Delete | Click or D | Selected parcels removed (with confirmation if >5) |
+| Merge | Click or M | Selected parcels combined into one |
+
+### Tool Usage Instructions (shown in Bottom Bar)
+
+| Tool | Hint Text |
+|------|-----------|
+| Select | "Click to select. Shift+click to add. Drag for box select." |
+| Draw | "Click to add points. Double-click to finish. Escape to cancel." |
+| Edit | "Drag vertices to reshape. Click off to finish." |
+| Split | "Draw a line across the parcel. Double-click to split." |
+
+---
+
+## Tab 2: Layers Panel
+
+### Purpose
+Control data sources and layer visibility.
+
+### Data Source Section
+**Label:** "Data Source"
+**Type:** Radio button group (mutually exclusive)
+
+| Option | Description | Parcel Count |
+|--------|-------------|--------------|
+| **SAM AI Output** | AI-detected boundaries | 12,032 |
+| **Ground Truth** | Manually digitized reference | 105 |
+| **Working Layer** | Your edits (auto-saved) | Variable |
+
+### Layer Visibility Section
+**Label:** "Layer Visibility"
+**Type:** Checkbox toggles
+
 | Toggle | Default | Description |
 |--------|---------|-------------|
-| Show GT Overlay | OFF | Overlay ground truth as dashed red lines |
-| Conflict Highlighting | OFF | Color parcels by area mismatch (green/yellow/red) |
-| ORI Tiles | ON | Show drone orthophoto imagery |
-| Google Satellite | ON | Show satellite basemap |
-| Polygons | ON | Show/hide parcel boundaries |
+| **Show GT Overlay** | OFF | Dashed red lines showing ground truth boundaries |
+| **Conflict Highlighting** | OFF | Color parcels by area mismatch (green/yellow/red) |
+| **ORI Tiles** | ON | Drone orthophoto imagery |
+| **Google Satellite** | ON | Satellite basemap |
+| **Show Polygons** | ON | Parcel boundary lines |
 
-**Min Area Filter**
-- Slider: 0 to 1000 m²
-- Presets: All, 10m², 50m², 100m², 500m²
-- Shows: "Hiding X parcels" when filter active
-- Stats: Smallest, Median, Largest parcel sizes
+### Min Area Filter Section
+**Label:** "Min Area Filter"
 
----
+| Element | Description |
+|---------|-------------|
+| **Slider** | Range: 0 to 1000 m² |
+| **Value Display** | Current threshold (e.g., "100 m²") |
+| **Preset Buttons** | "All", "10m²", "50m²", "100m²", "500m²" |
+| **Hiding Count** | "Hiding 2,373 parcels" (when filter active) |
+| **Area Stats** | Smallest: X m² | Median: Y m² | Largest: Z m² |
 
-### Tab 3: Classify
+### User Actions in Layers Panel
 
-Assign land type to selected parcel(s).
-
-| Type | Shortcut | Color |
-|------|----------|-------|
-| Agricultural | 1 | Orange |
-| Gramakantam | 2 | Yellow |
-| Building | 3 | Red |
-| Road | 4 | Gray |
-| Water Body | 5 | Blue |
-| Open Space | 6 | Green |
-| Compound | 7 | Purple |
-| Government Land | 8 | Teal |
-
-- Shows current type of selected parcel
-- Shows "Mixed types" when multiple different types selected
-- Click button or press number key to assign type
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Change data source | Click radio button | Map reloads with selected data |
+| Toggle layer | Click checkbox | Layer shows/hides immediately |
+| Adjust filter | Drag slider or click preset | Small parcels hide/show |
+| View area stats | Glance at stats | Understand parcel size distribution |
 
 ---
 
-### Tab 4: Validate
+## Tab 3: Classify Panel
 
-Quality checks and accuracy metrics.
+### Purpose
+Assign land type classification to selected parcels.
 
-**Area Comparison** (when parcel selected)
-- SAM Area: calculated area from AI boundary
-- ROR Area: area from Record of Rights
-- Difference: absolute and percentage
-- Match indicator: Excellent (<5%), Fair (5-15%), Poor (>15%)
+### Parcel Type Buttons
 
-**Topology Validation**
-- "Validate" button to check for errors
-- Shows count: X overlaps, Y gaps
-- Error list with click-to-zoom
-- "Fix All" button for auto-fixable errors
+| Type | Shortcut | Color | Border |
+|------|----------|-------|--------|
+| Agricultural | 1 | Orange fill | #ea580c |
+| Gramakantam | 2 | Yellow fill | #ca8a04 |
+| Building | 3 | Red fill | #dc2626 |
+| Road | 4 | Gray fill | #6b7280 |
+| Water Body | 5 | Blue fill | #2563eb |
+| Open Space | 6 | Green fill | #16a34a |
+| Compound | 7 | Purple fill | #9333ea |
+| Government Land | 8 | Teal fill | #0d9488 |
 
-**Accuracy Metrics**
-- Overall IoU score (target: 85%)
-- Matched/Unmatched parcel counts
-- "Parcels Needing Review" list
-- "Export Priority List" button
+### Current Selection Display
 
----
+| State | Display |
+|-------|---------|
+| Nothing selected | "Select a parcel to classify" |
+| Single parcel | "Current: [Type Name]" with color indicator |
+| Multiple same type | "Current: [Type Name] (X parcels)" |
+| Multiple different | "Mixed types (X parcels)" |
 
-### Tab 5: ROR
+### User Actions in Classify Panel
 
-Record of Rights data panel.
-
-- Shows list of ROR entries
-- Search box to filter by LP number
-- Each entry shows:
-  - LP Number (e.g., LP1, LP2, etc.)
-  - Area in m²
-- Click entry to highlight/select
-
----
-
-### Tab 6: Stats
-
-Statistics summary for current data.
-
-**Overview**
-- Total Parcels: 12,032
-- Total Area: 78.62 ha
-
-**Area Distribution**
-- Min, Average, Median, Max parcel sizes
-
-**By Parcel Type**
-- Horizontal bar chart
-- Each type with count and percentage
-- Bar color matches type color
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Classify parcel | Click type button or press 1-8 | Selected parcel(s) change color, type saved |
+| View current type | Select parcel | Current type highlighted in panel |
 
 ---
 
-## Bottom Bar (Implemented)
+## Tab 4: Validate Panel
 
-Status bar showing current state and contextual actions.
+### Purpose
+Quality assurance tools - area comparison, topology checks, accuracy metrics.
 
+### Section 1: Area Comparison
+**Shown when:** A parcel is selected
+
+| Field | Description |
+|-------|-------------|
+| **SAM Area** | Calculated area from AI boundary (m²) |
+| **ROR Area** | Area from Record of Rights (m²) |
+| **Difference** | Absolute difference and percentage |
+| **Match Quality** | Badge: Excellent (<5%), Fair (5-15%), Poor (>15%) |
+
+**Colors:**
+- Excellent: Green badge
+- Fair: Yellow badge
+- Poor: Red badge
+
+**No selection state:** "Select a parcel to compare areas"
+
+### Section 2: Topology Validation
+**Purpose:** Find overlaps and gaps
+
+| Element | Description |
+|---------|-------------|
+| **Validate Button** | "Run Topology Check" |
+| **Results Summary** | "X overlaps, Y gaps found" or "No errors found ✓" |
+| **Error List** | Scrollable list of issues |
+| **Error Item** | Type + "Zoom to" link |
+| **Fix All Button** | Auto-fix simple errors (shown if fixable) |
+
+### Section 3: Accuracy Metrics
+**Purpose:** Compare against ground truth
+
+| Metric | Description |
+|--------|-------------|
+| **IoU Score** | Overall Intersection over Union (target: 85%) |
+| **Matched Parcels** | Count matching GT within threshold |
+| **Unmatched Parcels** | Count without GT match |
+| **Needs Review List** | Parcels below accuracy threshold |
+
+### User Actions in Validate Panel
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| View area comparison | Select a parcel | Comparison data displays |
+| Run topology check | Click Validate | Scan runs, results display |
+| Zoom to error | Click "Zoom to" | Map centers on issue location |
+| Fix errors | Click Fix All | Auto-fixable issues resolved |
+
+---
+
+## Tab 5: ROR Panel
+
+### Purpose
+View and search Record of Rights data.
+
+### Elements
+
+| Element | Description |
+|---------|-------------|
+| **Search Box** | Filter by LP number (e.g., "45") |
+| **Record Count** | "Showing X of Y records" |
+| **Record List** | Scrollable list of ROR entries |
+| **Record Item** | LP Number + Area in m² |
+| **Total Area** | Sum of all displayed record areas |
+
+### Record Item Display
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Mode: SELECT │ "Click to select, Shift+click for multi" │              │
-│              │ Selected: 3 parcels • 456.7 m²           │ [Del][Merge] │
-└─────────────────────────────────────────────────────────────────────────┘
+LP1    ████████████  245.6 m²
+LP2    ████████      189.2 m²
+LP3    ██████████    215.8 m²
 ```
 
-- **Mode badge**: SELECT, DRAW, EDIT, SPLIT
-- **Mode hint**: Contextual instructions
-- **Selection info**: Count and total area
-- **Action buttons**: Delete (D), Merge (M), Split (S), Edit (E) - shown contextually
+### User Actions in ROR Panel
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Search records | Type in search box | Filter list instantly |
+| Select record | Click record item | Highlight corresponding parcel (if matched) |
+| Clear search | Clear search box | Show all records |
 
 ---
 
-## Map Interactions (All Implemented)
+## Tab 6: Stats Panel
 
-| Action | How To |
+### Purpose
+Summary statistics for current dataset.
+
+### Section 1: Overview Cards
+
+| Card | Value | Label |
+|------|-------|-------|
+| **Total Parcels** | 12,032 | "Total Parcels" |
+| **Total Area** | 78.62 ha | "Total Area" |
+
+### Section 2: Area Distribution
+
+| Stat | Description |
+|------|-------------|
+| Min | Smallest parcel area |
+| Avg | Average parcel area |
+| Median | Middle value |
+| Max | Largest parcel area |
+
+### Section 3: By Parcel Type
+**Type:** Horizontal bar chart
+
+For each parcel type with count > 0:
+- Type name with color indicator
+- Count and percentage
+- Horizontal bar (width = % of max count)
+- Area subtotal
+
+---
+
+## Bottom Bar
+
+### Purpose
+Persistent status bar showing current mode, contextual hints, and selection info.
+
+### Layout
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ [MODE]  │  Hint text...                    │ Selection │ [Actions]  │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Mode Badge
+Colored pill showing current tool:
+- SELECT (blue)
+- DRAW (green)
+- EDIT (purple)
+- SPLIT (orange)
+
+### Hint Text
+Contextual instructions based on current mode and state:
+
+| Mode | State | Hint |
+|------|-------|------|
+| SELECT | No selection | "Click to select, Shift+click for multi, drag for box" |
+| SELECT | Has selection | "Press D to delete, M to merge, E to edit vertices" |
+| DRAW | Drawing | "Click to add points, double-click to finish" |
+| EDIT | Editing | "Drag vertices to reshape, click outside to finish" |
+| SPLIT | Ready | "Click to start split line, double-click to cut" |
+
+### Selection Info
+| State | Display |
+|-------|---------|
+| Nothing selected | "Selected: 0" |
+| Parcels selected | "Selected: X parcels • Y.Z m²" |
+
+### Action Buttons
+Quick action buttons (shown contextually):
+- **Delete** (D) - when selection exists
+- **Merge** (M) - when 2+ selected
+- **Edit** (E) - when 1 selected
+- **Split** (S) - when 1 selected
+
+---
+
+## Map Canvas Interactions
+
+### Mouse Interactions
+
+| Action | How | Result |
+|--------|-----|--------|
+| Pan | Drag empty area | Move map view |
+| Zoom | Scroll wheel | Zoom in/out at cursor |
+| Select parcel | Click on parcel | Parcel selected (highlighted) |
+| Add to selection | Shift + Click | Add parcel to selection |
+| Toggle selection | Ctrl/Cmd + Click | Toggle parcel in/out of selection |
+| Box select | Drag from empty area | Select all parcels in box |
+| Clear selection | Click empty area | Deselect all |
+| Clear selection | Press Escape | Deselect all, cancel current operation |
+
+### Right-Click Context Menu
+
+**On empty space:**
+| Option | Action |
 |--------|--------|
-| Pan | Drag the map |
-| Zoom | Scroll wheel or pinch |
-| Select parcel | Click on it |
-| Multi-select | Shift+click to add |
-| Box select | Drag to draw rectangle |
-| Toggle selection | Ctrl+click |
-| Clear selection | Click empty area or Escape |
-| Right-click menu | Context actions on parcels |
+| Draw New Parcel | Switch to Draw mode |
+| Select All | Select all visible parcels |
+| Zoom to Extent | Fit all parcels in view |
 
-**Right-Click Menu Options:**
-- On unselected parcel: Select, Add to Selection, Zoom to
-- On selected parcel: Edit Vertices, Split, Delete, Zoom to
-- On multiple selection: Merge, Delete All, Zoom to Selection
-- On empty space: Draw New, Select All, Zoom to Extent
+**On unselected parcel:**
+| Option | Action |
+|--------|--------|
+| Select | Select this parcel |
+| Add to Selection | Add to current selection |
+| Zoom to Parcel | Center and zoom to parcel |
+
+**On selected parcel:**
+| Option | Action |
+|--------|--------|
+| Edit Vertices | Enter Edit mode |
+| Split | Enter Split mode |
+| Delete | Delete selected parcel(s) |
+| Zoom to Selection | Fit selection in view |
+
+**On multiple selection:**
+| Option | Action |
+|--------|--------|
+| Merge Parcels | Combine into one |
+| Delete All | Remove all selected |
+| Zoom to Selection | Fit selection in view |
+
+### Visual Feedback
+
+| State | Visual |
+|-------|--------|
+| Parcel hover | Lighter fill, cursor pointer |
+| Parcel selected | Cyan border (3px), lighter fill |
+| Parcel multi-selected | Cyan border, all selected highlighted |
+| Vertex (edit mode) | White circle handles on boundary |
+| Vertex hover | Larger handle, move cursor |
+| Drawing in progress | Dashed line following cursor |
+| Split line | Red dashed line |
+
+### Keyboard Shortcuts (Global)
+
+| Key | Action |
+|-----|--------|
+| V | Select mode |
+| N | Draw mode |
+| E | Edit vertices mode |
+| S | Split mode |
+| D or Delete | Delete selected |
+| M | Merge selected |
+| Z or Ctrl+Z | Undo |
+| Shift+Z | Redo |
+| 1-8 | Classify selected (type 1-8) |
+| Escape | Cancel/Clear selection |
+| Ctrl/Cmd+A | Select all visible |
 
 ---
 
-## Export Dialog (Implemented)
+## Export Dialog
 
-Triggered by "Export Shapefile" button.
+### Purpose
+Export edited parcels as Shapefile for use in other GIS systems.
 
-```
-┌─────────────────────────────────────────┐
-│  Export Shapefile                   [X] │
-├─────────────────────────────────────────┤
-│                                         │
-│  ┌─────────────────────────────────┐    │
-│  │ Total Polygons    12,032        │    │
-│  │ Output CRS        EPSG:32644    │    │
-│  │ Format            .shp .dbf .shx│    │
-│  └─────────────────────────────────┘    │
-│                                         │
-│  ┌─────────────────────────────────┐    │
-│  │ ✓ No topology errors            │    │
-│  └─────────────────────────────────┘    │
-│                                         │
-│           [Cancel]  [Export]            │
-│                                         │
-└─────────────────────────────────────────┘
-```
+### Elements
 
-- Shows polygon count and output format
-- Runs topology validation
-- Shows warning if errors exist
-- Downloads ZIP with .shp, .shx, .dbf, .prj files
+| Element | Description |
+|---------|-------------|
+| **Title** | "Export Shapefile" |
+| **Close Button** | X icon top-right |
+| **Summary Section** | Key export details |
+| **Validation Status** | Topology check result |
+| **Warning (if any)** | Issues to resolve |
+| **Cancel Button** | Secondary, closes dialog |
+| **Export Button** | Primary, triggers download |
+
+### Summary Section Content
+
+| Field | Value |
+|-------|-------|
+| Total Polygons | 12,032 |
+| Output CRS | EPSG:32644 (UTM Zone 44N) |
+| Format | .shp, .shx, .dbf, .prj |
+
+### Validation Status
+
+| State | Display |
+|-------|---------|
+| No errors | Green checkmark "No topology errors" |
+| Has errors | Yellow warning "3 overlaps found - export anyway?" |
+
+### User Actions
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Open dialog | Click "Export Shapefile" button | Dialog opens |
+| Cancel | Click Cancel or X | Dialog closes |
+| Export | Click Export | Download ZIP file |
+
+### Export Output
+- Downloads: `nibhanupudi_parcels.zip`
+- Contains: `.shp`, `.shx`, `.dbf`, `.prj` files
+
+---
+
+## Restore Session Dialog
+
+### Purpose
+On load, offer to restore previous unsaved work.
+
+### Elements
+
+| Element | Description |
+|---------|-------------|
+| **Title** | "Restore Previous Session?" |
+| **Message** | "You have unsaved edits from [timestamp]" |
+| **Edit Count** | "X parcels modified" |
+| **Restore Button** | Primary action |
+| **Discard Button** | Secondary action |
+
+### User Actions
+
+| Action | Result |
+|--------|--------|
+| Restore | Load previous working state |
+| Discard | Start fresh from SAM data |
 
 ---
 
 ## Color Palette
 
-```
-Primary:       #1e40af (Government blue)
-Primary Light: #3b82f6
-Success:       #059669 (Green)
-Warning:       #d97706 (Amber)
-Error:         #dc2626 (Red)
+### Primary Colors (Government-appropriate)
 
-Background:    #f8fafc
-Surface:       #ffffff
-Border:        #e2e8f0
-Text:          #1e293b
-Text Muted:    #64748b
+| Name | Hex | Usage |
+|------|-----|-------|
+| Primary Blue | #1e40af | Buttons, links, active states |
+| Primary Light | #3b82f6 | Hover states |
+| Cyan | #06b6d4 | Selection, highlights |
 
-Parcel Types:
-- Agricultural:    #ea580c
-- Gramakantam:     #ca8a04
-- Building:        #dc2626
-- Road:            #6b7280
-- Water Body:      #2563eb
-- Open Space:      #16a34a
-- Compound:        #9333ea
-- Government Land: #0d9488
-```
+### Semantic Colors
 
----
+| Name | Hex | Usage |
+|------|-----|-------|
+| Success | #059669 | Confirmations, good match |
+| Warning | #d97706 | Fair match, attention needed |
+| Error | #dc2626 | Poor match, errors |
 
-## Data Placeholders
+### UI Colors
 
-```html
-<!-- Map Editor Header -->
-<button id="back-btn">←</button>
-<h1 id="village-name">{{VILLAGE_NAME}}, {{MANDAL_NAME}}</h1>
-<span id="save-status">Saved ✓</span>
-<span id="user-name">{{USER_NAME}}</span>
+| Name | Hex | Usage |
+|------|-----|-------|
+| Background | #111827 | Sidebar background (dark) |
+| Surface | #1f2937 | Cards, panels |
+| Border | #374151 | Dividers, borders |
+| Text Primary | #f3f4f6 | Main text (light) |
+| Text Muted | #9ca3af | Secondary text |
 
-<!-- Data Source Counts -->
-<span class="sam-count">12,032</span>
-<span class="gt-count">105</span>
+### Parcel Type Colors
 
-<!-- Bottom Bar -->
-<span id="current-mode">{{MODE}}</span>
-<span id="mode-hint">{{HINT_TEXT}}</span>
-<span id="selection-count">{{COUNT}} parcels</span>
-<span id="selection-area">{{AREA}} m²</span>
+| Type | Fill | Border |
+|------|------|--------|
+| Agricultural | rgba(234,88,12,0.3) | #ea580c |
+| Gramakantam | rgba(202,138,4,0.3) | #ca8a04 |
+| Building | rgba(220,38,38,0.3) | #dc2626 |
+| Road | rgba(107,114,128,0.3) | #6b7280 |
+| Water Body | rgba(37,99,235,0.3) | #2563eb |
+| Open Space | rgba(22,163,74,0.3) | #16a34a |
+| Compound | rgba(147,51,234,0.3) | #9333ea |
+| Government | rgba(13,148,136,0.3) | #0d9488 |
 
-<!-- Stats Panel -->
-<div id="total-parcels">{{COUNT}}</div>
-<div id="total-area">{{AREA}} ha</div>
-<div id="min-area">{{MIN}} m²</div>
-<div id="avg-area">{{AVG}} m²</div>
-<div id="median-area">{{MEDIAN}} m²</div>
-<div id="max-area">{{MAX}} m²</div>
+### Conflict Highlighting Colors
 
-<!-- Map Container - I'll inject MapLibre here -->
-<div id="map-container"></div>
-```
+| Quality | Color | Threshold |
+|---------|-------|-----------|
+| Excellent | Green (#16a34a) | <5% deviation |
+| Fair | Yellow (#eab308) | 5-15% deviation |
+| Poor | Red (#dc2626) | >15% deviation |
 
 ---
 
-## What's NOT Implemented (Don't Include)
+## Typography
+
+| Element | Size | Weight | Color |
+|---------|------|--------|-------|
+| App Title | 18px | 600 | White |
+| Tab Label | 14px | 500 | Gray/Cyan |
+| Section Header | 12px | 600 | Gray (uppercase) |
+| Body Text | 14px | 400 | Light gray |
+| Stat Value | 24px | 700 | Cyan |
+| Stat Label | 12px | 400 | Gray |
+| Button | 14px | 500 | White |
+
+---
+
+## Accessibility Requirements
+
+### Color Contrast
+- Text: Minimum 4.5:1 contrast ratio
+- Large text (18px+): Minimum 3:1
+- UI components: Minimum 3:1
+
+### Keyboard Navigation
+- All interactive elements focusable via Tab
+- Logical tab order (left→right, top→bottom)
+- Visible focus indicators (cyan outline)
+- Escape to close dialogs/cancel operations
+
+### Screen Reader Support
+- All buttons have accessible names
+- Form inputs have labels
+- Images have alt text
+- Progress bars have aria-valuenow
+- Dialogs have aria-labelledby
+
+### Touch Targets
+- Minimum 44x44px for all buttons
+- Adequate spacing between targets
+
+---
+
+## Loading & Error States
+
+### Loading States
+
+| Context | Display |
+|---------|---------|
+| Initial map load | "Loading parcels..." with spinner |
+| Data source switch | Map dims, spinner overlay |
+| Export processing | Button shows spinner, disabled |
+| Topology validation | "Checking..." in panel |
+
+### Error States
+
+| Error | Display | Recovery |
+|-------|---------|----------|
+| Data load failed | "Failed to load parcels" + Retry button | Retry |
+| Export failed | Toast: "Export failed" | Try again |
+| Network error | Toast: "Connection lost" | Auto-retry |
+
+---
+
+## Responsive Behavior
+
+### Sidebar
+- **Desktop:** 280px fixed width
+- **Tablet:** Collapsible, icon toggle
+- **Mobile:** Full-screen overlay when open
+
+### Map
+- Always fills remaining viewport width
+- Minimum usable width: 300px
+
+### Bottom Bar
+- **Desktop:** Full info display
+- **Mobile:** Condensed (mode + selection count only)
+
+---
+
+## What's NOT Implemented
+
+These features are out of scope for the demo:
 
 - ❌ User roles/permissions
+- ❌ Multi-user collaboration
 - ❌ Approval workflows
-- ❌ Notifications/alerts
-- ❌ Settings page
+- ❌ Notification system
+- ❌ Settings/preferences page
 - ❌ Edit history log
-- ❌ Comments/notes on parcels
+- ❌ Comments on parcels
+- ❌ Parcel search by ID
+- ❌ Measurement tools
+- ❌ Print/PDF export
 
 ---
 
 ## Integration Notes
 
-When you send HTML designs:
+When converting HTML designs to React:
 
-1. **Map container**: Empty `<div id="map-container">` - I inject MapLibre GL
-2. **Sidebar**: Fixed ~280-300px width, scrollable content area
-3. **Tabs**: I'll wire up switching logic
-4. **Buttons**: Give unique IDs, I'll add handlers
-5. **Responsive**: Map fills remaining space
+1. **Map Container:** Empty `<div id="map-container">` - MapLibre GL injected here
+2. **Sidebar Width:** Fixed 280px, content scrolls independently
+3. **Tab Switching:** I'll wire up state management
+4. **All Buttons:** Give unique IDs, I'll add click handlers
+5. **Shortcuts:** I'll implement keyboard listener
+6. **Data Binding:** Placeholders like `{{VILLAGE_NAME}}` will be replaced
 
 ---
 
 ## Summary
 
-**Three screens:**
-1. **Login** - Simple auth form
-2. **Dashboard** - Village selection with progress
-3. **Map Editor** - Full editing interface (all features here)
+**Three screens, one workflow:**
 
-**Core story:** AI auto-detects 12,000+ parcel boundaries. Officers verify, fix mistakes (Merge/Split), classify land types, and export. Transforms weeks of manual work into hours.
+1. **Login** → Authenticate with government credentials
+2. **Dashboard** → Select village to work on
+3. **Map Editor** → Verify AI boundaries, fix errors, classify, export
+
+**Core demo story:** AI detected 12,000+ parcel boundaries automatically. Officer reviews, merges over-segmented areas, splits under-segmented areas, classifies land types, and exports clean shapefile. Hours instead of weeks.
