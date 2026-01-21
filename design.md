@@ -317,9 +317,19 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
 | Tool | Shortcut | Description |
 |------|----------|-------------|
 | Select | V | Click to select parcels, Shift+click for multi-select |
-| Draw | N | Draw new polygon boundary |
-| Edit Vertices | E | Drag vertices to adjust boundary |
-| Split | S | Draw line to split a parcel into two |
+| Draw | N | Draw new polygon boundary (double-click to finish, Escape to cancel) |
+| Edit Vertices | E | Drag vertex handles to adjust boundary shape |
+| Split | S | Draw line across parcel to divide into two polygons |
+| Delete | D | Delete selected parcel(s) - confirmation for 5+ parcels |
+| Merge | M | Merge 2+ selected adjacent parcels into one |
+
+**Actions**
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Undo | Ctrl+Z or Z | Undo last action |
+| Redo | Ctrl+Shift+Z | Redo undone action |
+| Select All | Ctrl+A | Select all visible parcels |
+| Clear Selection | Escape | Deselect all parcels |
 
 **Panel 2: Layer Controls**
 | Layer | Default | Description |
@@ -348,6 +358,37 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
 - Visual progress bar indicating match quality
 - Color-coded: Green (excellent), Yellow (fair), Red (poor)
 
+**Panel 6: Topology Validation** (in Validate tab)
+- "Validate" button to check for topology errors
+- Summary: shows count of overlaps and gaps
+- Error list with:
+  - Overlap errors (red) - with area in m²
+  - Gap errors (blue) - with area in m²
+  - "auto-fix" badge on fixable errors
+- "Fix All Auto-fixable Errors" button
+- Click error to zoom to location
+- Total overlap/gap area summary
+
+**Panel 7: Accuracy Metrics** (in Validate tab)
+- Ground truth status: loaded/not loaded with polygon count
+- "Calculate" button to compute IoU metrics
+- Overall IoU score (large display) with 85% target threshold
+- Color-coded pass/fail based on target
+- Statistics grid:
+  - Matched count
+  - Unmatched count
+  - Above 85% count
+  - Below 85% count
+- "Parcels Needing Review" list (sorted by lowest IoU)
+- "Export List" button for priority review report
+- Click parcel to zoom to location
+
+**Panel 8: Min Area Filter** (in Layers tab)
+- Slider: 0 to 1000 m² threshold
+- Preset buttons: All, 10m², 50m², 100m², 500m²
+- "Hiding X parcels" count when filter active
+- Area statistics: Smallest, Median, Largest parcel sizes
+
 #### C. Map Canvas (Center)
 - Full interactive map powered by MapLibre GL
 - Supports:
@@ -355,8 +396,11 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
   - Zoom (scroll wheel, pinch)
   - Click to select parcels
   - Shift+click for multi-select
-  - Double-click to finish drawing
+  - Ctrl/Cmd+click to toggle selection
+  - Double-click to finish drawing/splitting
   - Right-click for context menu
+  - Rectangle selection (drag to draw box)
+  - Lasso selection (freehand draw to select)
 
 **Map Controls (overlaid on map)**
 - Zoom in/out buttons (top-right)
@@ -365,11 +409,49 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
 - Coordinates display (bottom-right)
 - Full-screen toggle
 
+**Context Menu (Right-Click)**
+When right-clicking on the map, show contextual options:
+
+*On unselected polygon:*
+- Select
+- Add to Selection (Shift+Click)
+- Zoom to Polygon
+
+*On single selected polygon:*
+- Edit Vertices (E)
+- Split (S)
+- Zoom to Polygon
+- Delete (D)
+
+*On multiple selected polygons:*
+- Merge (M)
+- Delete All (D)
+- Zoom to Selection
+
+*On empty space:*
+- Select All (Ctrl+A)
+- Zoom to Full Extent
+- Draw New Polygon (N)
+
 #### D. Bottom Status Bar
-- Current mode indicator (SELECT, DRAW, EDIT, SPLIT)
-- Selection count
-- Total parcels in current view
-- Action buttons: Undo, Redo, Export Shapefile, Mark as Done
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Mode: SELECT │ "Click to select, Shift+click to multi-select" │            │
+│              │ Selected: 3 parcels • 456.7 m²                  │            │
+│              │                                    [Delete] [Merge] [Split] │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Mode indicator**: Shows current mode (SELECT, DRAW, EDIT-VERTICES, SPLIT)
+- **Mode hint**: Contextual help text for current mode
+- **Selection info**:
+  - Count of selected parcels
+  - Total area of selection (in m² or hectares)
+- **Action buttons** (contextual based on selection):
+  - Delete (D) - always when selection exists
+  - Merge (M) - only when 2+ parcels selected
+  - Split (S) - only when 1 parcel selected
+  - Edit (E) - only when 1 parcel selected
 
 ### Functionalities
 
@@ -407,32 +489,88 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
    - Switch between AI output, ground truth, and working layer
    - Working layer preserves all edits
 
-8. **Export**
-   - Export current parcels as Shapefile (.shp, .dbf, .shx in ZIP)
+8. **Delete Parcels**
+   - Select parcel(s) and press D or click Delete button
+   - Confirmation dialog when deleting 5+ parcels
+   - Supports undo
+
+9. **Merge Parcels**
+   - Select 2+ adjacent parcels
+   - Press M or click Merge button
+   - Combines into single polygon
+   - Inherits land type from first selected parcel
+   - Supports undo
+
+10. **Rectangle Selection**
+    - Drag to draw selection box
+    - All parcels intersecting box are selected
+
+11. **Lasso Selection**
+    - Freehand draw around parcels
+    - All parcels within lasso are selected
+
+12. **Topology Validation**
+    - Detects overlaps between parcels
+    - Detects gaps between parcels
+    - Auto-fix capability for some errors
+    - Click error to zoom to location
+
+13. **Accuracy Calculation**
+    - Compares parcels against ground truth
+    - Calculates IoU (Intersection over Union)
+    - Shows overall accuracy score
+    - Lists parcels needing review
+
+14. **Area Filtering**
+    - Hide parcels below minimum area threshold
+    - Useful for filtering out noise/small segments
+    - Preset buttons for common thresholds
+
+15. **Export with Validation**
+    - Runs topology check before export
+    - Shows warning if errors exist
+    - Option to "Export Anyway"
+    - Downloads as ZIP with .shp, .shx, .dbf, .prj files
+    - Output CRS: EPSG:32644 (UTM Zone 44N)
+
+16. **Auto-Save**
+    - Automatically saves edits to localStorage every 30 seconds
+    - "Saved ✓" indicator in header
+    - Restore session dialog on page reload
 
 ### User Actions
 
 | Action | Method | Shortcut |
 |--------|--------|----------|
+| **Selection** | | |
 | Select parcel | Click on parcel | - |
 | Multi-select | Shift+click | - |
 | Toggle selection | Ctrl/Cmd+click | - |
+| Select All | - | Ctrl+A |
 | Clear selection | Click empty space | Escape |
-| Enter draw mode | Click Draw tool | N |
-| Enter edit mode | Click Edit tool | E |
-| Enter split mode | Click Split tool | S |
-| Back to select | Click Select tool | V |
-| Undo | Click Undo button | Ctrl+Z |
+| **Mode Switching** | | |
+| Select mode | Click Select tool | V |
+| Draw mode | Click Draw tool | N |
+| Edit vertices mode | Click Edit tool | E |
+| Split mode | Click Split tool | S |
+| **Editing** | | |
+| Delete selected | Click Delete button | D |
+| Merge selected | Click Merge button | M |
+| Undo | Click Undo button | Ctrl+Z or Z |
 | Redo | Click Redo button | Ctrl+Shift+Z |
-| Set type to Agricultural | - | 1 |
-| Set type to Gramakantam | - | 2 |
-| Set type to Building | - | 3 |
-| Set type to Road | - | 4 |
-| Set type to Water Body | - | 5 |
-| Set type to Open Space | - | 6 |
-| Set type to Compound | - | 7 |
-| Set type to Govt Land | - | 8 |
-| Toggle fullscreen | - | F |
+| **Drawing** | | |
+| Add vertex | Click on map | - |
+| Finish polygon | Double-click | - |
+| Cancel drawing | - | Escape |
+| **Land Type Classification** | | |
+| Agricultural | - | 1 |
+| Gramakantam | - | 2 |
+| Building | - | 3 |
+| Road | - | 4 |
+| Water Body | - | 5 |
+| Open Space | - | 6 |
+| Compound | - | 7 |
+| Government Land | - | 8 |
 
 ### Data Placeholders
 
@@ -458,8 +596,46 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
 
 <!-- Status bar -->
 <span id="current-mode">{{MODE}}</span>
+<span id="mode-hint">{{MODE_HINT_TEXT}}</span>
 <span id="selection-count">{{SELECTED_COUNT}}</span>
+<span id="selection-area">{{SELECTED_AREA}}</span>
 <span id="total-count">{{TOTAL_PARCELS}}</span>
+
+<!-- Topology validation -->
+<div id="overlap-count">{{OVERLAP_COUNT}}</div>
+<div id="gap-count">{{GAP_COUNT}}</div>
+<div id="total-overlap-area">{{TOTAL_OVERLAP_AREA}}</div>
+<div id="total-gap-area">{{TOTAL_GAP_AREA}}</div>
+
+<!-- Accuracy metrics -->
+<div id="overall-iou">{{OVERALL_IOU}}%</div>
+<div id="matched-count">{{MATCHED_COUNT}}</div>
+<div id="unmatched-count">{{UNMATCHED_COUNT}}</div>
+<div id="above-threshold">{{ABOVE_THRESHOLD_COUNT}}</div>
+<div id="below-threshold">{{BELOW_THRESHOLD_COUNT}}</div>
+
+<!-- ROR Panel -->
+<div id="ror-record-count">{{ROR_RECORD_COUNT}}</div>
+<div id="ror-total-area">{{ROR_TOTAL_AREA}}</div>
+<!-- ROR record row template -->
+<div class="ror-record" data-lp-number="{{LP_NUMBER}}">
+  <span class="lp-number">{{LP_NUMBER}}</span>
+  <span class="area">{{AREA}} m²</span>
+</div>
+
+<!-- Statistics Panel -->
+<div id="stats-total-parcels">{{TOTAL_PARCEL_COUNT}}</div>
+<div id="stats-total-area">{{TOTAL_AREA_HA}} ha</div>
+<div id="stats-min-area">{{MIN_AREA}} m²</div>
+<div id="stats-avg-area">{{AVG_AREA}} m²</div>
+<div id="stats-median-area">{{MEDIAN_AREA}} m²</div>
+<div id="stats-max-area">{{MAX_AREA}} m²</div>
+<!-- Parcel type bar chart - repeat for each type -->
+<div class="type-bar" data-type="{{TYPE_ID}}" style="--bar-color: {{TYPE_COLOR}}">
+  <span class="type-name">{{TYPE_LABEL}}</span>
+  <div class="bar" style="width: {{PERCENT}}%"></div>
+  <span class="count">{{COUNT}} ({{PERCENT}}%)</span>
+</div>
 
 <!-- Map container - DO NOT include content, just the container -->
 <div id="map-container" style="width: 100%; height: 100%;"></div>
@@ -482,6 +658,90 @@ Primary workspace for viewing and editing land parcel boundaries with AI assista
    - Area comparison updates when selection changes
    - Save status updates automatically (auto-save every 30 seconds)
    - Parcel count updates when filtered
+
+### Dialogs/Modals
+
+#### Export Dialog
+Triggered when clicking "Export Shapefile" button.
+
+```
+┌─────────────────────────────────────────┐
+│ Export Shapefile                    [X] │
+├─────────────────────────────────────────┤
+│ Download polygons as ESRI Shapefile     │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Total Polygons    12,032            │ │
+│ │ Output CRS        EPSG:32644 (UTM)  │ │
+│ │ Format            .shp, .shx, .dbf  │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ ⚠ 3 topology errors detected        │ │
+│ │   2 overlaps, 1 gap                 │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ You can still export with errors, but   │
+│ the shapefile may not meet quality      │
+│ requirements.                           │
+│                                         │
+│        [Cancel] [Export Anyway] [Export]│
+└─────────────────────────────────────────┘
+```
+
+**Features:**
+- Shows polygon count and output format
+- Runs topology validation before export
+- Shows error count if validation fails
+- "Export Anyway" button (yellow) for exporting with errors
+- "Export" button (blue) for clean export
+- Download as ZIP file containing .shp, .shx, .dbf, .prj
+
+#### Restore Session Dialog
+Shown on page load if unsaved session exists.
+
+```
+┌─────────────────────────────────────────┐
+│ Restore Previous Session?           [X] │
+├─────────────────────────────────────────┤
+│ We found an unsaved session from your   │
+│ last visit.                             │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Saved         2 hours ago           │ │
+│ │ Date          Jan 22, 2026 3:45 PM  │ │
+│ │ Polygons      12,032                │ │
+│ │ Edits made    47                    │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ Choose "Restore" to continue where you  │
+│ left off, or "Discard" to start fresh.  │
+│                                         │
+│              [Discard] [Restore Session]│
+└─────────────────────────────────────────┘
+```
+
+**Features:**
+- Shows time since last save
+- Shows polygon count and edit count
+- "Discard" clears saved session and loads fresh data
+- "Restore Session" loads saved parcels
+
+#### Delete Confirmation Dialog
+Shown when deleting 5+ parcels.
+
+```
+┌─────────────────────────────────────────┐
+│ Confirm Delete                      [X] │
+├─────────────────────────────────────────┤
+│ Are you sure you want to delete         │
+│ 15 parcels?                             │
+│                                         │
+│ This action can be undone with Ctrl+Z.  │
+│                                         │
+│                      [Cancel] [Delete]  │
+└─────────────────────────────────────────┘
+```
 
 ---
 
