@@ -18,6 +18,8 @@ export function LayerPanel() {
     setActiveDataSource,
     showGroundTruthOverlay,
     setShowGroundTruthOverlay,
+    showConflictHighlighting,
+    setShowConflictHighlighting,
     visibleParcelTypes,
     toggleParcelType,
     setVisibleParcelTypes,
@@ -94,6 +96,16 @@ export function LayerPanel() {
           />
           <span className="text-sm text-gray-300">Show GT Overlay</span>
           <span className="ml-auto text-xs text-red-400">(dashed red)</span>
+        </label>
+        <label className="mt-2 flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showConflictHighlighting}
+            onChange={(e) => setShowConflictHighlighting(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-gray-900"
+          />
+          <span className="text-sm text-gray-300">Conflict Highlighting</span>
+          <span className="ml-auto text-xs text-yellow-400">(area mismatch)</span>
         </label>
       </div>
 
