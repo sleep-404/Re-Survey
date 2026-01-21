@@ -1,6 +1,7 @@
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useLayerStore } from '../../hooks/useLayerStore';
 import { PARCEL_TYPES, PARCEL_TYPE_ORDER } from '../../constants/parcelTypes';
+import { AreaFilterSlider } from './AreaFilterSlider';
 import type { ParcelType } from '../../types';
 
 export function LayerPanel() {
@@ -144,6 +145,11 @@ export function LayerPanel() {
             <span className="text-sm text-gray-300">Polygons</span>
           </label>
         </div>
+      </div>
+
+      {/* Area Filter Slider */}
+      <div className="border-t border-gray-700 pt-3">
+        <AreaFilterSlider />
       </div>
 
       {/* Parcel Type Filters */}
