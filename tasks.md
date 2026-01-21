@@ -15,6 +15,8 @@ This document contains **detailed, step-by-step implementation tasks** for the P
 - Verification steps
 - Commit commands
 
+**IMPORTANT: Commit immediately after creating or updating each file. Do not batch commits.**
+
 **Complete all P0 tasks in order.** Each task depends on the previous one.
 
 ---
