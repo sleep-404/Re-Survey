@@ -56,7 +56,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Get layer visibility from store
-  const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons } = useLayerStore();
+  const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons, showConflictHighlighting, minAreaThreshold } = useLayerStore();
 
   // Initialize map
   useEffect(() => {
@@ -441,6 +441,68 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     }
   }, [showPolygons, mapLoaded]);
 
+  // Update polygon colors when conflict highlighting is toggled
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    if (showConflictHighlighting) {
+      // Use conflict-based colors: green=excellent, yellow=fair, red=poor
+      map.current.setPaintProperty('parcels-fill', 'fill-color', [
+        'case',
+        ['boolean', ['get', 'isSelected'], false],
+        SELECTION_COLORS.selected.fillColor,
+        ['==', ['get', 'conflictLevel'], 0],
+        '#22c55e', // green - excellent
+        ['==', ['get', 'conflictLevel'], 1],
+        '#eab308', // yellow - fair
+        '#ef4444', // red - poor
+      ]);
+      map.current.setPaintProperty('parcels-border', 'line-color', [
+        'case',
+        ['boolean', ['get', 'isSelected'], false],
+        SELECTION_COLORS.selected.borderColor,
+        ['==', ['get', 'conflictLevel'], 0],
+        '#16a34a', // green border
+        ['==', ['get', 'conflictLevel'], 1],
+        '#ca8a04', // yellow border
+        '#dc2626', // red border
+      ]);
+    } else {
+      // Reset to parcel-type based colors
+      map.current.setPaintProperty('parcels-fill', 'fill-color', [
+        'match',
+        ['get', 'parcelType'],
+        'agricultural', PARCEL_TYPES.agricultural.fillColor,
+        'gramakantam', PARCEL_TYPES.gramakantam.fillColor,
+        'building', PARCEL_TYPES.building.fillColor,
+        'road', PARCEL_TYPES.road.fillColor,
+        'water_body', PARCEL_TYPES.water_body.fillColor,
+        'open_space', PARCEL_TYPES.open_space.fillColor,
+        'compound', PARCEL_TYPES.compound.fillColor,
+        'government_land', PARCEL_TYPES.government_land.fillColor,
+        PARCEL_TYPES.unclassified.fillColor,
+      ]);
+      map.current.setPaintProperty('parcels-border', 'line-color', [
+        'case',
+        ['boolean', ['get', 'isSelected'], false],
+        SELECTION_COLORS.selected.borderColor,
+        [
+          'match',
+          ['get', 'parcelType'],
+          'agricultural', PARCEL_TYPES.agricultural.borderColor,
+          'gramakantam', PARCEL_TYPES.gramakantam.borderColor,
+          'building', PARCEL_TYPES.building.borderColor,
+          'road', PARCEL_TYPES.road.borderColor,
+          'water_body', PARCEL_TYPES.water_body.borderColor,
+          'open_space', PARCEL_TYPES.open_space.borderColor,
+          'compound', PARCEL_TYPES.compound.borderColor,
+          'government_land', PARCEL_TYPES.government_land.borderColor,
+          PARCEL_TYPES.unclassified.borderColor,
+        ],
+      ]);
+    }
+  }, [showConflictHighlighting, mapLoaded]);
+
   // Update parcels data when it changes
   useEffect(() => {
     if (!map.current) return;
@@ -448,21 +510,47 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     const source = map.current.getSource('parcels') as GeoJSONSource;
     if (!source) return;
 
-    // Update features with selection/hover state
-    const featuresWithState = parcels.map((p) => ({
-      ...p,
-      properties: {
-        ...p.properties,
-        isSelected: selectedIds.has(p.properties.id),
-        isHovered: p.properties.id === hoveredId,
-      },
-    }));
+    // Calculate median area for conflict highlighting
+    const areas = parcels.map(p => p.properties.area || 0).filter(a => a > 0);
+    const sortedAreas = [...areas].sort((a, b) => a - b);
+    const medianArea = sortedAreas[Math.floor(sortedAreas.length / 2)] || 500;
+
+    // Update features with selection/hover state and conflict level
+    const featuresWithState = parcels
+      .filter(p => {
+        // Filter by minimum area threshold
+        const area = p.properties.area || 0;
+        return area >= minAreaThreshold;
+      })
+      .map((p) => {
+        const area = p.properties.area || 0;
+        // Calculate conflict level: 0=excellent (green), 1=fair (yellow), 2=poor (red)
+        let conflictLevel = 0;
+        if (area > 0 && medianArea > 0) {
+          const deviation = Math.abs(area - medianArea) / medianArea;
+          if (deviation > 0.5) conflictLevel = 2; // poor - red
+          else if (deviation > 0.2) conflictLevel = 1; // fair - yellow
+        }
+        // Also mark very small parcels as conflicts
+        if (area < 50) conflictLevel = 2;
+        else if (area < 100) conflictLevel = Math.max(conflictLevel, 1);
+
+        return {
+          ...p,
+          properties: {
+            ...p.properties,
+            isSelected: selectedIds.has(p.properties.id),
+            isHovered: p.properties.id === hoveredId,
+            conflictLevel,
+          },
+        };
+      });
 
     source.setData({
       type: 'FeatureCollection',
       features: featuresWithState,
     });
-  }, [parcels, selectedIds, hoveredId]);
+  }, [parcels, selectedIds, hoveredId, minAreaThreshold]);
 
   // Update drawing preview
   useEffect(() => {
