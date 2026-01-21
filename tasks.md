@@ -864,7 +864,7 @@ These are lower priority. Complete P0 first.
 
 ---
 
-## Task 5: ROR Data Panel
+## Task 5: ROR Data Panel ✅ DONE
 
 ### Goal
 Load ROR (Record of Rights) data from XLSX files and display it in a searchable panel. Allow comparing parcel areas against ROR expected areas.
