@@ -6,10 +6,11 @@ import { TopologyPanel } from './TopologyPanel';
 import { AccuracyPanel } from './AccuracyPanel';
 import { AreaComparisonPanel } from './AreaComparisonPanel';
 import { RORPanel } from './RORPanel';
+import { StatisticsPanel } from './StatisticsPanel';
 import { ExportDialog } from '../Dialogs/ExportDialog';
 import { useAutoSave } from '../../hooks/useAutoSave';
 
-type TabId = 'tools' | 'layers' | 'classify' | 'validate' | 'ror';
+type TabId = 'tools' | 'layers' | 'classify' | 'validate' | 'ror' | 'stats';
 
 interface Tab {
   id: TabId;
@@ -22,6 +23,7 @@ const TABS: Tab[] = [
   { id: 'classify', label: 'Classify' },
   { id: 'validate', label: 'Validate' },
   { id: 'ror', label: 'ROR' },
+  { id: 'stats', label: 'Stats' },
 ];
 
 interface SidebarProps {
@@ -76,6 +78,7 @@ export function Sidebar({ className = '' }: SidebarProps) {
           </div>
         )}
         {activeTab === 'ror' && <div className="p-4"><RORPanel /></div>}
+        {activeTab === 'stats' && <StatisticsPanel />}
       </div>
 
       {/* Footer */}
