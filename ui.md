@@ -35,10 +35,44 @@ Add Login and Dashboard screens to the existing Map Editor application, implemen
 
 | File | Changes |
 |------|---------|
-| `package.json` | Add `react-router-dom` |
-| `src/main.tsx` | Add router, define routes |
+| `package.json` | Add `react-router-dom`, `lucide-react`, `clsx`, `react-hot-toast` |
+| `src/main.tsx` | Add router, define routes, add Toaster |
 | `src/index.css` | Remove hardcoded dark theme from body |
-| `src/components/Sidebar/Sidebar.tsx` | Remove duplicate "Saved ✓" (now in header) |
+| `src/components/Sidebar/Sidebar.tsx` | Remove "Saved ✓" indicator (lines 44-46, moves to EditorHeader) |
+
+---
+
+## New Dependencies
+
+Install these packages in the `dashboard/` directory:
+
+```bash
+cd dashboard
+npm install react-router-dom lucide-react clsx react-hot-toast
+```
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `react-router-dom` | ^6.x | Client-side routing |
+| `lucide-react` | ^0.x | Icons (Eye, EyeOff, ChevronDown, ArrowLeft, Check, Loader2) |
+| `clsx` | ^2.x | Conditional class names (replacement for `cn()`) |
+| `react-hot-toast` | ^2.x | Toast notifications for "data not available" messages |
+
+**Usage patterns:**
+```tsx
+// clsx for conditional classes
+import clsx from 'clsx';
+<input className={clsx('border rounded', error && 'border-red-600')} />
+
+// lucide-react icons
+import { Eye, EyeOff, ChevronDown, ArrowLeft, Check, Loader2 } from 'lucide-react';
+<Eye className="w-5 h-5" />
+
+// react-hot-toast
+import toast, { Toaster } from 'react-hot-toast';
+toast.error('Village data not available');
+// Add <Toaster /> in main.tsx
+```
 
 ---
 
@@ -145,16 +179,21 @@ interface Village {
 - `setSortBy(field: 'name' | 'progress' | 'parcels'): void`
 - `toggleSortDirection(): void`
 
-**Computed (via selector):**
+**Filtering/Sorting Pattern:**
+
+Use component-level filtering in DashboardScreen (not in store) - simpler for 4 items:
+
 ```typescript
-// Filtered and sorted villages
+// In DashboardScreen.tsx
+const { villages, searchQuery, sortBy, sortDirection } = useVillageStore();
+
 const filteredVillages = useMemo(() => {
   let result = villages.filter(v =>
     v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     v.mandal.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  result.sort((a, b) => {
+  result = [...result].sort((a, b) => {
     const dir = sortDirection === 'asc' ? 1 : -1;
     if (sortBy === 'name') return dir * a.name.localeCompare(b.name);
     if (sortBy === 'progress') return dir * (a.progress - b.progress);
@@ -165,6 +204,11 @@ const filteredVillages = useMemo(() => {
   return result;
 }, [villages, searchQuery, sortBy, sortDirection]);
 ```
+
+**Why component-level, not store selector?**
+- Only 4 villages - no performance concern
+- Simpler to implement
+- useMemo in component is sufficient
 
 **Summary Calculations:**
 ```typescript
@@ -224,21 +268,25 @@ Create `LoginScreen.tsx`:
 
 **Password Toggle Implementation:**
 ```tsx
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+
 const [showPassword, setShowPassword] = useState(false);
 
 <div className="relative">
   <input
     type={showPassword ? 'text' : 'password'}
     id="password"
+    className="w-full border border-slate-300 rounded px-3 py-2 pr-10"
     aria-describedby={error ? 'password-error' : undefined}
   />
   <button
     type="button"
     onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2"
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
     aria-label={showPassword ? 'Hide password' : 'Show password'}
   >
-    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
   </button>
 </div>
 ```
@@ -273,9 +321,11 @@ const [showPassword, setShowPassword] = useState(false);
 )}
 
 // Input with error state
+import clsx from 'clsx';
+
 <input
-  className={cn(
-    'border rounded px-3 py-2',
+  className={clsx(
+    'border rounded px-3 py-2 w-full',
     error ? 'border-red-600' : 'border-slate-300'
   )}
   aria-invalid={!!error}
@@ -331,19 +381,25 @@ Create `DashboardScreen.tsx`:
 
 **User Dropdown:**
 ```tsx
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+
 const [dropdownOpen, setDropdownOpen] = useState(false);
 
 <div className="relative">
   <button
     onClick={() => setDropdownOpen(!dropdownOpen)}
-    className="flex items-center gap-2"
+    className="flex items-center gap-2 hover:bg-slate-100 px-2 py-1 rounded"
   >
     <span>{user.name}</span>
-    <ChevronDownIcon />
+    <ChevronDown className="w-4 h-4" />
   </button>
   {dropdownOpen && (
-    <div className="absolute right-0 mt-2 bg-white border rounded shadow-lg">
-      <button onClick={handleLogout} className="px-4 py-2 w-full text-left">
+    <div className="absolute right-0 mt-2 bg-white border border-slate-200 rounded shadow-lg z-50">
+      <button
+        onClick={handleLogout}
+        className="px-4 py-2 w-full text-left hover:bg-slate-100 text-slate-700"
+      >
         Logout
       </button>
     </div>
@@ -430,7 +486,7 @@ const [dropdownOpen, setDropdownOpen] = useState(false);
     aria-label={`${village.progress}% verified`}
   >
     <div
-      className={cn(
+      className={clsx(
         'h-full rounded-full',
         village.progress === 100 ? 'bg-emerald-600' :
         village.progress > 0 ? 'bg-blue-500' : 'bg-slate-300'
@@ -463,10 +519,19 @@ function getActionText(village: Village): string {
 
 **Village Click Handler:**
 ```typescript
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { useVillageStore } from '../../hooks/useVillageStore';
+
+const navigate = useNavigate();
+const { selectVillage } = useVillageStore();
+
 function handleVillageClick(village: Village) {
   if (!village.hasRealData) {
-    // Show toast or inline message
-    toast.info(`${village.name} data not available in demo`);
+    toast.error(`${village.name} data not available in demo`, {
+      duration: 3000,
+      icon: '⚠️',
+    });
     return;
   }
   selectVillage(village.id);
@@ -558,10 +623,17 @@ Create `MapEditorScreen.tsx`:
 
 **EditorHeader Component:**
 ```tsx
-function EditorHeader() {
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ChevronDown, Check } from 'lucide-react';
+import { useVillageStore } from '../../hooks/useVillageStore';
+import { useAuthStore } from '../../hooks/useAuthStore';
+import { useAutoSave } from '../../hooks/useAutoSave';
+
+export function EditorHeader() {
   const { selectedVillage } = useVillageStore();
   const { user, logout } = useAuthStore();
-  const { isDirty, isSaving, lastSaved } = usePolygonStore();
+  const { showSavedIndicator } = useAutoSave(); // Uses existing hook
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -574,7 +646,7 @@ function EditorHeader() {
           className="p-2 hover:bg-gray-700 rounded"
           aria-label="Back to Dashboard"
         >
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
           <span className="font-medium">{selectedVillage?.name}</span>
@@ -584,7 +656,13 @@ function EditorHeader() {
 
       {/* Right: Save status + User */}
       <div className="flex items-center gap-4">
-        <SaveStatus isSaving={isSaving} lastSaved={lastSaved} />
+        {/* Save indicator - uses existing useAutoSave hook */}
+        {showSavedIndicator && (
+          <span className="text-emerald-500 text-sm flex items-center gap-1 animate-pulse">
+            <Check className="w-4 h-4" />
+            Auto-saved ✓
+          </span>
+        )}
 
         <div className="relative">
           <button
@@ -592,7 +670,7 @@ function EditorHeader() {
             className="flex items-center gap-2 hover:bg-gray-700 px-2 py-1 rounded"
           >
             <span>{user?.name}</span>
-            <ChevronDownIcon className="w-4 h-4" />
+            <ChevronDown className="w-4 h-4" />
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
@@ -611,41 +689,77 @@ function EditorHeader() {
 }
 ```
 
-**Save Status Component (per design.md):**
+**Note:** The `showSavedIndicator` comes from the existing `useAutoSave()` hook in `src/hooks/useAutoSave.ts`. It shows for 2 seconds after each auto-save. No new "isSaving" state needed - the save to localStorage is synchronous.
+
+**Data Loading Logic:**
+
+The current data loading is in `App.tsx` (lines 18-78). For MapEditorScreen:
+- Keep the SAME loading logic (don't change it)
+- The `workingLayerRef` pattern for preserving edits when switching data sources must stay
+- Simply wrap the existing layout in MapEditorScreen
+
 ```tsx
-function SaveStatus({ isSaving, lastSaved }: { isSaving: boolean; lastSaved: Date | null }) {
-  if (isSaving) {
-    return (
-      <span className="text-gray-400 text-sm flex items-center gap-1">
-        <SpinnerIcon className="w-4 h-4 animate-spin" />
-        Saving...
-      </span>
-    );
-  }
+// MapEditorScreen.tsx - wraps existing components
+export function MapEditorScreen() {
+  // Keep existing data loading logic from App.tsx here
+  const { setParcels, setLoading, setError } = usePolygonStore();
+  const { activeDataSource } = useLayerStore();
+  const workingLayerRef = useRef<ParcelFeature[] | null>(null);
 
-  if (lastSaved) {
-    return (
-      <span className="text-emerald-500 text-sm flex items-center gap-1">
-        <CheckIcon className="w-4 h-4" />
-        Auto-saved ✓
-      </span>
-    );
-  }
+  useEffect(() => {
+    // ... existing loadData() logic from App.tsx ...
+  }, [activeDataSource, setParcels, setLoading, setError]);
 
-  return null;
+  useKeyboardShortcuts();
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
+      <EditorHeader />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar className="w-64 flex-shrink-0 border-r border-gray-700" />
+        <MapCanvas className="flex-1" />
+      </div>
+      <BottomBar className="flex-shrink-0" />
+    </div>
+  );
 }
 ```
 
-**Data Loading Logic (extract from App.tsx):**
-- Move GeoJSON loading into MapEditorScreen or a custom hook
-- Check `selectedVillage.hasRealData` before loading
-- Show loading state while data fetches
+**Sidebar Modification (Remove "Saved ✓"):**
+
+In `src/components/Sidebar/Sidebar.tsx`, remove lines 44-46:
+
+```diff
+  {/* Header */}
+  <div className="border-b border-gray-700 px-4 py-3">
+    <div className="flex items-center justify-between">
+      <h1 className="text-lg font-semibold text-gray-100">BoundaryAI</h1>
+-     {showSavedIndicator && (
+-       <span className="text-xs text-green-400 animate-pulse">Saved ✓</span>
+-     )}
+    </div>
+    <p className="text-xs text-gray-500">Land Parcel Editor</p>
+  </div>
+```
+
+Also remove the `useAutoSave` import and `showSavedIndicator` destructuring from line 36:
+```diff
+- const { showSavedIndicator } = useAutoSave();
+```
 
 ### Phase 7: Routing (10 min)
 Update `main.tsx`:
 
 ```tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { LoginScreen } from './components/Auth/LoginScreen';
+import { DashboardScreen } from './components/Dashboard/DashboardScreen';
+import { MapEditorScreen } from './components/Editor/MapEditorScreen';
+import { ProtectedRoute } from './components/Auth/ProtectedRoute';
+import './index.css';
 
 function App() {
   return (
@@ -670,9 +784,17 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Toaster position="top-center" />
     </BrowserRouter>
   );
 }
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
+```
 ```
 
 **ProtectedRoute Component:**
