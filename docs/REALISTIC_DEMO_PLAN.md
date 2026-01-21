@@ -319,21 +319,142 @@ This is a realistic, achievable, and useful prototype.
 
 ---
 
-## 12. FILES REFERENCE
+## 12. SOURCE FILES REFERENCE
 
-| File | Purpose |
-|------|---------|
-| `Land Resurvey orientation session.txt` | Official requirements transcript |
-| `WhatsApp Chat with Re_Survey (RTGS Hackathon).txt` | Communication with officials |
-| `docs/CHALLENGE_SUMMARY.md` | Problem breakdown |
-| `docs/EVALUATION_FINDINGS.md` | SAM evaluation results |
-| `docs/UI_WORKFLOW.md` | Officer workflow design |
-| `dashboard/public/data/sam_segments.geojson` | 12,032 SAM segments |
-| `dashboard/public/data/ground_truth.geojson` | 105 GT parcels (evaluation only) |
-| `Resurvey/*.xlsx` | ROR data for Kanumuru, Nibanupudi |
-| `Resurvey/*.shp` | Ground truth shapefiles (evaluation only) |
+### Primary Source Documents
+
+| File | Description | Key Content |
+|------|-------------|-------------|
+| `challenge.json` | Official hackathon challenge specification | Challenge code 100017, success criteria (>80% precision, >70% survey team feedback), expected solutions, POC scope |
+| `Land Resurvey orientation session.txt` | Transcript of Jan 6, 2026 orientation with officials | Actual requirements from Deputy Director, technical expectations, Q&A with officials |
+| `WhatsApp Chat with Re_Survey (RTGS Hackathon).txt` | Communication with RTGS team | Demo dates (Jan 19-23), data sharing updates, clarification that ground truth won't be provided for test villages |
+
+### Documentation Files
+
+| File | Description |
+|------|-------------|
+| `docs/CHALLENGE_SUMMARY.md` | Detailed problem breakdown into 11 sub-problems |
+| `docs/FINAL_SOLUTION_STRATEGY.md` | Original proposed approach (ROR-constrained segmentation) |
+| `docs/IMPLEMENTATION_PLAN.md` | Technical implementation phases |
+| `docs/UI_WORKFLOW.md` | Officer workflow design and UI mockups |
+| `docs/EVALUATION_FINDINGS.md` | SAM model evaluation results (25.84% IoU, 12K over-segmentation) |
+| `docs/STATUS.md` | Project status as of Jan 15, 2026 |
+| `docs/DEMO_SCRIPT.md` | Original demo presentation script |
+| `docs/CLOUD_DEPLOY.md` | Cloud deployment guide (Docker, AWS, GCP) |
+| `CLAUDE.md` | Project instructions for development |
+| `README.md` | Project overview and quick start |
+
+### Data Files - ORI Imagery
+
+| File | Size | Description |
+|------|------|-------------|
+| `AI Hackathon/589571_kanumuru_reprocess_247.ecw` | 2.3 GB | Kanumuru village drone imagery (ECW format) |
+| `AI Hackathon/589587_nibhanpudi_reprocess_326.ecw` | 785 MB | Nibanupudi village drone imagery (ECW format) |
+| `AI Hackathon/nibanupudi.tif` | 11 GB | Nibanupudi converted to GeoTIFF |
+| `dashboard/public/tiles/{z}/{x}/{y}.png` | ~50 MB | Pre-generated map tiles for dashboard (zoom 14-20) |
+
+### Data Files - ROR (Record of Rights)
+
+| File | Records | Description |
+|------|---------|-------------|
+| `Resurvey/kanumuru-annonymized ROR.xlsx` | 1,141 | Kanumuru parcel records (LP Number, Extent, ULPIN, Survey No, Land Type, Owner) |
+| `Resurvey/Nibhanupudi-annonymized ROR.xlsx` | ~850 | Nibanupudi parcel records |
+
+### Data Files - Ground Truth (EVALUATION ONLY)
+
+| File | Parcels | Description |
+|------|---------|-------------|
+| `Resurvey/kanumuru.shp` | ~1,100 | Kanumuru ground truth shapefile |
+| `Resurvey/nibanupudi.shp` | ~850 | Nibanupudi ground truth shapefile |
+| `dashboard/public/data/ground_truth.geojson` | 105 | Subset for evaluation |
+
+### Data Files - AI Generated
+
+| File | Features | Description |
+|------|----------|-------------|
+| `dashboard/public/data/sam_segments.geojson` | 12,032 | SAM-generated segments (over-segmented) |
+
+### Dashboard Source Code
+
+| Directory | Description |
+|-----------|-------------|
+| `dashboard/src/components/Map/` | MapCanvas, ContextMenu, LassoSelection, SelectionBox |
+| `dashboard/src/components/Sidebar/` | Sidebar, LayerPanel, ToolPanel, ParcelTypePanel, AccuracyPanel, TopologyPanel |
+| `dashboard/src/components/BottomBar/` | Status bar with zoom/coordinates |
+| `dashboard/src/components/Dialogs/` | ExportDialog, RestoreSessionDialog |
+| `dashboard/src/hooks/` | usePolygonStore, useKeyboardShortcuts, useAutoSave |
+| `dashboard/src/utils/` | exportShapefile, polygonSplit, accuracy, topology |
+
+### Backend Source Code
+
+| File | Description |
+|------|-------------|
+| `src/pipeline.py` | End-to-end SAM processing pipeline |
+| `src/sam_segmenter.py` | SAM model integration |
+| `src/image_loader.py` | Large TIFF tile loading |
+| `src/vectorization.py` | Mask to polygon conversion |
+| `src/ror_engine.py` | ROR record matching |
+| `src/confidence.py` | Confidence scoring and conflict detection |
+| `src/topology.py` | Gap/overlap fixing |
+| `src/data_loader.py` | Data loading utilities |
+
+### Infrastructure
+
+| File | Description |
+|------|-------------|
+| `Dockerfile` | GPU-enabled container |
+| `docker-compose.yml` | Container orchestration |
+| `scripts/deploy-aws.sh` | AWS deployment script |
+| `scripts/deploy-gcp.sh` | GCP deployment script |
+| `requirements.txt` | Python dependencies |
+| `requirements-gpu.txt` | GPU-enabled dependencies |
 
 ---
 
-*Document Version: 1.0*
+## 13. KEY INFORMATION FROM SOURCES
+
+### From challenge.json
+
+```json
+{
+  "challenge_code": "100017",
+  "poc_success_criteria": [
+    "Parcel extraction precision greater than 80%",
+    "At least 70% positive feedback from survey teams"
+  ],
+  "expected_solution": [
+    "AI-Based Geospatial Image Processing",
+    "Conflict Detection",
+    "AI-Assisted Field Validation",
+    "System Integration",
+    "Visualization Dashboard"
+  ]
+}
+```
+
+### From Orientation Transcript (Key Quotes)
+
+**On Output Format:**
+> "The AI tool should extract the land parcels for along this bunds from here to here... all bunds should be captured."
+
+**On Topology:**
+> "Those polygons whichever have been created should not overlap among each other and also there should not be any gaps."
+
+**On Expected Errors:**
+> "There may be some false bunds also, but those things will be corrected during the ground truthing phase."
+
+**On Editing Tools:**
+> "There should also be any mechanism to delete any lines or polygons in a fast manner."
+
+### From WhatsApp Chat
+
+**On Ground Truth:**
+> "Providing the Land Parcel shapefile... would materially compromise the objectivity and integrity of the solution validation process."
+
+**Demo Timeline:**
+> "Demo Presentation: January 19th - 23rd"
+
+---
+
+*Document Version: 1.1*
 *Last Updated: 2026-01-22*
