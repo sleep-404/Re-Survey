@@ -276,7 +276,7 @@ const [showPassword, setShowPassword] = useState(false);
 <input
   className={cn(
     'border rounded px-3 py-2',
-    error ? 'border-red-500' : 'border-slate-300'
+    error ? 'border-red-600' : 'border-slate-300'
   )}
   aria-invalid={!!error}
   aria-describedby={error ? 'login-error' : undefined}
@@ -364,7 +364,7 @@ const [dropdownOpen, setDropdownOpen] = useState(false);
 | Card | Color | Tailwind Classes |
 |------|-------|------------------|
 | Assigned | Blue | `bg-blue-50 border-blue-200 text-blue-700` |
-| Completed | Green | `bg-green-50 border-green-200 text-green-700` |
+| Completed | Green | `bg-emerald-50 border-emerald-200 text-emerald-700` |
 | Pending | Amber | `bg-amber-50 border-amber-200 text-amber-700` |
 
 ```tsx
@@ -432,7 +432,7 @@ const [dropdownOpen, setDropdownOpen] = useState(false);
     <div
       className={cn(
         'h-full rounded-full',
-        village.progress === 100 ? 'bg-green-500' :
+        village.progress === 100 ? 'bg-emerald-600' :
         village.progress > 0 ? 'bg-blue-500' : 'bg-slate-300'
       )}
       style={{ width: `${village.progress}%` }}
@@ -625,7 +625,7 @@ function SaveStatus({ isSaving, lastSaved }: { isSaving: boolean; lastSaved: Dat
 
   if (lastSaved) {
     return (
-      <span className="text-green-400 text-sm flex items-center gap-1">
+      <span className="text-emerald-500 text-sm flex items-center gap-1">
         <CheckIcon className="w-4 h-4" />
         Auto-saved ✓
       </span>
@@ -823,7 +823,7 @@ const MOCK_VILLAGES: Village[] = [
 | Text Muted | #64748b | `text-slate-500` | Secondary text, labels |
 | Primary Blue | #1e40af | `bg-blue-800` | Buttons |
 | Primary Hover | #1d4ed8 | `hover:bg-blue-700` | Button hover |
-| Error | #dc2626 | `text-red-600 border-red-500` | Error states |
+| Error | #dc2626 | `text-red-600 border-red-600` | Error states |
 
 ### Dark Theme (Map Editor)
 | Name | Hex | Tailwind | Usage |
@@ -833,14 +833,55 @@ const MOCK_VILLAGES: Village[] = [
 | Border | #374151 | `border-gray-700` | Dividers |
 | Text Primary | #f3f4f6 | `text-gray-100` | Main text |
 | Text Muted | #9ca3af | `text-gray-400` | Secondary text |
-| Accent | #06b6d4 | `text-cyan-400` | Selection, active states |
+| Accent | #06b6d4 | `text-cyan-500` | Selection, active states |
+
+### Semantic Colors (Both Themes)
+| Name | Hex | Tailwind | Usage |
+|------|-----|----------|-------|
+| Success | #059669 | `text-emerald-600` / `bg-emerald-600` | Confirmations, good match, completed |
+| Warning | #d97706 | `text-amber-600` / `bg-amber-600` | Fair match, attention needed |
+| Error | #dc2626 | `text-red-600` / `bg-red-600` | Poor match, errors, required fields |
 
 ### Summary Card Colors
 | Card | Background | Border | Text |
 |------|------------|--------|------|
 | Assigned | `bg-blue-50` | `border-blue-200` | `text-blue-700` |
-| Completed | `bg-green-50` | `border-green-200` | `text-green-700` |
+| Completed | `bg-emerald-50` | `border-emerald-200` | `text-emerald-700` |
 | Pending | `bg-amber-50` | `border-amber-200` | `text-amber-700` |
+
+---
+
+## Typography
+
+### Font Stack
+```css
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+/* Telugu text (if language selector implemented) */
+font-family: 'Noto Sans Telugu', sans-serif;
+```
+
+### Login & Dashboard (Light Theme)
+| Element | Size | Weight | Tailwind |
+|---------|------|--------|----------|
+| Page Title | 24px | 700 | `text-2xl font-bold text-slate-800` |
+| Section Header | 18px | 600 | `text-lg font-semibold text-slate-800` |
+| Card Title | 16px | 600 | `text-base font-semibold text-slate-800` |
+| Body Text | 14px | 400 | `text-sm text-slate-800` |
+| Muted Text | 14px | 400 | `text-sm text-slate-500` |
+| Button Text | 14px | 500 | `text-sm font-medium text-white` |
+
+### Map Editor (Dark Theme)
+| Element | Size | Weight | Tailwind |
+|---------|------|--------|----------|
+| App Title | 18px | 600 | `text-lg font-semibold text-gray-100` |
+| Tab Label (inactive) | 14px | 500 | `text-sm font-medium text-gray-400` |
+| Tab Label (active) | 14px | 500 | `text-sm font-medium text-cyan-500` |
+| Section Header | 12px | 600 | `text-xs font-semibold text-gray-400 uppercase` |
+| Body Text | 14px | 400 | `text-sm text-gray-200` |
+| Stat Value | 24px | 700 | `text-2xl font-bold text-cyan-500` |
+| Stat Label | 12px | 400 | `text-xs text-gray-400` |
+| Button Text | 14px | 500 | `text-sm font-medium text-white` |
 
 ---
 
