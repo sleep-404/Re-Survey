@@ -34,11 +34,11 @@ Open http://localhost:5173 - you should see the map with SAM segments loaded.
 
 ---
 
-## P0: MUST HAVE FOR DEMO
+## P0: MUST HAVE FOR DEMO ✅ COMPLETED
 
 ---
 
-## Task 1: Create useLayerStore for Global Layer State
+## Task 1: Create useLayerStore for Global Layer State ✅ DONE
 
 ### Goal
 Create a Zustand store for layer visibility state so LayerPanel and MapCanvas can share state.
@@ -367,7 +367,7 @@ git commit -m "feat: Add useLayerStore for global layer state management"
 
 ---
 
-## Task 2: Add Ground Truth Overlay Layer to MapCanvas
+## Task 2: Add Ground Truth Overlay Layer to MapCanvas ✅ DONE
 
 ### Goal
 Add a dedicated map layer that shows ground truth boundaries as dashed red lines, controlled by the store.
@@ -570,7 +570,7 @@ git commit -m "feat: Add ground truth overlay layer with dashed red boundaries"
 
 ---
 
-## Task 3: Implement Data Source Switcher
+## Task 3: Implement Data Source Switcher ✅ DONE
 
 ### Goal
 Make the data source radio buttons actually load different GeoJSON files.
@@ -711,7 +711,7 @@ git commit -m "feat: Implement data source switching between SAM, Ground Truth, 
 
 ---
 
-## Task 4: Final Integration and Testing
+## Task 4: Final Integration and Testing ✅ DONE
 
 ### Goal
 Ensure all features work together correctly.
