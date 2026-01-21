@@ -2,6 +2,7 @@
 
 **Date:** 2026-01-22
 **Purpose:** Comprehensive analysis of requirements vs. capabilities for the demo presentation (Jan 19-23, 2026)
+**Version:** 2.0 (Updated with accurate component status)
 
 ---
 
@@ -59,32 +60,43 @@ Officials want a **simple, practical tool**:
 
 ---
 
-## 3. AVAILABLE DATA (NO EXTERNAL DATA NEEDED)
+## 3. AVAILABLE DATA
 
-### What We Have
+### SAM Evaluation Data (Nibanupudi Village)
 
-| Data | Location | Status | Use For |
-|------|----------|--------|---------|
-| **ORI Imagery** | `AI Hackathon/*.ecw`, `*.tif` | ✅ Available | AI input |
-| **ORI Tiles** | `dashboard/public/tiles/` | ✅ Generated | Dashboard display |
-| **SAM Segments** | `sam_segments.geojson` (12,032 segments) | ✅ Generated | Starting point |
-| **ROR Data** | `Resurvey/*.xlsx` | ✅ Available | Conflict detection |
-| **Ground Truth** | `Resurvey/*.shp` | ⚠️ EVALUATION ONLY | Final accuracy check |
+| Data | Location | Count | Status |
+|------|----------|-------|--------|
+| **ORI Imagery** | `dashboard/public/tiles/` | Zoom 14-20 | ✅ Generated |
+| **SAM Segments** | `dashboard/public/data/sam_segments.geojson` | 12,032 | ✅ Generated |
+| **Ground Truth** | `dashboard/public/data/ground_truth.geojson` | 105 parcels | ✅ Available |
 
-### ROR Data Content (Kanumuru - 1141 records)
+**Important:** SAM was run ONLY on **Nibanupudi village** (Krishna district), which is the same village where we have ground truth from officials. This allows direct comparison.
 
-- LP Number (unique parcel ID)
-- LP Extent (area in acres)
-- ULPIN (unique identifier)
-- Old Survey Number
-- Land Type/Classification
-- Owner info (anonymized)
+### Ground Truth Properties (from official survey)
+```json
+{
+  "lp_no": 824,           // LP Number (official parcel ID)
+  "extent_hec": 0.091,    // Area in hectares
+  "extent_ac": 0.225,     // Area in acres
+  "area_sqm": 910.32,     // Area in square meters
+  "parcelType": "building" // Classification
+}
+```
 
-### What We DON'T Have (And Don't Need)
+### ROR Data (Record of Rights)
 
-- FMB records ❌ (not required for demo)
-- Bhu-Naksha ❌ (not required for demo)
-- Additional villages beyond provided data ❌
+| File | Records | Description |
+|------|---------|-------------|
+| `Resurvey/kanumuru-annonymized ROR.xlsx` | 1,141 | Kanumuru parcel records |
+| `Resurvey/Nibhanupudi-annonymized ROR.xlsx` | ~850 | Nibanupudi parcel records |
+
+Contains: LP Number, LP Extent (acres), ULPIN, Old Survey Number, Land Type, Owner info
+
+### What We DON'T Have (And Don't Need for Demo)
+
+- FMB records ❌ (not required)
+- Bhu-Naksha ❌ (not required)
+- Additional villages beyond Nibanupudi ❌
 
 ---
 
@@ -95,186 +107,315 @@ From **EVALUATION_FINDINGS.md**:
 | Metric | Value | Problem |
 |--------|-------|---------|
 | SAM Segments | 12,032 | **115x over-segmentation** (for 105 parcels) |
-| Mean IoU | 25.84% | Segments don't match parcels |
-| Coverage | 78.46% | SAM does see the land area |
+| Ground Truth | 105 parcels | Official annotations |
+| **Mean IoU** | **25.84%** | Segments don't match parcels |
+| **Coverage** | **78.46%** | SAM does see the land area |
 | Avg Segment Size | 66 sqm | Too small (parcels avg 2,201 sqm) |
 
 **Root Cause**: SAM segments by visual texture (crops, shadows, soil), NOT by bunds.
 
 ---
 
-## 5. CURRENT DASHBOARD STATUS
+## 5. CURRENT DASHBOARD STATUS (VERIFIED)
 
-The React dashboard already has:
+### What's Actually Built ✅
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| MapCanvas | ✅ Built | MapLibre with satellite tiles |
-| Polygon Store | ✅ Built | Add, update, delete, merge, split |
-| Selection Tools | ✅ Built | Lasso, box selection |
-| Context Menu | ✅ Built | Right-click actions |
-| Export Dialog | ✅ Built | Shapefile export |
-| Layer Panel | ✅ Built | Toggle layers |
-| Parcel Type Panel | ✅ Built | Classify parcels |
-| Split Tool | ✅ Built | Draw line to split |
+| Component | File | Status | Notes |
+|-----------|------|--------|-------|
+| MapCanvas | `Map/MapCanvas.tsx` | ✅ Built | MapLibre with ORI tiles, Google satellite fallback |
+| Polygon Store | `hooks/usePolygonStore.ts` | ✅ Built | Add, update, delete, **merge**, split |
+| Selection Tools | `hooks/useSelectionStore.ts` | ✅ Built | Click, Shift+click, Ctrl+click |
+| Lasso Selection | `Map/LassoSelection.tsx` | ✅ Built | Draw to select multiple |
+| Box Selection | `Map/SelectionBox.tsx` | ✅ Built | Drag rectangle to select |
+| **Context Menu** | `Map/ContextMenu.tsx` | ✅ Built | Right-click actions including **MERGE** |
+| **Merge Tool** | In ContextMenu | ✅ Built | Select multiple → right-click → "Merge X Polygons" |
+| **Split Tool** | `hooks/useSplitStore.ts` | ✅ Built | Draw line to split polygon |
+| Export Dialog | `Dialogs/ExportDialog.tsx` | ✅ Built | Shapefile export |
+| Layer Panel | `Sidebar/LayerPanel.tsx` | ✅ Built | Toggle ORI, polygons by type |
+| Parcel Type Panel | `Sidebar/ParcelTypePanel.tsx` | ✅ Built | Classify parcels |
+| **Topology Panel** | `Sidebar/TopologyPanel.tsx` | ✅ Built | Validate & auto-fix overlaps/gaps |
+| **Accuracy Panel** | `Sidebar/AccuracyPanel.tsx` | ✅ Built | Calculate IoU against ground truth |
+| Keyboard Shortcuts | `hooks/useKeyboardShortcuts.ts` | ✅ Built | V, N, E, S, D, M, Z, etc. |
+| Auto-save | `hooks/useAutoSave.ts` | ✅ Built | LocalStorage persistence |
+| Undo/Redo | `hooks/useHistoryStore.ts` | ✅ Built | Full action history |
 
-### Missing for Demo
+### What's Actually Missing ❌
 
-- Merge tool (UI to select and merge)
-- ROR panel (display/compare)
-- Conflict detection
-- Confidence indicators
-- Topology validation UI
-- Vertex editing
+| Feature | Priority | Effort | Notes |
+|---------|----------|--------|-------|
+| **Ground Truth Layer Toggle** | P0 | 2-3 hrs | Must show GT vs SAM side-by-side |
+| **Data Source Switcher** | P0 | 1-2 hrs | Load SAM segments OR Ground Truth |
+| ROR Data Panel | P1 | 3-4 hrs | Display ROR records, area comparison |
+| Conflict Highlighting | P1 | 2-3 hrs | Color-code by area mismatch |
+| Segment Filtering | P2 | 1-2 hrs | Hide tiny segments (< X sqm) |
+| Statistics Panel | P2 | 1-2 hrs | Counts by status |
 
 ---
 
-## 6. WHAT IS ACTUALLY POSSIBLE FOR DEMO
+## 6. CRITICAL DEMO REQUIREMENT: SHOW SAM vs GROUND TRUTH
 
-### Realistic Demo Scope
+### The Demo Must Show
+
+1. **What SAM Detected** - 12,032 segments (AI output)
+2. **What Officials Annotated** - 105 parcels (ground truth)
+3. **That They Are Comparable** - Same village, same imagery
+4. **How Officers Can Fix It** - Merge, split, delete tools
+
+### Current Gap
+
+The AccuracyPanel calculates IoU but doesn't visually show both layers simultaneously. For the demo, we need:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DEMO CAPABILITIES                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ✅ CAN DEMO (Already Built or Buildable):                       │
-│  ─────────────────────────────────────────                       │
-│  • Show SAM-extracted polygons on ORI imagery                    │
-│  • Select parcels (click, lasso, box)                            │
-│  • Delete polygons                                               │
-│  • Split polygons (draw line)                                    │
-│  • Classify parcel types (agricultural, building, water, etc.)   │
-│  • Export to shapefile                                           │
-│  • Toggle layers (ORI, polygons, ground truth for comparison)    │
-│                                                                  │
-│  🔨 NEED TO BUILD:                                               │
-│  ─────────────────                                               │
-│  • Merge polygons (select multiple → combine)                    │
-│  • ROR data display (area comparison)                            │
-│  • Conflict highlighting (AI area vs ROR area)                   │
-│  • Confidence scoring (based on area match)                      │
-│  • Smart filtering (hide tiny segments, show large only)         │
-│  • Topology check (highlight overlaps/gaps)                      │
-│                                                                  │
-│  ❌ NOT REALISTIC FOR DEMO:                                      │
-│  ──────────────────────────                                      │
-│  • Better segmentation model (would need training)               │
-│  • FMB/Bhu-Naksha integration (data doesn't exist)               │
-│  • Mobile field app                                              │
-│  • WebLand API integration                                       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER PANEL (Updated)                                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Base Layers                                                 │
+│  ───────────                                                 │
+│  ☑ ORI Imagery                                              │
+│                                                              │
+│  Data Layers                                                 │
+│  ───────────                                                 │
+│  ○ SAM Output (12,032 segments)    ← AI Detection           │
+│  ● Ground Truth (105 parcels)      ← Official Annotations   │
+│  ○ Working Layer                   ← Officer Edits          │
+│                                                              │
+│  Show Comparison                                             │
+│  ────────────────                                            │
+│  ☑ Overlay Ground Truth Boundaries (dashed red)             │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Implementation Required
+
+```typescript
+// New state in LayerPanel or separate store
+const [activeDataSource, setActiveDataSource] = useState<'sam' | 'ground_truth' | 'working'>('working');
+const [showGroundTruthOverlay, setShowGroundTruthOverlay] = useState(false);
+
+// Load different GeoJSON based on selection
+useEffect(() => {
+  const url = activeDataSource === 'sam'
+    ? '/data/sam_segments.geojson'
+    : activeDataSource === 'ground_truth'
+    ? '/data/ground_truth.geojson'
+    : null; // working layer uses polygon store
+
+  if (url) loadGeoJSON(url);
+}, [activeDataSource]);
 ```
 
 ---
 
 ## 7. THE REAL DIFFERENTIATOR
 
-Given the constraints, our differentiator should be:
-
 ### "Officer-Centric Editing Tool"
 
-Instead of trying to have the best AI segmentation (which we can't achieve without training data), focus on:
+Instead of claiming best AI segmentation, focus on:
 
 #### 1. Best-in-class UI for reviewing/correcting AI output
 
-- Fast merge tool (click-click-merge)
-- Fast split tool (draw line) ✅ Already built
-- Easy delete (select and delete) ✅ Already built
-- Lasso selection for bulk operations ✅ Already built
+- **Fast merge tool** - Lasso select + right-click + "Merge" ✅ Already built
+- **Fast split tool** - Draw line through polygon ✅ Already built
+- **Easy delete** - Select + press D ✅ Already built
+- **Bulk selection** - Lasso, box select ✅ Already built
 
-#### 2. ROR-Integrated Conflict Detection
+#### 2. Visual Comparison Capability
 
-- Load ROR data alongside parcels
-- Auto-calculate area difference: AI area vs ROR area
-- Color-code: Green (<5% diff), Yellow (5-15%), Red (>15%)
-- Conflict queue: Show parcels with issues first
+- Toggle between SAM output and Ground Truth
+- Overlay ground truth boundaries on SAM segments
+- See exactly where AI differs from official annotations
 
-#### 3. Smart Post-Processing
+#### 3. Smart Post-Processing (Built)
 
-- Filter tiny segments (< X sqm)
-- Auto-merge adjacent micro-segments
-- Topology highlighting (show overlaps/gaps)
+- **Topology validation** ✅ Detect overlaps/gaps
+- **Auto-fix** ✅ Fix minor topology issues
+- **Accuracy metrics** ✅ Calculate IoU against ground truth
 
-#### 4. Officer Productivity Features
+#### 4. Officer Productivity Features (Built)
 
-- Statistics panel (X parcels reviewed, Y merged, Z flagged)
-- Keyboard shortcuts for common actions
-- Auto-save progress
-- Export with audit trail
+- Keyboard shortcuts ✅
+- Auto-save progress ✅
+- Undo/Redo ✅
+- Export with metadata ✅
 
 ---
 
-## 8. RECOMMENDED DEMO FLOW
+## 8. RECOMMENDED DEMO FLOW (Updated)
 
 ```
-DEMO SCRIPT (5-7 minutes):
+DEMO SCRIPT (7-8 minutes):
 
 1. SHOW THE PROBLEM (30 sec)
-   "Here's Nibanupudi village ORI. Currently officers manually trace
-   every parcel boundary. Takes 3-5 days per village."
+   "Here's Nibanupudi village ORI from drone imagery.
+   Currently officers manually trace every parcel boundary.
+   Takes 3-5 days per village."
 
-2. SHOW AI OUTPUT (30 sec)
-   "Our AI has pre-processed this. 12,000 initial segments detected."
-   [Load SAM segments on map]
+2. SHOW OFFICIAL GROUND TRUTH (30 sec)
+   [Toggle to Ground Truth layer]
+   "Officials have manually annotated 105 parcels in this area.
+   This is what we're trying to achieve automatically."
 
-3. SHOW THE OVER-SEGMENTATION ISSUE (30 sec)
-   "SAM over-segments. We have 12,000 segments for ~100 parcels.
-   But that's okay - we give officers tools to fix this quickly."
+3. SHOW SAM AI OUTPUT (1 min)
+   [Toggle to SAM Output layer]
+   "Our AI has processed the same imagery.
+   It detected 12,032 segments - that's 115x over-segmentation."
 
-4. DEMO MERGE TOOL (1 min)
-   "Officer sees a parcel split into 5 pieces. Select all, click merge."
-   [Demo lasso select + merge]
+   [Show overlay - SAM with Ground Truth boundaries]
+   "You can see SAM captures the land area (78% coverage)
+   but fragments each parcel into ~100 pieces.
+   SAM sees crop textures, shadows - not parcel boundaries."
 
-5. DEMO SPLIT TOOL (30 sec)
-   "AI missed a boundary. Officer draws a line to split."
-   [Demo split tool]
+4. EXPLAIN THE STRATEGY (30 sec)
+   "Perfect AI isn't our goal. What matters is giving officers
+   fast tools to correct AI output. Over-segmentation is fixable."
 
-6. SHOW ROR COMPARISON (1 min)
-   "System compares to ROR. This parcel is 2.3 acres, ROR says 2.5.
-   Highlighted yellow for review."
-   [Show area mismatch highlighting]
+5. DEMO MERGE TOOL (1 min)
+   [Lasso select multiple SAM segments that should be one parcel]
+   "Officer sees a parcel split into pieces. Lasso select..."
+   [Right-click → Merge]
+   "One click - merged into a single parcel."
 
-7. SHOW CONFLICT QUEUE (1 min)
-   "Officers don't check all 500 parcels. We show only the 30 with issues."
-   [Show filtered view of conflicts]
+6. DEMO SPLIT TOOL (30 sec)
+   "AI missed a boundary? Draw a line to split."
+   [Demo split tool on a parcel]
 
-8. EXPORT (30 sec)
-   "When done, export as shapefile compatible with their systems."
+7. SHOW TOPOLOGY VALIDATION (1 min)
+   [Click Validate in Topology Panel]
+   "System checks for overlaps and gaps automatically."
+   [Show Fix All button]
+   "Auto-fix handles minor issues."
+
+8. SHOW ACCURACY METRICS (30 sec)
+   [Click Calculate in Accuracy Panel]
+   "Compare your edits against reference data.
+   See which parcels need attention."
+
+9. EXPORT (30 sec)
+   "When done, export as shapefile - ready for your systems."
    [Demo export]
 
-9. SUMMARY (30 sec)
-   "What took 3-5 days now takes 2-4 hours. 90% time savings."
+10. SUMMARY (30 sec)
+    "What took 3-5 days manually now takes 2-4 hours.
+    AI gives you a starting point, tools make correction fast.
+    90% time savings."
 ```
 
 ---
 
 ## 9. TECHNICAL IMPLEMENTATION PRIORITIES
 
-### Priority 1 (Must Have for Demo)
+### Priority 0 (Must Have for Demo)
 
-1. **Merge Tool UI** - Select multiple polygons → merge into one
-2. **ROR Data Panel** - Load and display ROR data alongside polygons
-3. **Area Comparison** - Calculate AI area vs ROR expected area
-4. **Conflict Highlighting** - Color-code parcels by area match
+| Task | Effort | Description |
+|------|--------|-------------|
+| **Ground Truth Layer Toggle** | 2-3 hrs | Add radio buttons to switch data source |
+| **Ground Truth Overlay** | 1-2 hrs | Show GT boundaries as dashed lines over working layer |
+| **Data Source Loading** | 1 hr | Load sam_segments.geojson or ground_truth.geojson |
 
-### Priority 2 (Nice to Have)
+### Priority 1 (Nice to Have)
 
-5. **Filtering** - Hide segments below area threshold
-6. **Statistics Panel** - Count parcels by status
-7. **Topology Check** - Highlight overlaps/gaps
-8. **Confidence Score** - Based on area match percentage
+| Task | Effort | Description |
+|------|--------|-------------|
+| ROR Data Panel | 3-4 hrs | Load and display ROR records |
+| Area Comparison | 2 hrs | Show AI area vs ROR expected area |
+| Conflict Highlighting | 2 hrs | Color-code by area mismatch |
 
-### Priority 3 (If Time Permits)
+### Priority 2 (If Time Permits)
 
-9. **Vertex Editing** - Drag boundary points
-10. **Auto-merge Micro-segments** - Batch merge tiny adjacent polygons
-11. **Ground Truth Comparison** - For evaluation (not shown to users)
+| Task | Effort | Description |
+|------|--------|-------------|
+| Segment Filtering | 1-2 hrs | Hide segments below area threshold |
+| Statistics Summary | 1 hr | Count parcels by review status |
 
 ---
 
-## 10. KEY QUOTES FROM OFFICIALS
+## 10. IMPLEMENTATION SPEC: Ground Truth Layer Toggle
+
+### File: `dashboard/src/components/Sidebar/LayerPanel.tsx`
+
+```typescript
+// Add new state
+const [dataSource, setDataSource] = useState<'working' | 'sam' | 'ground_truth'>('working');
+const [showGTOverlay, setShowGTOverlay] = useState(false);
+
+// Add to JSX after "Base Layers"
+<div>
+  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+    Data Source
+  </h3>
+  <div className="space-y-1">
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        name="dataSource"
+        checked={dataSource === 'working'}
+        onChange={() => setDataSource('working')}
+      />
+      <span className="text-sm text-gray-300">Working Layer</span>
+    </label>
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        name="dataSource"
+        checked={dataSource === 'sam'}
+        onChange={() => setDataSource('sam')}
+      />
+      <span className="text-sm text-gray-300">SAM Output (12,032)</span>
+      <span className="text-xs text-blue-400">AI</span>
+    </label>
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        name="dataSource"
+        checked={dataSource === 'ground_truth'}
+        onChange={() => setDataSource('ground_truth')}
+      />
+      <span className="text-sm text-gray-300">Ground Truth (105)</span>
+      <span className="text-xs text-green-400">Official</span>
+    </label>
+  </div>
+</div>
+
+<div className="mt-3">
+  <label className="flex items-center gap-2 cursor-pointer">
+    <input
+      type="checkbox"
+      checked={showGTOverlay}
+      onChange={(e) => setShowGTOverlay(e.target.checked)}
+    />
+    <span className="text-sm text-gray-300">Show GT Overlay</span>
+  </label>
+</div>
+```
+
+### File: `dashboard/src/components/Map/MapCanvas.tsx`
+
+Add a new source and layer for ground truth overlay:
+
+```typescript
+// In map.on('load', ...) after existing layers
+map.current.addSource('ground-truth-overlay', {
+  type: 'geojson',
+  data: { type: 'FeatureCollection', features: [] },
+});
+
+map.current.addLayer({
+  id: 'ground-truth-border',
+  type: 'line',
+  source: 'ground-truth-overlay',
+  paint: {
+    'line-color': '#ef4444',
+    'line-width': 2,
+    'line-dasharray': [4, 2],
+  },
+});
+```
+
+---
+
+## 11. KEY QUOTES FROM OFFICIALS
 
 ### On Expected Output
 
@@ -298,163 +439,108 @@ DEMO SCRIPT (5-7 minutes):
 
 ---
 
-## 11. CONCLUSION
+## 12. RISK MITIGATION
+
+### If Ground Truth Toggle Not Ready
+
+**Fallback Demo Flow:**
+1. Start with SAM segments loaded
+2. Demo editing tools (merge, split, delete)
+3. Use Accuracy Panel to show metrics against GT
+4. Don't show visual comparison - just metrics
+
+### If ROR Integration Not Ready
+
+**Fallback:**
+- Skip ROR comparison section
+- Focus on visual editing + topology + accuracy
+- Still demonstrates 80% of value
+
+### Demo Environment Checklist
+
+- [ ] Dashboard runs locally (`npm run dev`)
+- [ ] ORI tiles load correctly
+- [ ] SAM segments load (12,032 features)
+- [ ] Ground truth loads (105 features)
+- [ ] Merge tool works (right-click context menu)
+- [ ] Split tool works
+- [ ] Topology validation runs
+- [ ] Accuracy calculation works
+- [ ] Export generates valid shapefile
+
+---
+
+## 13. CONCLUSION
 
 ### What We Should Tell Officials
 
 > "Our solution focuses on **empowering officers** with intelligent editing tools.
-> The AI provides a starting point, and our UI makes corrections fast and efficient.
-> We compare results with ROR data to prioritize which parcels need attention.
+> The AI provides a starting point (SAM detection), and our UI makes corrections fast.
+> We can show you exactly how AI output compares to official annotations.
 > What took 3-5 days manually now takes 2-4 hours."
 
 ### The Honest Differentiator
 
 We're not claiming the best AI segmentation. We're providing:
 
-1. **The best officer experience** for reviewing and correcting AI output
-2. **Smart conflict detection** using ROR data
-3. **Practical tools** that match exactly what officials asked for
+1. **Visual comparison** - See AI output vs official annotations side-by-side
+2. **The best officer experience** - Fast merge/split/delete tools (already built)
+3. **Quality assurance** - Topology validation and accuracy metrics (already built)
+4. **Practical tools** - Exactly what officials asked for
 
-This is a realistic, achievable, and useful prototype.
+### Summary of What's Built vs Needed
+
+| Category | Built | Needed |
+|----------|-------|--------|
+| Core editing (merge/split/delete) | ✅ 100% | - |
+| Selection tools (lasso/box/click) | ✅ 100% | - |
+| Topology validation | ✅ 100% | - |
+| Accuracy metrics | ✅ 100% | - |
+| Export to shapefile | ✅ 100% | - |
+| **Ground Truth comparison** | 60% (metrics only) | Visual toggle |
+| ROR integration | 0% | Nice to have |
+
+**This is a realistic, achievable, and demonstrable prototype.**
 
 ---
 
-## 12. SOURCE FILES REFERENCE
+## 14. SOURCE FILES REFERENCE
 
 ### Primary Source Documents
 
-| File | Description | Key Content |
-|------|-------------|-------------|
-| `challenge.json` | Official hackathon challenge specification | Challenge code 100017, success criteria (>80% precision, >70% survey team feedback), expected solutions, POC scope |
-| `Land Resurvey orientation session.txt` | Transcript of Jan 6, 2026 orientation with officials | Actual requirements from Deputy Director, technical expectations, Q&A with officials |
-| `WhatsApp Chat with Re_Survey (RTGS Hackathon).txt` | Communication with RTGS team | Demo dates (Jan 19-23), data sharing updates, clarification that ground truth won't be provided for test villages |
-
-### Documentation Files
-
 | File | Description |
 |------|-------------|
-| `docs/CHALLENGE_SUMMARY.md` | Detailed problem breakdown into 11 sub-problems |
-| `docs/FINAL_SOLUTION_STRATEGY.md` | Original proposed approach (ROR-constrained segmentation) |
-| `docs/IMPLEMENTATION_PLAN.md` | Technical implementation phases |
-| `docs/UI_WORKFLOW.md` | Officer workflow design and UI mockups |
-| `docs/EVALUATION_FINDINGS.md` | SAM model evaluation results (25.84% IoU, 12K over-segmentation) |
-| `docs/STATUS.md` | Project status as of Jan 15, 2026 |
-| `docs/DEMO_SCRIPT.md` | Original demo presentation script |
-| `docs/CLOUD_DEPLOY.md` | Cloud deployment guide (Docker, AWS, GCP) |
-| `CLAUDE.md` | Project instructions for development |
-| `README.md` | Project overview and quick start |
+| `challenge.json` | Official hackathon challenge specification |
+| `Land Resurvey orientation session.txt` | Transcript of Jan 6, 2026 orientation |
+| `WhatsApp Chat with Re_Survey (RTGS Hackathon).txt` | Communication with RTGS team |
 
-### Data Files - ORI Imagery
-
-| File | Size | Description |
-|------|------|-------------|
-| `AI Hackathon/589571_kanumuru_reprocess_247.ecw` | 2.3 GB | Kanumuru village drone imagery (ECW format) |
-| `AI Hackathon/589587_nibhanpudi_reprocess_326.ecw` | 785 MB | Nibanupudi village drone imagery (ECW format) |
-| `AI Hackathon/nibanupudi.tif` | 11 GB | Nibanupudi converted to GeoTIFF |
-| `dashboard/public/tiles/{z}/{x}/{y}.png` | ~50 MB | Pre-generated map tiles for dashboard (zoom 14-20) |
-
-### Data Files - ROR (Record of Rights)
-
-| File | Records | Description |
-|------|---------|-------------|
-| `Resurvey/kanumuru-annonymized ROR.xlsx` | 1,141 | Kanumuru parcel records (LP Number, Extent, ULPIN, Survey No, Land Type, Owner) |
-| `Resurvey/Nibhanupudi-annonymized ROR.xlsx` | ~850 | Nibanupudi parcel records |
-
-### Data Files - Ground Truth (EVALUATION ONLY)
-
-| File | Parcels | Description |
-|------|---------|-------------|
-| `Resurvey/kanumuru.shp` | ~1,100 | Kanumuru ground truth shapefile |
-| `Resurvey/nibanupudi.shp` | ~850 | Nibanupudi ground truth shapefile |
-| `dashboard/public/data/ground_truth.geojson` | 105 | Subset for evaluation |
-
-### Data Files - AI Generated
+### Demo Data (Nibanupudi Village)
 
 | File | Features | Description |
 |------|----------|-------------|
-| `dashboard/public/data/sam_segments.geojson` | 12,032 | SAM-generated segments (over-segmented) |
+| `dashboard/public/data/sam_segments.geojson` | 12,032 | SAM-generated segments |
+| `dashboard/public/data/ground_truth.geojson` | 105 | Official parcel annotations |
+| `dashboard/public/tiles/{z}/{x}/{y}.png` | - | ORI imagery tiles (zoom 14-20) |
 
 ### Dashboard Source Code
 
-| Directory | Description |
-|-----------|-------------|
-| `dashboard/src/components/Map/` | MapCanvas, ContextMenu, LassoSelection, SelectionBox |
-| `dashboard/src/components/Sidebar/` | Sidebar, LayerPanel, ToolPanel, ParcelTypePanel, AccuracyPanel, TopologyPanel |
-| `dashboard/src/components/BottomBar/` | Status bar with zoom/coordinates |
-| `dashboard/src/components/Dialogs/` | ExportDialog, RestoreSessionDialog |
-| `dashboard/src/hooks/` | usePolygonStore, useKeyboardShortcuts, useAutoSave |
-| `dashboard/src/utils/` | exportShapefile, polygonSplit, accuracy, topology |
+| Directory | Key Files |
+|-----------|-----------|
+| `dashboard/src/components/Map/` | MapCanvas, ContextMenu (with merge), LassoSelection, SelectionBox |
+| `dashboard/src/components/Sidebar/` | LayerPanel, ToolPanel, ParcelTypePanel, **AccuracyPanel**, **TopologyPanel** |
+| `dashboard/src/hooks/` | usePolygonStore (merge/split), useSelectionStore, useModeStore, useHistoryStore |
+| `dashboard/src/utils/` | exportShapefile, polygonSplit, **accuracy**, **topology** |
 
-### Backend Source Code
+### Map Configuration
 
-| File | Description |
-|------|-------------|
-| `src/pipeline.py` | End-to-end SAM processing pipeline |
-| `src/sam_segmenter.py` | SAM model integration |
-| `src/image_loader.py` | Large TIFF tile loading |
-| `src/vectorization.py` | Mask to polygon conversion |
-| `src/ror_engine.py` | ROR record matching |
-| `src/confidence.py` | Confidence scoring and conflict detection |
-| `src/topology.py` | Gap/overlap fixing |
-| `src/data_loader.py` | Data loading utilities |
-
-### Infrastructure
-
-| File | Description |
-|------|-------------|
-| `Dockerfile` | GPU-enabled container |
-| `docker-compose.yml` | Container orchestration |
-| `scripts/deploy-aws.sh` | AWS deployment script |
-| `scripts/deploy-gcp.sh` | GCP deployment script |
-| `requirements.txt` | Python dependencies |
-| `requirements-gpu.txt` | GPU-enabled dependencies |
-
----
-
-## 13. KEY INFORMATION FROM SOURCES
-
-### From challenge.json
-
-```json
-{
-  "challenge_code": "100017",
-  "poc_success_criteria": [
-    "Parcel extraction precision greater than 80%",
-    "At least 70% positive feedback from survey teams"
-  ],
-  "expected_solution": [
-    "AI-Based Geospatial Image Processing",
-    "Conflict Detection",
-    "AI-Assisted Field Validation",
-    "System Integration",
-    "Visualization Dashboard"
-  ]
-}
+```typescript
+// Default center - Nibanupudi village
+const DEFAULT_CENTER: [number, number] = [80.98846, 16.27826];
+const DEFAULT_ZOOM = 16;
 ```
 
-### From Orientation Transcript (Key Quotes)
-
-**On Output Format:**
-> "The AI tool should extract the land parcels for along this bunds from here to here... all bunds should be captured."
-
-**On Topology:**
-> "Those polygons whichever have been created should not overlap among each other and also there should not be any gaps."
-
-**On Expected Errors:**
-> "There may be some false bunds also, but those things will be corrected during the ground truthing phase."
-
-**On Editing Tools:**
-> "There should also be any mechanism to delete any lines or polygons in a fast manner."
-
-### From WhatsApp Chat
-
-**On Ground Truth:**
-> "Providing the Land Parcel shapefile... would materially compromise the objectivity and integrity of the solution validation process."
-
-**Demo Timeline:**
-> "Demo Presentation: January 19th - 23rd"
-
 ---
 
-*Document Version: 1.1*
+*Document Version: 2.0*
 *Last Updated: 2026-01-22*
+*Changes: Corrected component status (merge/topology/accuracy are built), added SAM vs Ground Truth comparison requirement, added implementation specs*
