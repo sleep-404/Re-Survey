@@ -3,7 +3,7 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
 import { Icon } from '../shared/Icon';
-import { union, featureCollection, area as turfArea } from '@turf/turf';
+import { union, featureCollection, concave, point, area as turfArea } from '@turf/turf';
 import type { AppMode, ParcelFeature } from '../../types';
 
 // Tool icons mapping
@@ -92,33 +92,36 @@ export function ToolPanel() {
       const fc = featureCollection(features);
       const merged = union(fc);
 
-      if (!merged || !merged.geometry) {
-        console.error('Union returned null or empty geometry');
-        alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
-        return;
-      }
-
-      // Handle MultiPolygon (if polygons had gaps) - take largest by area
       let finalGeometry: GeoJSON.Polygon;
-      if (merged.geometry.type === 'MultiPolygon') {
-        let largestIdx = 0;
-        let largestArea = 0;
-        merged.geometry.coordinates.forEach((polyCoords, idx) => {
-          const polyArea = turfArea({
-            type: 'Feature',
-            properties: {},
-            geometry: { type: 'Polygon', coordinates: polyCoords }
-          });
-          if (polyArea > largestArea) {
-            largestArea = polyArea;
-            largestIdx = idx;
-          }
-        });
-        finalGeometry = {
-          type: 'Polygon',
-          coordinates: merged.geometry.coordinates[largestIdx],
-        };
+
+      if (!merged || !merged.geometry) {
+        // Union failed - fall back to concave hull
+        console.log('Union failed, trying concave hull');
+        const allPoints = selectedParcels.flatMap(p =>
+          p.geometry.coordinates[0].map(coord => point(coord as [number, number]))
+        );
+        const hull = concave(featureCollection(allPoints), { maxEdge: 0.001 });
+        if (!hull || hull.geometry.type !== 'Polygon') {
+          alert('Failed to merge polygons.');
+          return;
+        }
+        finalGeometry = hull.geometry;
+      } else if (merged.geometry.type === 'MultiPolygon') {
+        // Polygons have gaps - use concave hull to connect them using original points
+        console.log('Union returned MultiPolygon (gaps detected), using concave hull');
+        const allPoints = selectedParcels.flatMap(p =>
+          p.geometry.coordinates[0].map(coord => point(coord as [number, number]))
+        );
+        const hull = concave(featureCollection(allPoints), { maxEdge: 0.001 });
+        if (!hull || hull.geometry.type !== 'Polygon') {
+          // Concave hull failed - fall back to keeping all parts as-is using union result
+          // Take all coordinates from all polygons in the MultiPolygon
+          alert('Polygons are not adjacent. Please select adjacent parcels to merge.');
+          return;
+        }
+        finalGeometry = hull.geometry;
       } else {
+        // Union worked - polygons were touching
         finalGeometry = merged.geometry;
       }
 
@@ -148,8 +151,6 @@ export function ToolPanel() {
     } catch (err) {
       console.error('Merge failed - Full error:', err);
       console.error('Error message:', err instanceof Error ? err.message : String(err));
-      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack');
-      console.error('Selected parcels:', JSON.stringify(selectedParcels.map(p => p.geometry), null, 2));
       alert(`Merge failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
