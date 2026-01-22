@@ -41,7 +41,7 @@ Track completion by checking off items as you commit each file.
 - [x] Update `src/index.css` (remove hardcoded dark theme)
 
 ### Phase 2: Auth Store
-- [ ] Create `src/hooks/useAuthStore.ts`
+- [x] Create `src/hooks/useAuthStore.ts`
 
 ### Phase 3: Village Store
 - [ ] Create `src/hooks/useVillageStore.ts`
