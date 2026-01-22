@@ -33,6 +33,13 @@ export function MapEditorScreen() {
     setDataSourceCount('live', liveSegments.length);
   }, [liveSegments.length, setDataSourceCount]);
 
+  // Sync live segments to map when they change (while viewing live data)
+  useEffect(() => {
+    if (activeDataSource === 'live') {
+      setParcels(liveSegments);
+    }
+  }, [liveSegments, activeDataSource, setParcels]);
+
   // Load data based on active data source
   useEffect(() => {
     async function loadData() {
