@@ -151,8 +151,11 @@ export function ToolPanel() {
       clearSelection();
       useSelectionStore.getState().select(mergedParcel.properties.id);
     } catch (err) {
-      console.error('Merge failed:', err);
-      alert('Failed to merge polygons. They may not be compatible for merging.');
+      console.error('Merge failed - Full error:', err);
+      console.error('Error message:', err instanceof Error ? err.message : String(err));
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack');
+      console.error('Selected parcels:', JSON.stringify(selectedParcels.map(p => p.geometry), null, 2));
+      alert(`Merge failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
