@@ -140,6 +140,15 @@ export function ToolPanel() {
         finalGeometry = merged.geometry;
       }
 
+      // Remove any holes (inner rings) - keep only the outer boundary
+      if (finalGeometry.coordinates.length > 1) {
+        console.log('Removing', finalGeometry.coordinates.length - 1, 'holes from merged polygon');
+        finalGeometry = {
+          type: 'Polygon',
+          coordinates: [finalGeometry.coordinates[0]], // Keep only outer ring
+        };
+      }
+
       const calculatedArea = turfArea({
         type: 'Feature',
         properties: {},
