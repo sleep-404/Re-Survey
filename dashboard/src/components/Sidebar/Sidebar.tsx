@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ToolPanel } from './ToolPanel';
 import { LayerPanel } from './LayerPanel';
 import { ParcelTypePanel } from './ParcelTypePanel';
+import { LivePanel } from './LivePanel';
 import { TopologyPanel } from './TopologyPanel';
 import { AccuracyPanel } from './AccuracyPanel';
 import { AreaComparisonPanel } from './AreaComparisonPanel';
@@ -10,7 +11,7 @@ import { StatisticsPanel } from './StatisticsPanel';
 import { ExportDialog } from '../Dialogs/ExportDialog';
 import { Icon } from '../shared/Icon';
 
-type MainTabId = 'tools' | 'layers' | 'classify';
+type MainTabId = 'tools' | 'layers' | 'classify' | 'live';
 type SubTabId = 'validate' | 'ror' | 'stats';
 
 interface SidebarProps {
@@ -77,6 +78,16 @@ export function Sidebar({ className = '' }: SidebarProps) {
         >
           Classify
         </button>
+        <button
+          onClick={() => handleMainTabClick('live')}
+          className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${
+            activeMainTab === 'live' && !showSubTabContent
+              ? 'text-purple-400 border-b-2 border-purple-500 bg-purple-950/20'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800 border-b-2 border-transparent'
+          }`}
+        >
+          Live
+        </button>
       </div>
 
       {/* Sub Tab Navigation */}
@@ -129,6 +140,11 @@ export function Sidebar({ className = '' }: SidebarProps) {
         {!showSubTabContent && activeMainTab === 'classify' && (
           <div className="p-5">
             <ParcelTypePanel />
+          </div>
+        )}
+        {!showSubTabContent && activeMainTab === 'live' && (
+          <div className="p-5">
+            <LivePanel />
           </div>
         )}
 
