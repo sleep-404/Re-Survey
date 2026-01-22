@@ -2,19 +2,19 @@ import { useEffect } from 'react';
 import { useModeStore } from './useModeStore';
 import { useSelectionStore } from './useSelectionStore';
 import { usePolygonStore } from './usePolygonStore';
-import { useHistoryStore, createDeleteAction, createChangeTypeAction, createMergeAction } from './useHistoryStore';
+import { useHistoryStore, createDeleteAction, createChangeTypeAction, createMergeAction, createAddAction } from './useHistoryStore';
 import { useDrawingStore } from './useDrawingStore';
 import { useSplitStore } from './useSplitStore';
 import { getParcelTypeByShortcut } from '../constants/parcelTypes';
-import { union, featureCollection } from '@turf/turf';
+import { union, featureCollection, area as turfArea } from '@turf/turf';
 import type { ParcelFeature } from '../types';
 
 export function useKeyboardShortcuts() {
   const { mode, enterDrawMode, enterEditMode, enterSplitMode, exitToSelectMode } = useModeStore();
-  const { getSelectedIds, getSelectionCount, clearSelection, selectAll } = useSelectionStore();
-  const { parcels, getParcelsByIds, deleteParcels, setParcelsType } = usePolygonStore();
+  const { getSelectedIds, getSelectionCount, clearSelection, selectAll, select } = useSelectionStore();
+  const { parcels, getParcelsByIds, deleteParcels, setParcelsType, addParcel } = usePolygonStore();
   const { undo, redo, canUndo, canRedo, pushAction } = useHistoryStore();
-  const { isDrawing, cancelDrawing } = useDrawingStore();
+  const { isDrawing, cancelDrawing, finishDrawing, canFinish } = useDrawingStore();
   const { isSplitting, cancelSplit } = useSplitStore();
 
   useEffect(() => {
@@ -132,6 +132,43 @@ export function useKeyboardShortcuts() {
 
         case 'escape':
           if (isDrawing) {
+            // Finish drawing and create polygon if we have enough vertices
+            if (canFinish()) {
+              const closedVertices = finishDrawing();
+              if (closedVertices && closedVertices.length >= 4) {
+                // Calculate area
+                const geometry: GeoJSON.Polygon = {
+                  type: 'Polygon',
+                  coordinates: [closedVertices],
+                };
+                const calculatedArea = turfArea({
+                  type: 'Feature',
+                  properties: {},
+                  geometry,
+                });
+
+                // Create a new parcel feature
+                const newParcel: ParcelFeature = {
+                  type: 'Feature',
+                  geometry,
+                  properties: {
+                    id: `drawn-${Date.now()}`,
+                    parcelType: 'unclassified',
+                    area: calculatedArea,
+                  },
+                };
+
+                // Add to store and history
+                addParcel(newParcel);
+                pushAction(createAddAction(newParcel));
+
+                // Switch back to select mode and select the new parcel
+                exitToSelectMode();
+                select(newParcel.properties.id);
+                return;
+              }
+            }
+            // Not enough vertices - cancel the drawing
             cancelDrawing();
           }
           if (isSplitting) {
@@ -202,10 +239,12 @@ export function useKeyboardShortcuts() {
     getSelectionCount,
     clearSelection,
     selectAll,
+    select,
     parcels,
     getParcelsByIds,
     deleteParcels,
     setParcelsType,
+    addParcel,
     undo,
     redo,
     canUndo,
@@ -213,6 +252,8 @@ export function useKeyboardShortcuts() {
     pushAction,
     isDrawing,
     cancelDrawing,
+    finishDrawing,
+    canFinish,
     isSplitting,
     cancelSplit,
   ]);
