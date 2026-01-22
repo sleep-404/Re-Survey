@@ -14,8 +14,8 @@ export function LoginScreen() {
   const location = useLocation();
   const { login, isLoading, error, clearError } = useAuthStore();
 
-  const [employeeId, setEmployeeId] = useState('');
-  const [password, setPassword] = useState('');
+  const [employeeId, setEmployeeId] = useState('EMP001');
+  const [password, setPassword] = useState('demo123');
   const [showPassword, setShowPassword] = useState(false);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
