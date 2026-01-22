@@ -8,7 +8,6 @@ import { AreaComparisonPanel } from './AreaComparisonPanel';
 import { RORPanel } from './RORPanel';
 import { StatisticsPanel } from './StatisticsPanel';
 import { ExportDialog } from '../Dialogs/ExportDialog';
-import { useAutoSave } from '../../hooks/useAutoSave';
 
 type TabId = 'tools' | 'layers' | 'classify' | 'validate' | 'ror' | 'stats';
 
@@ -33,18 +32,12 @@ interface SidebarProps {
 export function Sidebar({ className = '' }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabId>('tools');
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const { showSavedIndicator } = useAutoSave();
 
   return (
     <div className={`flex h-full flex-col bg-gray-900 ${className}`}>
       {/* Header */}
       <div className="border-b border-gray-700 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-100">BoundaryAI</h1>
-          {showSavedIndicator && (
-            <span className="text-xs text-green-400 animate-pulse">Saved ✓</span>
-          )}
-        </div>
+        <h1 className="text-lg font-semibold text-gray-100">BoundaryAI</h1>
         <p className="text-xs text-gray-500">Land Parcel Editor</p>
       </div>
 
