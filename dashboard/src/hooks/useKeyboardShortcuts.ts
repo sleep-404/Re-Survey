@@ -4,6 +4,7 @@ import { useSelectionStore } from './useSelectionStore';
 import { usePolygonStore } from './usePolygonStore';
 import { useHistoryStore, createDeleteAction, createChangeTypeAction, createMergeAction, createAddAction } from './useHistoryStore';
 import { useDrawingStore } from './useDrawingStore';
+import { useEditingStore } from './useEditingStore';
 import { useSplitStore } from './useSplitStore';
 import { getParcelTypeByShortcut } from '../constants/parcelTypes';
 import { union, featureCollection, area as turfArea } from '@turf/turf';
@@ -15,6 +16,7 @@ export function useKeyboardShortcuts() {
   const { parcels, getParcelsByIds, deleteParcels, setParcelsType, addParcel } = usePolygonStore();
   const { undo, redo, canUndo, canRedo, pushAction } = useHistoryStore();
   const { isDrawing, cancelDrawing, finishDrawing, canFinish } = useDrawingStore();
+  const { selectedVertexIndex, deleteSelectedVertex } = useEditingStore();
   const { isSplitting, cancelSplit } = useSplitStore();
 
   useEffect(() => {
@@ -53,6 +55,12 @@ export function useKeyboardShortcuts() {
           return;
 
         case 'd':
+          // In edit-vertices mode, delete selected vertex
+          if (mode === 'edit-vertices' && selectedVertexIndex !== null) {
+            deleteSelectedVertex();
+            return;
+          }
+          // In select mode, delete selected parcels
           if (selectionCount > 0) {
             const parcelsToDelete = getParcelsByIds(selectedIds);
 
@@ -254,6 +262,8 @@ export function useKeyboardShortcuts() {
     cancelDrawing,
     finishDrawing,
     canFinish,
+    selectedVertexIndex,
+    deleteSelectedVertex,
     isSplitting,
     cancelSplit,
   ]);

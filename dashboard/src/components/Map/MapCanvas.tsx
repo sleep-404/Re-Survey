@@ -36,6 +36,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     currentCoordinates,
     isDragging,
     draggedVertexIndex,
+    selectedVertexIndex,
     startEditing,
     updateVertex,
     startDragging,
@@ -303,9 +304,24 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         type: 'circle',
         source: 'editing',
         paint: {
-          'circle-radius': 7,
-          'circle-color': '#ffffff',
-          'circle-stroke-color': '#06b6d4',
+          'circle-radius': [
+            'case',
+            ['boolean', ['get', 'isSelected'], false],
+            9, // larger when selected
+            7,
+          ],
+          'circle-color': [
+            'case',
+            ['boolean', ['get', 'isSelected'], false],
+            '#fbbf24', // yellow/amber when selected
+            '#ffffff',
+          ],
+          'circle-stroke-color': [
+            'case',
+            ['boolean', ['get', 'isSelected'], false],
+            '#f59e0b', // amber stroke when selected
+            '#06b6d4',
+          ],
           'circle-stroke-width': 2,
         },
         filter: ['==', '$type', 'Point'],
@@ -655,7 +671,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: coord },
-          properties: { index },
+          properties: { index, isSelected: index === selectedVertexIndex },
         });
       });
 
@@ -674,7 +690,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
       type: 'FeatureCollection',
       features,
     });
-  }, [currentCoordinates]);
+  }, [currentCoordinates, selectedVertexIndex]);
 
   // Update split line preview
   useEffect(() => {

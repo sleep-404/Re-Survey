@@ -7,6 +7,7 @@ interface EditingState {
   originalCoordinates: Position[] | null;
   currentCoordinates: Position[] | null;
   draggedVertexIndex: number | null;
+  selectedVertexIndex: number | null;
   isDragging: boolean;
 
   // Actions
@@ -14,7 +15,9 @@ interface EditingState {
   updateVertex: (index: number, position: Position) => void;
   startDragging: (vertexIndex: number) => void;
   stopDragging: () => void;
+  selectVertex: (index: number | null) => void;
   deleteVertex: (index: number) => void;
+  deleteSelectedVertex: () => void;
   addVertex: (afterIndex: number, position: Position) => void;
   finishEditing: () => Position[] | null;
   cancelEditing: () => void;
@@ -30,6 +33,7 @@ export const useEditingStore = create<EditingState>((set, get) => ({
   originalCoordinates: null,
   currentCoordinates: null,
   draggedVertexIndex: null,
+  selectedVertexIndex: null,
   isDragging: false,
 
   // Actions
@@ -54,6 +58,7 @@ export const useEditingStore = create<EditingState>((set, get) => ({
   startDragging: (vertexIndex) =>
     set({
       draggedVertexIndex: vertexIndex,
+      selectedVertexIndex: vertexIndex,
       isDragging: true,
     }),
 
@@ -61,7 +66,11 @@ export const useEditingStore = create<EditingState>((set, get) => ({
     set({
       draggedVertexIndex: null,
       isDragging: false,
+      // Keep selectedVertexIndex - vertex stays selected after drag
     }),
+
+  selectVertex: (index) =>
+    set({ selectedVertexIndex: index }),
 
   deleteVertex: (index) =>
     set((state) => {
@@ -69,8 +78,22 @@ export const useEditingStore = create<EditingState>((set, get) => ({
       // Need at least 3 vertices for a valid polygon
       if (state.currentCoordinates.length <= 3) return state;
       const newCoords = state.currentCoordinates.filter((_, i) => i !== index);
-      return { currentCoordinates: newCoords };
+      // Clear selection if deleted vertex was selected
+      const newSelectedIndex = state.selectedVertexIndex === index ? null :
+        (state.selectedVertexIndex !== null && state.selectedVertexIndex > index)
+          ? state.selectedVertexIndex - 1
+          : state.selectedVertexIndex;
+      return { currentCoordinates: newCoords, selectedVertexIndex: newSelectedIndex };
     }),
+
+  deleteSelectedVertex: () => {
+    const { selectedVertexIndex, currentCoordinates } = get();
+    if (selectedVertexIndex === null || !currentCoordinates) return;
+    // Need at least 3 vertices for a valid polygon
+    if (currentCoordinates.length <= 3) return;
+    const newCoords = currentCoordinates.filter((_, i) => i !== selectedVertexIndex);
+    set({ currentCoordinates: newCoords, selectedVertexIndex: null });
+  },
 
   addVertex: (afterIndex, position) =>
     set((state) => {
@@ -96,6 +119,7 @@ export const useEditingStore = create<EditingState>((set, get) => ({
       originalCoordinates: null,
       currentCoordinates: null,
       draggedVertexIndex: null,
+      selectedVertexIndex: null,
       isDragging: false,
     });
 
@@ -108,6 +132,7 @@ export const useEditingStore = create<EditingState>((set, get) => ({
       originalCoordinates: null,
       currentCoordinates: null,
       draggedVertexIndex: null,
+      selectedVertexIndex: null,
       isDragging: false,
     }),
 
