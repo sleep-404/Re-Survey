@@ -3,7 +3,7 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
 import { Icon } from '../shared/Icon';
-import { union, featureCollection } from '@turf/turf';
+import { union, featureCollection, buffer, simplify } from '@turf/turf';
 import type { AppMode, ParcelFeature } from '../../types';
 
 // Tool icons mapping
@@ -81,21 +81,61 @@ export function ToolPanel() {
     if (selectedParcels.length < 2) return;
 
     try {
-      const mergedResult = union(featureCollection(
-        selectedParcels.map(p => ({
+      // First, buffer each polygon slightly to close tiny gaps between adjacent segments
+      const bufferedFeatures = selectedParcels.map(p => {
+        const buffered = buffer(p, 0.5, { units: 'meters' });
+        return {
           type: 'Feature' as const,
           properties: {},
-          geometry: p.geometry,
-        }))
-      ));
+          geometry: buffered?.geometry || p.geometry,
+        };
+      });
+
+      // Union the buffered polygons
+      let mergedResult = union(featureCollection(bufferedFeatures));
+
       if (!mergedResult || !mergedResult.geometry) {
         alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
         return;
       }
 
+      // Shrink back by the same buffer amount to restore original size
+      const shrunk = buffer(mergedResult, -0.5, { units: 'meters' });
+      if (shrunk && shrunk.geometry) {
+        mergedResult = shrunk;
+      }
+
+      // Simplify to clean up any artifacts (tolerance in degrees, ~0.1m)
+      const simplified = simplify(mergedResult, { tolerance: 0.000001, highQuality: true });
+      if (simplified && simplified.geometry) {
+        mergedResult = simplified;
+      }
+
+      // Handle both Polygon and MultiPolygon results
+      let finalGeometry: GeoJSON.Polygon | GeoJSON.MultiPolygon = mergedResult.geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
+
+      // If result is MultiPolygon, take the largest polygon
+      if (finalGeometry.type === 'MultiPolygon') {
+        const polygons = finalGeometry.coordinates;
+        // Find the largest polygon by coordinate count (rough area approximation)
+        let largestIdx = 0;
+        let largestSize = 0;
+        polygons.forEach((poly, idx) => {
+          const size = poly[0]?.length || 0;
+          if (size > largestSize) {
+            largestSize = size;
+            largestIdx = idx;
+          }
+        });
+        finalGeometry = {
+          type: 'Polygon',
+          coordinates: polygons[largestIdx],
+        };
+      }
+
       const mergedParcel: ParcelFeature = {
         type: 'Feature',
-        geometry: mergedResult.geometry as GeoJSON.Polygon,
+        geometry: finalGeometry as GeoJSON.Polygon,
         properties: {
           id: `merged-${Date.now()}`,
           parcelType: selectedParcels[0].properties.parcelType,
