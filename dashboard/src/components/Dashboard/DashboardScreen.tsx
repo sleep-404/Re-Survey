@@ -4,7 +4,7 @@ import { ChevronDown, Check } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../hooks/useAuthStore';
-import { useVillageStore, Village } from '../../hooks/useVillageStore';
+import { useVillageStore, type Village } from '../../hooks/useVillageStore';
 
 export function DashboardScreen() {
   const navigate = useNavigate();
