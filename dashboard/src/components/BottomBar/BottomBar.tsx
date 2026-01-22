@@ -1,4 +1,4 @@
-import { useModeStore, MODE_LABELS, MODE_HINTS } from '../../hooks/useModeStore';
+import { useModeStore, MODE_LABELS } from '../../hooks/useModeStore';
 import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
@@ -8,6 +8,31 @@ import type { ParcelFeature } from '../../types';
 interface BottomBarProps {
   className?: string;
 }
+
+// Keyboard hints per mode
+const MODE_KEYBOARD_HINTS: Record<string, Array<{ keys: string[]; action: string }>> = {
+  select: [
+    { keys: ['Click'], action: 'to select' },
+    { keys: ['Shift', 'Click'], action: 'to add' },
+    { keys: ['D'], action: 'to delete' },
+    { keys: ['M'], action: 'to merge' },
+  ],
+  draw: [
+    { keys: ['Click'], action: 'to add vertex' },
+    { keys: ['Enter'], action: 'to finish' },
+    { keys: ['Esc'], action: 'to cancel' },
+  ],
+  edit: [
+    { keys: ['Drag'], action: 'vertex to move' },
+    { keys: ['Enter'], action: 'to finish' },
+    { keys: ['Esc'], action: 'to cancel' },
+  ],
+  split: [
+    { keys: ['Click'], action: 'to draw split line' },
+    { keys: ['Enter'], action: 'to split' },
+    { keys: ['Esc'], action: 'to cancel' },
+  ],
+};
 
 export function BottomBar({ className = '' }: BottomBarProps) {
   const { mode } = useModeStore();
@@ -27,11 +52,10 @@ export function BottomBar({ className = '' }: BottomBarProps) {
   // Format area for display
   const formatArea = (sqm: number): string => {
     if (sqm < 1000) {
-      return `${sqm.toFixed(0)} m²`;
+      return `${sqm.toFixed(1)} m²`;
     } else if (sqm < 10000) {
       return `${(sqm / 1000).toFixed(2)} km²`;
     } else {
-      // Convert to acres (1 acre = 4046.86 sqm)
       const acres = sqm / 4046.86;
       return `${acres.toFixed(2)} ac`;
     }
@@ -41,17 +65,13 @@ export function BottomBar({ className = '' }: BottomBarProps) {
   const handleDelete = () => {
     if (selectedIds.length === 0) return;
 
-    // Confirm if deleting many parcels
     if (selectedIds.length >= 5) {
       if (!confirm(`Delete ${selectedIds.length} parcels?`)) {
         return;
       }
     }
 
-    // Record history
     pushAction(createDeleteAction(selectedParcels));
-
-    // Delete parcels
     deleteParcels(selectedIds);
     clearSelection();
   };
@@ -61,7 +81,6 @@ export function BottomBar({ className = '' }: BottomBarProps) {
     if (selectedParcels.length < 2) return;
 
     try {
-      // Merge all selected polygons using turf union
       const mergedResult = union(featureCollection(
         selectedParcels.map(p => ({
           type: 'Feature' as const,
@@ -74,26 +93,21 @@ export function BottomBar({ className = '' }: BottomBarProps) {
         return;
       }
 
-      // Create the new merged parcel
       const mergedParcel: ParcelFeature = {
         type: 'Feature',
         geometry: mergedResult.geometry as GeoJSON.Polygon,
         properties: {
           id: `merged-${Date.now()}`,
           parcelType: selectedParcels[0].properties.parcelType,
-          // Sum areas if available
           area: selectedParcels.reduce((sum, p) => sum + (p.properties.area ?? 0), 0),
         },
       };
 
-      // Record history for undo
       pushAction(createMergeAction(selectedParcels, mergedParcel));
 
-      // Remove original parcels and add merged one
       const { mergeParcels } = usePolygonStore.getState();
       mergeParcels(selectedIds, mergedParcel);
 
-      // Select the new merged parcel
       clearSelection();
       useSelectionStore.getState().select(mergedParcel.properties.id);
     } catch (err) {
@@ -102,106 +116,74 @@ export function BottomBar({ className = '' }: BottomBarProps) {
     }
   };
 
+  const hints = MODE_KEYBOARD_HINTS[mode] ?? MODE_KEYBOARD_HINTS.select;
+
   return (
-    <div
-      className={`flex items-center justify-between border-t border-gray-700 bg-gray-900 px-4 py-2 ${className}`}
+    <footer
+      className={`h-12 bg-[#1f2937] border-t border-gray-700 flex items-center justify-between px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] ${className}`}
     >
       {/* Left: Mode Indicator */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase text-gray-500">
-            Mode
-          </span>
-          <span className="rounded bg-cyan-600 px-2 py-0.5 text-sm font-medium text-white">
-            {MODE_LABELS[mode]}
-          </span>
-        </div>
-
-        {/* Hints based on mode */}
-        <span className="text-sm text-gray-400">{MODE_HINTS[mode]}</span>
+      <div className="flex items-center gap-4 min-w-[200px]">
+        <span className="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 font-bold uppercase tracking-wider text-[10px] shadow-sm flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          {MODE_LABELS[mode]} Mode
+        </span>
       </div>
 
-      {/* Right: Selection Info & Actions */}
-      <div className="flex items-center gap-4">
-        {selectionCount > 0 ? (
-          <>
-            {/* Selection count and area */}
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-400">Selected:</span>
-              <span className="font-medium text-gray-200">{selectionCount}</span>
-              {totalArea > 0 && (
-                <>
-                  <span className="text-gray-600">•</span>
-                  <span className="text-gray-400">{formatArea(totalArea)}</span>
-                </>
-              )}
-            </div>
+      {/* Center: Keyboard Hints */}
+      <div className="hidden lg:flex items-center gap-6 text-xs text-gray-400 font-medium bg-gray-900/50 px-4 py-1.5 rounded-full border border-gray-700/50">
+        {hints.map((hint, index) => (
+          <span key={index} className="flex items-center gap-1.5">
+            {hint.keys.map((key, keyIndex) => (
+              <span key={keyIndex} className="flex items-center gap-1">
+                <kbd className="font-sans font-bold text-gray-200 bg-gray-700 px-1.5 rounded border border-gray-600">
+                  {key}
+                </kbd>
+                {keyIndex < hint.keys.length - 1 && <span>+</span>}
+              </span>
+            ))}
+            <span>{hint.action}</span>
+            {index < hints.length - 1 && (
+              <span className="w-1 h-1 rounded-full bg-gray-600 ml-4" />
+            )}
+          </span>
+        ))}
+      </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-1">
-              <ActionButton
-                label="Delete"
-                shortcut="D"
-                onClick={handleDelete}
-                variant="danger"
-              />
-              {selectionCount >= 2 && (
-                <ActionButton
-                  label="Merge"
-                  shortcut="M"
-                  onClick={handleMerge}
-                />
-              )}
-              {selectionCount === 1 && (
-                <>
-                  <ActionButton
-                    label="Split"
-                    shortcut="S"
-                    onClick={() => useModeStore.getState().enterSplitMode()}
-                  />
-                  <ActionButton
-                    label="Edit"
-                    shortcut="E"
-                    onClick={() => useModeStore.getState().enterEditMode()}
-                  />
-                </>
-              )}
-            </div>
-          </>
+      {/* Right: Selection Info */}
+      <div className="flex items-center justify-end min-w-[200px]">
+        {selectionCount > 0 ? (
+          <div className="text-gray-300 text-sm font-mono bg-gray-800 px-3 py-1 rounded border border-gray-700 flex items-center gap-3">
+            <span>
+              Selected: <span className="text-cyan-400 font-bold">{selectionCount}</span> parcel{selectionCount !== 1 ? 's' : ''}
+            </span>
+            {totalArea > 0 && (
+              <>
+                <span className="w-[1px] h-3 bg-gray-600" />
+                <span>
+                  Area: <span className="text-cyan-400 font-bold">{formatArea(totalArea)}</span>
+                </span>
+              </>
+            )}
+          </div>
         ) : (
           <span className="text-sm text-gray-500">No selection</span>
         )}
       </div>
-    </div>
-  );
-}
 
-interface ActionButtonProps {
-  label: string;
-  shortcut: string;
-  onClick: () => void;
-  variant?: 'default' | 'danger';
-}
-
-function ActionButton({
-  label,
-  shortcut,
-  onClick,
-  variant = 'default',
-}: ActionButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1 rounded px-2 py-1 text-sm transition-colors ${
-        variant === 'danger'
-          ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
-          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-      }`}
-    >
-      {label}
-      <kbd className="rounded bg-gray-800 px-1 text-xs text-gray-500">
-        {shortcut}
-      </kbd>
-    </button>
+      {/* Hidden action handlers - triggered by keyboard shortcuts */}
+      <button
+        className="hidden"
+        onClick={handleDelete}
+        data-action="delete"
+        aria-hidden
+      />
+      <button
+        className="hidden"
+        onClick={handleMerge}
+        data-action="merge"
+        aria-hidden
+      />
+    </footer>
   );
 }
