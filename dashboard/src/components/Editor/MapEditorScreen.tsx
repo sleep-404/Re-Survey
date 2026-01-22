@@ -10,9 +10,12 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import type { ParcelFeature } from '../../types';
 
 export function MapEditorScreen() {
-  const { setParcels, setLoading, setError } = usePolygonStore();
+  const { parcels, setParcels, setLoading, setError } = usePolygonStore();
   const { activeDataSource, setDataSourceCount } = useLayerStore();
   const { liveSegments, setLiveSegments } = useLiveSegmentationStore();
+
+  // Track if we're currently syncing to prevent infinite loops
+  const isSyncingRef = useRef(false);
 
   // Track working layer data separately so it persists when switching away and back
   const workingLayerRef = useRef<ParcelFeature[] | null>(null);
@@ -35,8 +38,11 @@ export function MapEditorScreen() {
 
   // Sync live segments to map when they change (while viewing live data)
   useEffect(() => {
-    if (activeDataSource === 'live') {
+    if (activeDataSource === 'live' && !isSyncingRef.current) {
+      isSyncingRef.current = true;
       setParcels(liveSegments);
+      // Reset flag after React finishes this update cycle
+      setTimeout(() => { isSyncingRef.current = false; }, 0);
     }
   }, [liveSegments, activeDataSource, setParcels]);
 
@@ -116,15 +122,16 @@ export function MapEditorScreen() {
 
   // Sync polygon edits back to live segments store when editing live data
   useEffect(() => {
-    if (activeDataSource === 'live') {
-      const parcels = usePolygonStore.getState().parcels;
-      // Only sync if there are actual changes (avoid infinite loop)
-      const currentLive = useLiveSegmentationStore.getState().liveSegments;
-      if (parcels !== currentLive && parcels.length > 0) {
-        useLiveSegmentationStore.getState().setLiveSegments(parcels);
+    if (activeDataSource === 'live' && !isSyncingRef.current) {
+      // Only sync if parcels actually differ from liveSegments
+      if (parcels !== liveSegments && parcels.length >= 0) {
+        isSyncingRef.current = true;
+        setLiveSegments(parcels);
+        // Reset flag after React finishes this update cycle
+        setTimeout(() => { isSyncingRef.current = false; }, 0);
       }
     }
-  }, [activeDataSource]);
+  }, [activeDataSource, parcels, liveSegments, setLiveSegments]);
 
   // Register keyboard shortcuts
   useKeyboardShortcuts();
