@@ -10,6 +10,7 @@ import { useEditingStore } from '../../hooks/useEditingStore';
 import { useSplitStore } from '../../hooks/useSplitStore';
 import { useHistoryStore, createAddAction, createEditVerticesAction, createSplitAction } from '../../hooks/useHistoryStore';
 import { useLayerStore } from '../../hooks/useLayerStore';
+import { useLiveSegmentationStore } from '../../hooks/useLiveSegmentationStore';
 import { PARCEL_TYPES, SELECTION_COLORS } from '../../constants/parcelTypes';
 import { polygonSplit } from '../../utils/polygonSplit';
 import type { ParcelFeature } from '../../types';
@@ -51,9 +52,14 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     cancelSplit,
   } = useSplitStore();
   const { pushAction } = useHistoryStore();
+  const { isDrawingBox, currentBox, setCurrentBox, setDrawingBox } = useLiveSegmentationStore();
   const [cursorPosition, setCursorPosition] = useState<[number, number] | null>(null);
   const [groundTruthData, setGroundTruthData] = useState<FeatureCollection | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Bounding box drawing state
+  const [boxStart, setBoxStart] = useState<[number, number] | null>(null);
+  const [boxEnd, setBoxEnd] = useState<[number, number] | null>(null);
 
   // Get layer visibility from store
   const { showGroundTruthOverlay, showOriTiles, showSatellite, showPolygons, showConflictHighlighting, minAreaThreshold } = useLayerStore();
@@ -362,6 +368,35 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         paint: {
           'line-color': '#ef4444',
           'line-width': 3,
+          'line-dasharray': [4, 2],
+        },
+      });
+
+      // Bounding box source for live segmentation
+      map.current.addSource('bounding-box', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Bounding box fill (semi-transparent purple)
+      map.current.addLayer({
+        id: 'bounding-box-fill',
+        type: 'fill',
+        source: 'bounding-box',
+        paint: {
+          'fill-color': '#a855f7',
+          'fill-opacity': 0.15,
+        },
+      });
+
+      // Bounding box border (purple dashed)
+      map.current.addLayer({
+        id: 'bounding-box-border',
+        type: 'line',
+        source: 'bounding-box',
+        paint: {
+          'line-color': '#a855f7',
+          'line-width': 2,
           'line-dasharray': [4, 2],
         },
       });
@@ -676,6 +711,61 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     });
   }, [splitLineVertices, cursorPosition, isSplitting]);
 
+  // Update bounding box preview for live segmentation
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('bounding-box') as GeoJSONSource;
+    if (!source) return;
+
+    const features: GeoJSON.Feature[] = [];
+
+    // Show the currently drawn box (while drawing)
+    if (boxStart && boxEnd) {
+      const minLng = Math.min(boxStart[0], boxEnd[0]);
+      const maxLng = Math.max(boxStart[0], boxEnd[0]);
+      const minLat = Math.min(boxStart[1], boxEnd[1]);
+      const maxLat = Math.max(boxStart[1], boxEnd[1]);
+
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [minLng, minLat],
+            [maxLng, minLat],
+            [maxLng, maxLat],
+            [minLng, maxLat],
+            [minLng, minLat],
+          ]],
+        },
+        properties: { isDrawing: true },
+      });
+    }
+    // Show the saved current box (from store)
+    else if (currentBox && !isDrawingBox) {
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [currentBox.minLng, currentBox.minLat],
+            [currentBox.maxLng, currentBox.minLat],
+            [currentBox.maxLng, currentBox.maxLat],
+            [currentBox.minLng, currentBox.maxLat],
+            [currentBox.minLng, currentBox.minLat],
+          ]],
+        },
+        properties: { isDrawing: false },
+      });
+    }
+
+    source.setData({
+      type: 'FeatureCollection',
+      features,
+    });
+  }, [boxStart, boxEnd, currentBox, isDrawingBox, mapLoaded]);
+
   // Start split when entering split mode with a selected polygon
   useEffect(() => {
     if (mode === 'split' && selectedIds.size === 1 && !isSplitting) {
@@ -721,6 +811,11 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
   const handleClick = useCallback(
     (e: MapMouseEvent) => {
       if (!map.current) return;
+
+      // Bounding box drawing mode - clicks are handled by mousedown/mouseup
+      if (isDrawingBox) {
+        return;
+      }
 
       // Split mode - add vertex to split line
       if (mode === 'split' && isSplitting) {
@@ -771,13 +866,22 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         select(clickedId);
       }
     },
-    [mode, selectedIds, select, addToSelection, removeFromSelection, isDrawing, startDrawing, addVertex, isSplitting, addSplitVertex]
+    [mode, selectedIds, select, addToSelection, removeFromSelection, isDrawing, startDrawing, addVertex, isSplitting, addSplitVertex, isDrawingBox]
   );
 
   // Handle mouse move for hover, drawing preview, and vertex dragging
   const handleMouseMove = useCallback(
     (e: MapMouseEvent) => {
       if (!map.current) return;
+
+      // Bounding box drawing mode - update box end point while dragging
+      if (isDrawingBox) {
+        if (boxStart) {
+          setBoxEnd([e.lngLat.lng, e.lngLat.lat]);
+        }
+        map.current.getCanvas().style.cursor = 'crosshair';
+        return;
+      }
 
       // Split mode - update cursor position for line preview
       if (mode === 'split' && isSplitting) {
@@ -839,7 +943,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         map.current.getCanvas().style.cursor = '';
       }
     },
-    [hoveredId, setHovered, mode, isDrawing, isDragging, draggedVertexIndex, updateVertex, isSplitting]
+    [hoveredId, setHovered, mode, isDrawing, isDragging, draggedVertexIndex, updateVertex, isSplitting, isDrawingBox, boxStart]
   );
 
   // Handle double-click to finish drawing or split
@@ -912,10 +1016,23 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     [mode, isDrawing, finishDrawing, addParcel, pushAction, isSplitting, splitTargetId, finishSplit, cancelSplit, parcels]
   );
 
-  // Handle mousedown for vertex dragging
+  // Handle mousedown for vertex dragging and bounding box drawing
   const handleMouseDown = useCallback(
     (e: MapMouseEvent) => {
-      if (!map.current || mode !== 'edit-vertices') return;
+      if (!map.current) return;
+
+      // Bounding box drawing mode - start drawing box
+      if (isDrawingBox) {
+        e.preventDefault();
+        setBoxStart([e.lngLat.lng, e.lngLat.lat]);
+        setBoxEnd([e.lngLat.lng, e.lngLat.lat]);
+        // Disable map dragging while box drawing
+        map.current.dragPan.disable();
+        return;
+      }
+
+      // Edit mode - vertex dragging
+      if (mode !== 'edit-vertices') return;
 
       // Check if clicking on a vertex
       const vertexFeatures = map.current.queryRenderedFeatures(e.point, {
@@ -932,19 +1049,38 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         }
       }
     },
-    [mode, startDragging]
+    [mode, startDragging, isDrawingBox]
   );
 
-  // Handle mouseup to stop vertex dragging
+  // Handle mouseup to stop vertex dragging and finish bounding box
   const handleMouseUp = useCallback(() => {
     if (!map.current) return;
+
+    // Bounding box drawing mode - finish drawing box
+    if (isDrawingBox && boxStart && boxEnd) {
+      const minLng = Math.min(boxStart[0], boxEnd[0]);
+      const maxLng = Math.max(boxStart[0], boxEnd[0]);
+      const minLat = Math.min(boxStart[1], boxEnd[1]);
+      const maxLat = Math.max(boxStart[1], boxEnd[1]);
+
+      // Only save if box has meaningful size (not just a click)
+      if (Math.abs(maxLng - minLng) > 0.0001 && Math.abs(maxLat - minLat) > 0.0001) {
+        setCurrentBox({ minLng, maxLng, minLat, maxLat });
+        setDrawingBox(false);
+      }
+
+      setBoxStart(null);
+      setBoxEnd(null);
+      map.current.dragPan.enable();
+      return;
+    }
 
     if (isDragging) {
       stopDragging();
       // Re-enable map dragging
       map.current.dragPan.enable();
     }
-  }, [isDragging, stopDragging]);
+  }, [isDragging, stopDragging, isDrawingBox, boxStart, boxEnd, setCurrentBox, setDrawingBox]);
 
   // Attach event handlers
   useEffect(() => {
