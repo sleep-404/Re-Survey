@@ -53,9 +53,9 @@ Track completion by checking off items as you commit each file.
 - [x] Create `src/components/Dashboard/DashboardScreen.tsx`
 
 ### Phase 6: Map Editor Screen
-- [ ] Create `src/components/Editor/EditorHeader.tsx`
-- [ ] Create `src/components/Editor/MapEditorScreen.tsx`
-- [ ] Update `src/components/Sidebar/Sidebar.tsx` (remove Saved indicator)
+- [x] Create `src/components/Editor/EditorHeader.tsx`
+- [x] Create `src/components/Editor/MapEditorScreen.tsx`
+- [x] Update `src/components/Sidebar/Sidebar.tsx` (remove Saved indicator)
 
 ### Phase 7: Protected Route
 - [ ] Create `src/components/Auth/ProtectedRoute.tsx`
