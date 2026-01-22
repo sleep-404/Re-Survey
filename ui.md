@@ -8,6 +8,67 @@ Add Login and Dashboard screens to the existing Map Editor application, implemen
 
 ---
 
+## ⚠️ CRITICAL: Commit Rules
+
+**Commit IMMEDIATELY after creating or updating EACH file. Do NOT wait.**
+
+1. Create/update a file → Save → Commit immediately
+2. One file = One commit (unless tightly coupled like component + types)
+3. Never batch multiple file changes
+4. Never include yourself as commit author
+5. Follow conventional commit format: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
+
+**Example:**
+```bash
+# After creating useAuthStore.ts
+git add dashboard/src/hooks/useAuthStore.ts
+git commit -m "feat: Add auth store with login/logout and session persistence"
+
+# After creating LoginScreen.tsx
+git add dashboard/src/components/Auth/LoginScreen.tsx
+git commit -m "feat: Add login screen with form validation and error states"
+```
+
+---
+
+## Implementation Progress
+
+Track completion by checking off items as you commit each file.
+
+### Phase 1: Setup
+- [ ] Create branch `feature/ui-redesign`
+- [ ] Run `npm install react-router-dom lucide-react clsx react-hot-toast`
+- [ ] Update `src/index.css` (remove hardcoded dark theme)
+
+### Phase 2: Auth Store
+- [ ] Create `src/hooks/useAuthStore.ts`
+
+### Phase 3: Village Store
+- [ ] Create `src/hooks/useVillageStore.ts`
+
+### Phase 4: Login Screen
+- [ ] Create `src/components/Auth/LoginScreen.tsx`
+
+### Phase 5: Dashboard Screen
+- [ ] Create `src/components/Dashboard/DashboardScreen.tsx`
+
+### Phase 6: Map Editor Screen
+- [ ] Create `src/components/Editor/EditorHeader.tsx`
+- [ ] Create `src/components/Editor/MapEditorScreen.tsx`
+- [ ] Update `src/components/Sidebar/Sidebar.tsx` (remove Saved indicator)
+
+### Phase 7: Protected Route
+- [ ] Create `src/components/Auth/ProtectedRoute.tsx`
+
+### Phase 8: Routing
+- [ ] Update `src/main.tsx` (add router and routes)
+
+### Phase 9: Testing
+- [ ] Verify all 23 test cases pass
+- [ ] Verify all existing Map Editor features work
+
+---
+
 ## Current State → Target State
 
 | Aspect | Current | Target |
