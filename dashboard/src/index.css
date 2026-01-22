@@ -3,6 +3,37 @@
 /* MapLibre GL JS styles */
 @import "maplibre-gl/dist/maplibre-gl.css";
 
+/* Tailwind v4 Theme Customization */
+@theme {
+  /* Custom gray shades */
+  --color-gray-750: #2d3748;
+  --color-gray-850: #1a202c;
+  --color-gray-950: #030712;
+
+  /* Custom cyan shade */
+  --color-cyan-450: #06b6d4;
+
+  /* Primary color */
+  --color-primary: #1e3fae;
+  --color-primary-dark: #1e40af;
+
+  /* Font family */
+  --font-sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Public Sans', sans-serif;
+
+  /* Custom animations */
+  --animate-pulse-slow: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Custom base styles */
 @layer base {
   :root {
@@ -19,12 +50,43 @@
 
   body {
     @apply m-0 min-h-screen antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
   #root {
     @apply h-screen w-screen;
   }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom range slider styles */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #06b6d4;
+  cursor: pointer;
+  margin-top: -5px;
+  box-shadow: 0 0 0 2px #111827;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: #374151;
+  border-radius: 2px;
 }
 
 /* MapLibre overrides */
