@@ -19,6 +19,11 @@ export interface SegmentationRequest {
   max_dimension?: number;
   min_area?: number;
   max_area?: number;
+  // Advanced SAM parameters
+  points_per_side?: number;
+  simplify_tolerance?: number;
+  stability_thresh?: number;
+  iou_thresh?: number;
 }
 
 export interface SegmentResult {
@@ -59,6 +64,9 @@ interface LiveSegmentationState {
   maxDimension: number;
   minArea: number;
   maxArea: number;
+  // Advanced settings
+  pointsPerSide: number;
+  simplifyTolerance: number;
 
   // API state
   isProcessing: boolean;
@@ -76,6 +84,8 @@ interface LiveSegmentationState {
   setMaxDimension: (dim: number) => void;
   setMinArea: (area: number) => void;
   setMaxArea: (area: number) => void;
+  setPointsPerSide: (points: number) => void;
+  setSimplifyTolerance: (tolerance: number) => void;
   runSegmentation: () => Promise<void>;
   addSegments: (segments: ParcelFeature[]) => void;
   setLiveSegments: (segments: ParcelFeature[]) => void;
@@ -90,9 +100,11 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
   drawnBoxes: [],
 
   selectedModel: 'vit_b',
-  maxDimension: 1024,
-  minArea: 100,
+  maxDimension: 512,
+  minArea: 1500,
   maxArea: 500000,
+  pointsPerSide: 16,
+  simplifyTolerance: 2.0,
 
   isProcessing: false,
   lastError: null,
@@ -114,8 +126,12 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
 
   setMaxArea: (area) => set({ maxArea: area }),
 
+  setPointsPerSide: (points) => set({ pointsPerSide: points }),
+
+  setSimplifyTolerance: (tolerance) => set({ simplifyTolerance: tolerance }),
+
   runSegmentation: async () => {
-    const { currentBox, selectedModel, maxDimension, minArea, maxArea } = get();
+    const { currentBox, selectedModel, maxDimension, minArea, maxArea, pointsPerSide, simplifyTolerance } = get();
 
     if (!currentBox) {
       set({ lastError: 'No bounding box selected. Draw a box on the map first.' });
@@ -131,6 +147,8 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
         max_dimension: maxDimension,
         min_area: minArea,
         max_area: maxArea,
+        points_per_side: pointsPerSide,
+        simplify_tolerance: simplifyTolerance,
       };
 
       const response = await fetch(API_ENDPOINT, {
