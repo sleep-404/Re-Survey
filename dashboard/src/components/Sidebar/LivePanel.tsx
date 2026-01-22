@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useLiveSegmentationStore, type SAMModelType } from '../../hooks/useLiveSegmentationStore';
 import { useLayerStore } from '../../hooks/useLayerStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
@@ -10,7 +10,38 @@ const MODEL_OPTIONS: { value: SAMModelType; label: string; description: string }
   { value: 'vit_h', label: 'ViT-H (Best)', description: 'Huge model, highest accuracy' },
 ];
 
+// Parameter tooltips
+const PARAM_HELP = {
+  minArea: {
+    label: 'Min Area',
+    increase: 'Filters out small noise/fragments',
+    decrease: 'Keeps smaller segments (may include noise)',
+  },
+  simplifyTolerance: {
+    label: 'Boundary Smoothing',
+    increase: 'Smoother edges, fewer points',
+    decrease: 'More detailed edges, follows pixels closely',
+  },
+  pointsPerSide: {
+    label: 'Segment Density',
+    increase: 'Detects more segments (finer grid)',
+    decrease: 'Fewer segments (coarser detection)',
+  },
+  stabilityThresh: {
+    label: 'Edge Confidence',
+    increase: 'Only confident edges (cleaner but may miss some)',
+    decrease: 'More edges detected (noisier but comprehensive)',
+  },
+  iouThresh: {
+    label: 'Overlap Filter',
+    increase: 'Removes more overlapping segments',
+    decrease: 'Allows more segment overlap',
+  },
+};
+
 export function LivePanel() {
+  const [showHelp, setShowHelp] = useState(false);
+
   const {
     isDrawingBox,
     currentBox,
@@ -19,6 +50,8 @@ export function LivePanel() {
     minArea,
     pointsPerSide,
     simplifyTolerance,
+    stabilityThresh,
+    iouThresh,
     isProcessing,
     lastError,
     lastProcessingTime,
@@ -28,6 +61,8 @@ export function LivePanel() {
     setMinArea,
     setPointsPerSide,
     setSimplifyTolerance,
+    setStabilityThresh,
+    setIouThresh,
     runSegmentation,
     clearAllSegments,
     clearCurrentBox,
@@ -187,14 +222,43 @@ export function LivePanel() {
         <div className="flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">3</span>
           <span className="text-xs font-medium text-gray-300">Settings</span>
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="ml-auto text-[10px] text-gray-500 hover:text-cyan-400 flex items-center gap-1 transition-colors"
+          >
+            <Icon name={showHelp ? 'expand_less' : 'help_outline'} className="text-sm" />
+            {showHelp ? 'Hide help' : 'How do these work?'}
+          </button>
         </div>
+
+        {/* Expandable Help Section */}
+        {showHelp && (
+          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-800/40 rounded-lg text-[10px] space-y-2">
+            <div className="flex items-start gap-2">
+              <Icon name="lightbulb" className="text-yellow-500 text-sm mt-0.5" />
+              <div className="text-gray-300">
+                <p className="font-medium mb-2">Parameter Guide:</p>
+                <ul className="space-y-1.5 text-gray-400">
+                  <li><span className="text-cyan-400">Min Area:</span> Filters small noise. ↑ = cleaner, ↓ = keeps small parcels</li>
+                  <li><span className="text-cyan-400">Boundary Smoothing:</span> Simplifies edges. ↑ = smoother, ↓ = pixel-precise</li>
+                  <li><span className="text-cyan-400">Segment Density:</span> Detection grid. ↑ = more segments, ↓ = fewer</li>
+                  <li><span className="text-cyan-400">Edge Confidence:</span> Detection threshold. ↑ = only clear edges, ↓ = all edges</li>
+                  <li><span className="text-cyan-400">Overlap Filter:</span> Removes duplicates. ↑ = strict, ↓ = allows overlap</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4 pl-1">
           {/* Min Area Filter */}
-          <div>
+          <div title={`↑ ${PARAM_HELP.minArea.increase}\n↓ ${PARAM_HELP.minArea.decrease}`}>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide">Min Area</label>
-              <span className="text-[10px] text-cyan-400 font-mono">{minArea} m²</span>
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                Min Area
+                <Icon name="info" className="text-[10px] text-gray-600" />
+              </label>
+              <span className="text-[10px] text-cyan-400 font-mono">{minArea} px</span>
             </div>
             <input
               type="range"
@@ -207,21 +271,24 @@ export function LivePanel() {
               className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
             />
             <div className="flex justify-between text-[9px] text-gray-600 mt-1">
-              <span>100</span>
-              <span>5000 m²</span>
+              <span>Keep small</span>
+              <span>Filter noise</span>
             </div>
           </div>
 
           {/* Simplify Tolerance */}
-          <div>
+          <div title={`↑ ${PARAM_HELP.simplifyTolerance.increase}\n↓ ${PARAM_HELP.simplifyTolerance.decrease}`}>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide">Boundary Smoothing</label>
-              <span className="text-[10px] text-cyan-400 font-mono">{simplifyTolerance.toFixed(1)} m</span>
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                Boundary Smoothing
+                <Icon name="info" className="text-[10px] text-gray-600" />
+              </label>
+              <span className="text-[10px] text-cyan-400 font-mono">{simplifyTolerance.toFixed(1)}</span>
             </div>
             <input
               type="range"
               min="0"
-              max="5"
+              max="8"
               step="0.5"
               value={simplifyTolerance}
               onChange={(e) => setSimplifyTolerance(Number(e.target.value))}
@@ -229,15 +296,18 @@ export function LivePanel() {
               className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
             />
             <div className="flex justify-between text-[9px] text-gray-600 mt-1">
-              <span>Detailed</span>
+              <span>Pixel-precise</span>
               <span>Smooth</span>
             </div>
           </div>
 
           {/* Points Per Side (Density) */}
-          <div>
+          <div title={`↑ ${PARAM_HELP.pointsPerSide.increase}\n↓ ${PARAM_HELP.pointsPerSide.decrease}`}>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide">Segment Density</label>
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                Segment Density
+                <Icon name="info" className="text-[10px] text-gray-600" />
+              </label>
               <span className="text-[10px] text-cyan-400 font-mono">{pointsPerSide} pts</span>
             </div>
             <input
@@ -251,8 +321,58 @@ export function LivePanel() {
               className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
             />
             <div className="flex justify-between text-[9px] text-gray-600 mt-1">
-              <span>Fewer segments</span>
+              <span>Fewer</span>
               <span>More segments</span>
+            </div>
+          </div>
+
+          {/* Stability Threshold (Edge Confidence) */}
+          <div title={`↑ ${PARAM_HELP.stabilityThresh.increase}\n↓ ${PARAM_HELP.stabilityThresh.decrease}`}>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                Edge Confidence
+                <Icon name="info" className="text-[10px] text-gray-600" />
+              </label>
+              <span className="text-[10px] text-cyan-400 font-mono">{stabilityThresh.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="0.98"
+              step="0.02"
+              value={stabilityThresh}
+              onChange={(e) => setStabilityThresh(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            />
+            <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+              <span>All edges</span>
+              <span>Confident only</span>
+            </div>
+          </div>
+
+          {/* IoU Threshold (Overlap Filter) */}
+          <div title={`↑ ${PARAM_HELP.iouThresh.increase}\n↓ ${PARAM_HELP.iouThresh.decrease}`}>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                Overlap Filter
+                <Icon name="info" className="text-[10px] text-gray-600" />
+              </label>
+              <span className="text-[10px] text-cyan-400 font-mono">{iouThresh.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="0.98"
+              step="0.02"
+              value={iouThresh}
+              onChange={(e) => setIouThresh(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            />
+            <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+              <span>Allow overlap</span>
+              <span>Remove duplicates</span>
             </div>
           </div>
         </div>
