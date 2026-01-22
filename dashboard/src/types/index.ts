@@ -21,6 +21,8 @@ export interface ParcelProperties {
   isSelected?: boolean;   // UI state - currently selected
   isHovered?: boolean;    // UI state - currently hovered
   hasTopologyError?: boolean; // Has overlap or gap issue
+  lp_no?: number;         // LP number from data source
+  lpNumber?: number;      // Alternative LP number field
 }
 
 // A parcel is a GeoJSON Feature with our custom properties
