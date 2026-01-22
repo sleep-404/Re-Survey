@@ -280,7 +280,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         type: 'fill',
         source: 'editing',
         paint: {
-          'fill-color': '#06b6d4',
+          'fill-color': '#f97316', // orange for editing
           'fill-opacity': 0.15,
         },
         filter: ['==', '$type', 'Polygon'],
@@ -292,7 +292,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         type: 'line',
         source: 'editing',
         paint: {
-          'line-color': '#06b6d4',
+          'line-color': '#f97316', // orange for editing
           'line-width': 2,
         },
         filter: ['==', '$type', 'Polygon'],
@@ -313,14 +313,14 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
           'circle-color': [
             'case',
             ['boolean', ['get', 'isSelected'], false],
-            '#fbbf24', // yellow/amber when selected
+            '#fecaca', // light red when selected (delete-able)
             '#ffffff',
           ],
           'circle-stroke-color': [
             'case',
             ['boolean', ['get', 'isSelected'], false],
-            '#f59e0b', // amber stroke when selected
-            '#06b6d4',
+            '#dc2626', // red stroke when selected (delete-able)
+            '#f97316', // orange stroke normally
           ],
           'circle-stroke-width': 2,
         },
