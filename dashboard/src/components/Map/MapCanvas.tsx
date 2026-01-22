@@ -378,24 +378,24 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Bounding box fill (semi-transparent purple)
+      // Bounding box fill (semi-transparent black)
       map.current.addLayer({
         id: 'bounding-box-fill',
         type: 'fill',
         source: 'bounding-box',
         paint: {
-          'fill-color': '#a855f7',
-          'fill-opacity': 0.15,
+          'fill-color': '#000000',
+          'fill-opacity': 0.1,
         },
       });
 
-      // Bounding box border (purple dashed)
+      // Bounding box border (black dashed)
       map.current.addLayer({
         id: 'bounding-box-border',
         type: 'line',
         source: 'bounding-box',
         paint: {
-          'line-color': '#a855f7',
+          'line-color': '#000000',
           'line-width': 2,
           'line-dasharray': [4, 2],
         },
