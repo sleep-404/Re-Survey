@@ -2,11 +2,17 @@ import { create } from 'zustand';
 
 /**
  * Data source types for the main polygon layer
- * - 'sam': SAM-generated segments (12,032 features)
- * - 'ground_truth': Official annotations (105 features)
+ * - 'sam': SAM-generated segments
+ * - 'ground_truth': Official annotations
  * - 'working': User's edited working layer
  */
 export type DataSource = 'working' | 'sam' | 'ground_truth';
+
+interface DataSourceCounts {
+  sam: number | null;
+  ground_truth: number | null;
+  working: number | null;
+}
 
 interface LayerState {
   // Base tile layer visibility
@@ -15,6 +21,9 @@ interface LayerState {
 
   // Data source selection (radio - only one active at a time)
   activeDataSource: DataSource;
+
+  // Counts for each data source (null = not yet loaded)
+  dataSourceCounts: DataSourceCounts;
 
   // Overlay toggle (can show GT overlay on top of any data source)
   showGroundTruthOverlay: boolean;
@@ -35,6 +44,7 @@ interface LayerState {
   setShowOriTiles: (show: boolean) => void;
   setShowSatellite: (show: boolean) => void;
   setActiveDataSource: (source: DataSource) => void;
+  setDataSourceCount: (source: DataSource, count: number) => void;
   setShowGroundTruthOverlay: (show: boolean) => void;
   setShowPolygons: (show: boolean) => void;
   setShowConflictHighlighting: (show: boolean) => void;
@@ -50,6 +60,13 @@ export const useLayerStore = create<LayerState>((set) => ({
 
   // Start with SAM data loaded (matches current App.tsx behavior)
   activeDataSource: 'sam',
+
+  // Counts initialized as null (will be populated when data loads)
+  dataSourceCounts: {
+    sam: null,
+    ground_truth: null,
+    working: null,
+  },
 
   // Ground truth overlay off by default
   showGroundTruthOverlay: false,
@@ -80,6 +97,10 @@ export const useLayerStore = create<LayerState>((set) => ({
   setShowOriTiles: (show) => set({ showOriTiles: show }),
   setShowSatellite: (show) => set({ showSatellite: show }),
   setActiveDataSource: (source) => set({ activeDataSource: source }),
+  setDataSourceCount: (source, count) =>
+    set((state) => ({
+      dataSourceCounts: { ...state.dataSourceCounts, [source]: count },
+    })),
   setShowGroundTruthOverlay: (show) => set({ showGroundTruthOverlay: show }),
   setShowPolygons: (show) => set({ showPolygons: show }),
   setShowConflictHighlighting: (show) => set({ showConflictHighlighting: show }),

@@ -10,7 +10,7 @@ import type { ParcelFeature } from '../../types';
 
 export function MapEditorScreen() {
   const { setParcels, setLoading, setError } = usePolygonStore();
-  const { activeDataSource } = useLayerStore();
+  const { activeDataSource, setDataSourceCount } = useLayerStore();
 
   // Track working layer data separately so it persists when switching away and back
   const workingLayerRef = useRef<ParcelFeature[] | null>(null);
@@ -31,6 +31,7 @@ export function MapEditorScreen() {
       const currentParcels = usePolygonStore.getState().parcels;
       if (currentParcels.length > 0) {
         workingLayerRef.current = currentParcels;
+        setDataSourceCount('working', currentParcels.length);
       }
 
       setLoading(true);
@@ -67,6 +68,7 @@ export function MapEditorScreen() {
         );
 
         setParcels(features);
+        setDataSourceCount(activeDataSource as Exclude<DataSource, 'working'>, features.length);
         console.log(
           `Loaded ${features.length} parcels from ${activeDataSource}`
         );

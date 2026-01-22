@@ -28,13 +28,12 @@ interface VillageState {
   toggleSortDirection: () => void;
 }
 
-// Mock villages data
-const MOCK_VILLAGES: Village[] = [
+// Base village data (parcel counts for villages with real data will be fetched)
+const BASE_VILLAGES: Omit<Village, 'parcelCount'>[] = [
   {
     id: 'nibhanupudi',
     name: 'Nibhanupudi',
     mandal: 'Pedakurapadu',
-    parcelCount: 12032,
     progress: 0,
     hasRealData: true
   },
@@ -42,7 +41,6 @@ const MOCK_VILLAGES: Village[] = [
     id: 'kondaveedu',
     name: 'Kondaveedu',
     mandal: 'Pedakurapadu',
-    parcelCount: 8456,
     progress: 100,
     hasRealData: false
   },
@@ -50,7 +48,6 @@ const MOCK_VILLAGES: Village[] = [
     id: 'manchala',
     name: 'Manchala',
     mandal: 'Sattenapalli',
-    parcelCount: 5234,
     progress: 45,
     hasRealData: false
   },
@@ -58,11 +55,17 @@ const MOCK_VILLAGES: Village[] = [
     id: 'vemuru',
     name: 'Vemuru',
     mandal: 'Vemuru',
-    parcelCount: 6789,
     progress: 0,
     hasRealData: false
   }
 ];
+
+// Placeholder counts for demo villages without real data
+const DEMO_PARCEL_COUNTS: Record<string, number> = {
+  kondaveedu: 8456,
+  manchala: 5234,
+  vemuru: 6789
+};
 
 export const useVillageStore = create<VillageState>((set, get) => ({
   // Initial state
@@ -78,13 +81,37 @@ export const useVillageStore = create<VillageState>((set, get) => ({
   loadVillages: async () => {
     set({ isLoading: true, error: null });
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      // Fetch actual parcel count for Nibhanupudi from SAM segments
+      let nibhanupudiCount = 0;
+      try {
+        const response = await fetch('/data/sam_segments.geojson');
+        if (response.ok) {
+          const geojson = await response.json();
+          nibhanupudiCount = geojson.features?.length || 0;
+        }
+      } catch (err) {
+        console.warn('Could not fetch SAM segments count:', err);
+      }
 
-    set({
-      villages: MOCK_VILLAGES,
-      isLoading: false
-    });
+      // Build villages with real or placeholder counts
+      const villages: Village[] = BASE_VILLAGES.map((v) => ({
+        ...v,
+        parcelCount: v.hasRealData
+          ? nibhanupudiCount
+          : DEMO_PARCEL_COUNTS[v.id] || 0
+      }));
+
+      set({
+        villages,
+        isLoading: false
+      });
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : 'Failed to load villages',
+        isLoading: false
+      });
+    }
   },
 
   selectVillage: (id: string) => {

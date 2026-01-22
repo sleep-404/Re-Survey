@@ -23,6 +23,7 @@ export function LayerPanel() {
     setShowPolygons,
     activeDataSource,
     setActiveDataSource,
+    dataSourceCounts,
     showGroundTruthOverlay,
     setShowGroundTruthOverlay,
     showConflictHighlighting,
@@ -30,6 +31,12 @@ export function LayerPanel() {
     minAreaThreshold: minAreaFilter,
     setMinAreaThreshold: setMinAreaFilter,
   } = useLayerStore();
+
+  // Format count for display
+  const formatCount = (count: number | null) => {
+    if (count === null) return '';
+    return `(${count.toLocaleString()})`;
+  };
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -87,7 +94,7 @@ export function LayerPanel() {
             <span className={`text-xs font-medium transition-colors ${
               activeDataSource === 'sam' ? 'text-cyan-100' : 'text-gray-300 group-hover:text-white'
             }`}>
-              SAM AI Output <span className="text-gray-500 ml-1">(12,032)</span>
+              SAM AI Output {dataSourceCounts.sam !== null && <span className="text-gray-500 ml-1">{formatCount(dataSourceCounts.sam)}</span>}
             </span>
           </label>
           <label
@@ -127,7 +134,7 @@ export function LayerPanel() {
             <span className={`text-xs font-medium transition-colors ${
               activeDataSource === 'ground_truth' ? 'text-cyan-100' : 'text-gray-300 group-hover:text-white'
             }`}>
-              Ground Truth <span className="text-green-400 ml-1">(105)</span>
+              Ground Truth {dataSourceCounts.ground_truth !== null && <span className="text-green-400 ml-1">{formatCount(dataSourceCounts.ground_truth)}</span>}
             </span>
           </label>
         </div>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BoundaryAI Map Editor Classify Tab</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            750: '#2d3748',
+                            850: '#1a202c',
+                            900: '#111827',
+                            950: '#030712',
+                        },
+                        cyan: {
+                            450: '#06b6d4', 
+                        }
+                    },
+                    fontFamily: {
+                        "sans": ["Public Sans", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            margin-top: -5px; 
+            box-shadow: 0 0 0 2px #111827;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #374151;
+            border-radius: 2px;
+        }
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans selection:bg-cyan-500/30">
+<header class="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
+<div class="flex items-center gap-4">
+<button class="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-700">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div>
+<h1 class="font-semibold text-lg text-white tracking-tight">Nibhanupudi, Pedakurapadu</h1>
+<p class="text-xs text-gray-400 font-medium">Map Editor V2.4</p>
+</div>
+</div>
+<div class="flex items-center gap-8">
+<span class="text-emerald-500 text-sm font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                Auto-saved <span class="material-symbols-outlined text-sm font-bold">check</span>
+</span>
+<div class="h-8 w-[1px] bg-gray-700"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="flex flex-col items-end">
+<span class="text-sm font-semibold text-gray-200 group-hover:text-white transition-colors">Ravi Kumar</span>
+<span class="text-[10px] text-gray-400">Survey Officer</span>
+</div>
+<div class="relative">
+<div class="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-2 ring-gray-800">RK</div>
+<div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-800"></div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-white transition-colors">expand_more</span>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<aside class="w-[280px] bg-[#111827] flex flex-col border-r border-gray-700 shrink-0 z-20 shadow-xl">
+<div class="h-14 flex items-center px-5 border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
+<span class="font-bold text-white tracking-tight">BoundaryAI</span>
+<span class="mx-2 text-gray-600">|</span>
+<span class="text-[10px] text-cyan-500 uppercase tracking-widest font-bold">Land Parcel Editor</span>
+</div>
+<div class="flex flex-col w-full border-b border-gray-800 bg-[#111827]">
+<div class="flex items-center w-full">
+<button class="flex-1 py-3 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors border-b-2 border-transparent">Tools</button>
+<button class="flex-1 py-3 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors border-b-2 border-transparent">Layers</button>
+<button class="flex-1 py-3 text-sm font-medium text-cyan-400 border-b-2 border-cyan-500 bg-cyan-950/20 transition-colors">Classify</button>
+</div>
+<div class="flex items-center w-full border-t border-gray-800/50">
+<button class="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">Validate</button>
+<button class="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">ROR</button>
+<button class="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">Stats</button>
+</div>
+</div>
+<div class="p-5 flex-1 overflow-y-auto no-scrollbar">
+<div class="mb-6">
+<h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        Current Selection <div class="h-[1px] flex-1 bg-gray-800"></div>
+</h3>
+<div class="bg-[#1f2937] rounded-lg p-4 border border-gray-700 shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<span class="text-sm font-semibold text-white">1 parcel selected</span>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="text-xs text-gray-400">Current Type:</span>
+<div class="flex items-center gap-2 px-2 py-1 bg-gray-900/50 rounded border border-gray-600/50">
+<span class="w-2 h-2 rounded-full bg-[#ea580c] shadow-[0_0_6px_rgba(234,88,12,0.4)]"></span>
+<span class="text-xs font-medium text-gray-200">Agricultural</span>
+</div>
+</div>
+<div class="text-[10px] text-gray-500 font-mono border-t border-gray-700 pt-2 mt-2 leading-relaxed">
+                            Area: 245.6 m² • LP#: 1234
+                        </div>
+</div>
+</div>
+<div class="mb-6">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Assign Type</h3>
+</div>
+<p class="text-[11px] text-gray-400 mb-3">Click a type or press 1-8 to classify</p>
+<div class="space-y-1">
+<button class="w-full flex items-center justify-between p-2 rounded bg-cyan-950/10 border-l-[3px] border-cyan-500 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#ea580c] shadow-[0_0_6px_rgba(234,88,12,0.4)]"></span>
+<span class="text-xs font-medium text-cyan-100 group-hover:text-white">Agricultural</span>
+</div>
+<span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/50">1</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#ca8a04]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Gramakantam</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">2</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#dc2626]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Building</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">3</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#6b7280]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Road</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">4</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#2563eb]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Water Body</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">5</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Open Space</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">6</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#9333ea]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Compound</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">7</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 border-l-[3px] border-transparent hover:border-gray-700 text-left group transition-all">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#0d9488]"></span>
+<span class="text-xs text-gray-400 group-hover:text-gray-200">Government Land</span>
+</div>
+<span class="text-[10px] font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700 group-hover:border-gray-600">8</span>
+</button>
+</div>
+</div>
+<div class="mb-4">
+<h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        Quick Stats <div class="h-[1px] flex-1 bg-gray-800"></div>
+</h3>
+<div class="bg-gray-800/30 rounded-lg p-3 border border-gray-700/50">
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-medium text-gray-400">Classified: 9,658 / 12,032</span>
+<span class="text-xs font-bold text-cyan-400">80.3%</span>
+</div>
+<div class="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden mb-2">
+<div class="h-full bg-cyan-500 rounded-full" style="width: 80.3%"></div>
+</div>
+<p class="text-[10px] text-gray-500 mt-2 flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                            3,374 parcels still unclassified
+                        </p>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-gray-800 bg-[#111827]">
+<button class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white py-2.5 px-4 rounded-lg border border-gray-700 transition-all text-xs font-semibold shadow-lg hover:shadow-gray-900/50">
+<span class="material-symbols-outlined text-base">download</span> Export Shapefile
+                </button>
+</div>
+</aside>
+<main class="flex-1 relative bg-neutral-900 overflow-hidden cursor-crosshair group">
+<div class="absolute inset-0 w-full h-full bg-gray-800">
+<img alt="Satellite Map" class="w-full h-full object-cover opacity-60 mix-blend-normal grayscale-[20%] contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2_u14hjiUuIK2HHhMqPtH2mbo1S9lzMI0qDsPDxX7xUjkCeJlc4FotRrEXfHNXIHWIrEk6DNftgqYwMNhmo_CMR12QdUOL1kwPaQhpT3OSTaYh4xjUUOzHRPFvHVbWOiSYXvRCrLKIM0JaQdB7OfWsfYrVbyGsLlXt9XZw5hAS45Zn9fwhLdU4lNVxZWNRw1K_2GywuyJR2k_g1SfitRmmBpSFC-f9bGyXqq2I-Lw3v2YGNaUgjvyyh6D2wrpj5mgBUM9t4Qz6z0K"/>
+<div class="absolute inset-0 bg-[#0f172a]/30 mix-blend-multiply"></div>
+</div>
+<svg class="absolute inset-0 w-full h-full z-10" preserveAspectRatio="none" viewBox="0 0 1000 800">
+<defs>
+<pattern height="10" id="diagonalHatch" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse" width="10">
+<line style="stroke:#06b6d4; stroke-width:1; opacity: 0.3" x1="0" x2="0" y1="0" y2="10"></line>
+</pattern>
+</defs>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M-50,50 L200,80 L180,280 L-20,250 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M200,80 L400,100 L380,320 L180,280 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M400,100 L650,120 L620,350 L380,320 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M650,120 L900,140 L880,380 L620,350 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M-20,250 L180,280 L160,500 L-40,480 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-[#06b6d4] stroke-[3px] fill-[#06b6d4]/30 animate-pulse-slow" d="M180,280 L380,320 L350,550 L160,500 Z" style="filter: drop-shadow(0 0 4px rgba(6,182,212,0.4));" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M380,320 L620,350 L580,580 L350,550 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M620,350 L880,380 L850,600 L580,580 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M160,500 L350,550 L320,780 L140,750 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M350,550 L580,580 L550,820 L320,780 Z" vector-effect="non-scaling-stroke"></path>
+<path class="stroke-cyan-300/40 stroke-1 fill-cyan-900/10 hover:fill-cyan-500/10 hover:stroke-cyan-400 transition-colors" d="M580,580 L850,600 L820,840 L550,820 Z" vector-effect="non-scaling-stroke"></path>
+<circle class="fill-white stroke-cyan-600 stroke-2 hover:r-6 cursor-pointer transition-all" cx="180" cy="280" r="4"></circle>
+<circle class="fill-white stroke-cyan-600 stroke-2 hover:r-6 cursor-pointer transition-all" cx="380" cy="320" r="4"></circle>
+<circle class="fill-white stroke-cyan-600 stroke-2 hover:r-6 cursor-pointer transition-all" cx="350" cy="550" r="4"></circle>
+<circle class="fill-white stroke-cyan-600 stroke-2 hover:r-6 cursor-pointer transition-all" cx="160" cy="500" r="4"></circle>
+</svg>
+<div class="absolute top-6 right-6 flex flex-col gap-2 z-20">
+<div class="flex flex-col bg-[#1f2937] border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+<button class="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 border-b border-gray-700 bg-[#1f2937] transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 bg-[#1f2937] transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<button class="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 bg-[#1f2937] border border-gray-700 rounded-lg shadow-xl transition-colors" title="My Location">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+<button class="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 bg-[#1f2937] border border-gray-700 rounded-lg shadow-xl transition-colors" title="Layers">
+<span class="material-symbols-outlined">layers</span>
+</button>
+</div>
+<div class="absolute bottom-6 right-6 bg-gray-900/80 backdrop-blur px-2 py-1 rounded border border-gray-700 text-[10px] text-gray-300 pointer-events-none z-20 font-mono">
+                50 m
+                <div class="w-16 h-1.5 bg-white border border-black mt-0.5 flex">
+<div class="w-1/2 h-full bg-black"></div>
+<div class="w-1/2 h-full bg-white"></div>
+</div>
+</div>
+</main>
+</div>
+<footer class="h-12 bg-[#1f2937] border-t border-gray-700 flex items-center justify-between px-6 shrink-0 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+<div class="flex items-center gap-4 min-w-[200px]">
+<span class="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 font-bold uppercase tracking-wider text-[10px] shadow-sm flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                Select Mode
+             </span>
+</div>
+<div class="hidden lg:flex items-center gap-6 text-xs text-gray-400 font-medium bg-gray-900/50 px-4 py-1.5 rounded-full border border-gray-700/50">
+<span class="flex items-center gap-1.5"><kbd class="font-sans font-bold text-gray-200 bg-gray-700 px-1.5 rounded border border-gray-600">Click</kbd> to select</span>
+<span class="w-1 h-1 rounded-full bg-gray-600"></span>
+<span class="flex items-center gap-1.5"><kbd class="font-sans font-bold text-gray-200 bg-gray-700 px-1.5 rounded border border-gray-600">Shift</kbd> + <kbd class="font-sans font-bold text-gray-200 bg-gray-700 px-1.5 rounded border border-gray-600">Click</kbd> to add</span>
+<span class="w-1 h-1 rounded-full bg-gray-600"></span>
+<span class="flex items-center gap-1.5"><kbd class="font-sans font-bold text-gray-200 bg-gray-700 px-1.5 rounded border border-gray-600">D</kbd> to delete</span>
+<span class="w-1 h-1 rounded-full bg-gray-600"></span>
+<span class="flex items-center gap-1.5"><kbd class="font-sans font-bold text-gray-200 bg-gray-700 px-1.5 rounded border border-gray-600">M</kbd> to merge</span>
+</div>
+<div class="flex items-center justify-end min-w-[200px]">
+<div class="text-gray-300 text-sm font-mono bg-gray-800 px-3 py-1 rounded border border-gray-700 flex items-center gap-3">
+<span>Selected: <span class="text-cyan-400 font-bold">1</span> parcel</span>
+<span class="w-[1px] h-3 bg-gray-600"></span>
+<span>Area: <span class="text-cyan-400 font-bold">245.6 m²</span></span>
+</div>
+</div>
+</footer>
+
+</body></html>
