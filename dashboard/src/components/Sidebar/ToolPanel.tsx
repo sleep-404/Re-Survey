@@ -99,29 +99,42 @@ export function ToolPanel() {
         alert('Failed to merge polygons.');
         return;
       } else if (merged.geometry.type === 'MultiPolygon') {
-        // Polygons have a gap - buffer slightly to close the gap, then union again
+        // Polygons have a gap - buffer to close the gap, then union, then shrink back
         console.log('Union returned MultiPolygon (gap detected), buffering to close gap');
 
-        // Buffer each polygon by 0.5 meters to close small gaps
-        const bufferedFeatures = selectedParcels.map(p => {
-          const buffered = buffer(p, 0.5, { units: 'meters' });
-          return buffered || p;
-        });
+        // Try increasing buffer sizes until polygons connect
+        let bufferedUnion = null;
+        let successfulBuffer = 0;
 
-        const bufferedUnion = union(featureCollection(bufferedFeatures));
+        for (const bufferSize of [1, 2, 5, 10, 20]) {
+          const bufferedFeatures = selectedParcels.map(p => {
+            const buffered = buffer(p, bufferSize, { units: 'meters' });
+            return buffered || p;
+          });
 
-        if (!bufferedUnion || !bufferedUnion.geometry) {
-          alert('Failed to merge polygons.');
+          const result = union(featureCollection(bufferedFeatures));
+
+          if (result?.geometry?.type === 'Polygon') {
+            bufferedUnion = result;
+            successfulBuffer = bufferSize;
+            console.log('Parcels connected with buffer:', bufferSize, 'meters');
+            break;
+          }
+        }
+
+        if (!bufferedUnion || bufferedUnion.geometry.type !== 'Polygon') {
+          alert('Parcels are too far apart to merge (>40m gap).');
           return;
         }
 
-        // If still MultiPolygon after buffering, parcels are too far apart
-        if (bufferedUnion.geometry.type === 'MultiPolygon') {
-          alert('Parcels are too far apart to merge. Please select adjacent parcels.');
-          return;
+        // Shrink back by the buffer amount to restore approximate original size
+        const shrunk = buffer(bufferedUnion, -successfulBuffer, { units: 'meters' });
+        if (shrunk?.geometry?.type === 'Polygon') {
+          finalGeometry = shrunk.geometry;
+        } else {
+          // Shrinking failed (can happen with thin shapes), use buffered result
+          finalGeometry = bufferedUnion.geometry;
         }
-
-        finalGeometry = bufferedUnion.geometry;
       } else {
         // Union worked - polygons were touching
         finalGeometry = merged.geometry;
