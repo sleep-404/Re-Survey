@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useLiveSegmentationStore, type SAMModelType } from '../../hooks/useLiveSegmentationStore';
 import { useLayerStore } from '../../hooks/useLayerStore';
+import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { Icon } from '../shared/Icon';
 
 const MODEL_OPTIONS: { value: SAMModelType; label: string; description: string }[] = [
@@ -26,7 +27,8 @@ export function LivePanel() {
     clearError,
   } = useLiveSegmentationStore();
 
-  const { setActiveDataSource } = useLayerStore();
+  const { activeDataSource, setActiveDataSource } = useLayerStore();
+  const { setParcels } = usePolygonStore();
 
   const handleStartDrawing = useCallback(() => {
     setDrawingBox(true);
@@ -47,10 +49,12 @@ export function LivePanel() {
   }, [runSegmentation, setActiveDataSource]);
 
   const handleReset = useCallback(() => {
-    if (window.confirm('Clear all live segmentation results? This cannot be undone.')) {
-      clearAllSegments();
+    clearAllSegments();
+    // If currently viewing live data, clear the map immediately
+    if (activeDataSource === 'live') {
+      setParcels([]);
     }
-  }, [clearAllSegments]);
+  }, [clearAllSegments, activeDataSource, setParcels]);
 
   const formatTime = (ms: number) => {
     if (ms < 1000) return `${ms.toFixed(0)}ms`;
