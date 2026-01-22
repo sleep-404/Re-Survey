@@ -3,7 +3,7 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
 import { Icon } from '../shared/Icon';
-import { union, featureCollection, buffer, simplify } from '@turf/turf';
+import { union, featureCollection, buffer, simplify, area as turfArea } from '@turf/turf';
 import type { AppMode, ParcelFeature } from '../../types';
 
 // Tool icons mapping
@@ -133,13 +133,20 @@ export function ToolPanel() {
         };
       }
 
+      // Calculate actual area from merged geometry
+      const calculatedArea = turfArea({
+        type: 'Feature',
+        properties: {},
+        geometry: finalGeometry,
+      });
+
       const mergedParcel: ParcelFeature = {
         type: 'Feature',
         geometry: finalGeometry as GeoJSON.Polygon,
         properties: {
           id: `merged-${Date.now()}`,
           parcelType: selectedParcels[0].properties.parcelType,
-          area: selectedParcels.reduce((sum, p) => sum + (p.properties.area ?? 0), 0),
+          area: calculatedArea,
         },
       };
 

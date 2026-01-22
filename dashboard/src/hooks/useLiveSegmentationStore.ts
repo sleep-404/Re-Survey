@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { area as turfArea } from '@turf/turf';
 import type { ParcelFeature } from '../types';
 
 const API_ENDPOINT = 'http://65.0.45.43:8503/api/sam/segment-region';
@@ -155,20 +156,29 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
       const existingSegments = get().liveSegments;
       const baseId = existingSegments.length;
 
-      const newFeatures: ParcelFeature[] = data.segments.map((segment, index) => ({
-        type: 'Feature' as const,
-        geometry: segment.polygon,
-        properties: {
-          id: `live-${baseId + index}-${Date.now()}`,
-          parcelType: 'unclassified' as const,
-          area: segment.area_sqm,
-          area_sqm: segment.area_sqm,
-          confidence: segment.confidence,
-          source: 'live-segmentation',
-          model: data.model_used,
-          segmentId: segment.id,
-        },
-      }));
+      const newFeatures: ParcelFeature[] = data.segments.map((segment, index) => {
+        // Calculate area from geometry if backend doesn't provide it
+        const calculatedArea = segment.area_sqm || turfArea({
+          type: 'Feature',
+          properties: {},
+          geometry: segment.polygon,
+        });
+
+        return {
+          type: 'Feature' as const,
+          geometry: segment.polygon,
+          properties: {
+            id: `live-${baseId + index}-${Date.now()}`,
+            parcelType: 'unclassified' as const,
+            area: calculatedArea,
+            area_sqm: calculatedArea,
+            confidence: segment.confidence,
+            source: 'live-segmentation',
+            model: data.model_used,
+            segmentId: segment.id,
+          },
+        };
+      });
 
       // Add to existing segments
       const updatedSegments = [...existingSegments, ...newFeatures];
