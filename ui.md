@@ -58,7 +58,7 @@ Track completion by checking off items as you commit each file.
 - [x] Update `src/components/Sidebar/Sidebar.tsx` (remove Saved indicator)
 
 ### Phase 7: Protected Route
-- [ ] Create `src/components/Auth/ProtectedRoute.tsx`
+- [x] Create `src/components/Auth/ProtectedRoute.tsx`
 
 ### Phase 8: Routing
 - [ ] Update `src/main.tsx` (add router and routes)
