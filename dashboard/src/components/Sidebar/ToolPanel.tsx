@@ -3,7 +3,7 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
 import { Icon } from '../shared/Icon';
-import { union, featureCollection, concave, point, area as turfArea } from '@turf/turf';
+import { union, featureCollection, buffer, area as turfArea } from '@turf/turf';
 import type { AppMode, ParcelFeature } from '../../types';
 
 // Tool icons mapping
@@ -95,31 +95,33 @@ export function ToolPanel() {
       let finalGeometry: GeoJSON.Polygon;
 
       if (!merged || !merged.geometry) {
-        // Union failed - fall back to concave hull
-        console.log('Union failed, trying concave hull');
-        const allPoints = selectedParcels.flatMap(p =>
-          p.geometry.coordinates[0].map(coord => point(coord as [number, number]))
-        );
-        const hull = concave(featureCollection(allPoints), { maxEdge: 0.001 });
-        if (!hull || hull.geometry.type !== 'Polygon') {
+        console.error('Union returned null');
+        alert('Failed to merge polygons.');
+        return;
+      } else if (merged.geometry.type === 'MultiPolygon') {
+        // Polygons have a gap - buffer slightly to close the gap, then union again
+        console.log('Union returned MultiPolygon (gap detected), buffering to close gap');
+
+        // Buffer each polygon by 0.5 meters to close small gaps
+        const bufferedFeatures = selectedParcels.map(p => {
+          const buffered = buffer(p, 0.5, { units: 'meters' });
+          return buffered || p;
+        });
+
+        const bufferedUnion = union(featureCollection(bufferedFeatures));
+
+        if (!bufferedUnion || !bufferedUnion.geometry) {
           alert('Failed to merge polygons.');
           return;
         }
-        finalGeometry = hull.geometry;
-      } else if (merged.geometry.type === 'MultiPolygon') {
-        // Polygons have gaps - use concave hull to connect them using original points
-        console.log('Union returned MultiPolygon (gaps detected), using concave hull');
-        const allPoints = selectedParcels.flatMap(p =>
-          p.geometry.coordinates[0].map(coord => point(coord as [number, number]))
-        );
-        const hull = concave(featureCollection(allPoints), { maxEdge: 0.001 });
-        if (!hull || hull.geometry.type !== 'Polygon') {
-          // Concave hull failed - fall back to keeping all parts as-is using union result
-          // Take all coordinates from all polygons in the MultiPolygon
-          alert('Polygons are not adjacent. Please select adjacent parcels to merge.');
+
+        // If still MultiPolygon after buffering, parcels are too far apart
+        if (bufferedUnion.geometry.type === 'MultiPolygon') {
+          alert('Parcels are too far apart to merge. Please select adjacent parcels.');
           return;
         }
-        finalGeometry = hull.geometry;
+
+        finalGeometry = bufferedUnion.geometry;
       } else {
         // Union worked - polygons were touching
         finalGeometry = merged.geometry;
