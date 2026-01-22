@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Check } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useVillageStore, type Village } from '../../hooks/useVillageStore';
+import { Icon } from '../shared/Icon';
+
+// Logo URL
+const AP_EMBLEM_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBnw4iep8fyTAo5ZIIRmqTibv572vQWlqSsuRmacWr7JrlQMxuLFAV6ejQAuXCsuLwJWyMEm7SeWDbxEyR60scB8dhKKttTH9Zuz3IHFR8dOFrvjFOweYy5v8vDTfxOwmhgoHtvadTtdY5RumHDQ67nVVpaXwZ3DDTMGglHRHpHjdFPZK1HFYbVg9cddLcfdJvZNP11yvFC4rFCHX1P6662ma_N-is9flPoftIwVFdVzOrgpxnAyyErD5sR9GVqU9hB5TzqBmSIfRI2';
 
 export function DashboardScreen() {
   const navigate = useNavigate();
@@ -24,12 +27,10 @@ export function DashboardScreen() {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Load villages on mount
   useEffect(() => {
     loadVillages();
   }, [loadVillages]);
 
-  // Filter and sort villages
   const filteredVillages = useMemo(() => {
     let result = villages.filter(
       (v) =>
@@ -48,7 +49,6 @@ export function DashboardScreen() {
     return result;
   }, [villages, searchQuery, sortBy, sortDirection]);
 
-  // Summary calculations
   const assigned = villages.length;
   const completed = villages.filter((v) => v.progress === 100).length;
   const pending = villages.filter((v) => v.progress < 100).length;
@@ -76,25 +76,38 @@ export function DashboardScreen() {
     return 'Continue';
   };
 
+  const userInitials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : 'U';
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen w-full bg-white font-sans text-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+      <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[#e2e8f0] bg-white px-6">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-            <span className="text-slate-500 text-xs font-bold">B</span>
-          </div>
-          <span className="font-semibold text-slate-800">BoundaryAI</span>
+          <div
+            className="h-8 w-8 rounded-full bg-contain bg-center bg-no-repeat"
+            style={{ backgroundImage: `url("${AP_EMBLEM_URL}")` }}
+          />
+          <span className="text-lg font-semibold text-[#1e293b] tracking-tight">BoundaryAI</span>
         </div>
 
         {/* User Dropdown */}
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 hover:bg-slate-100 px-3 py-2 rounded text-slate-700"
+            className="flex cursor-pointer items-center gap-2 rounded p-1 hover:bg-slate-50 transition"
           >
-            <span>{user?.name}</span>
-            <ChevronDown className="w-4 h-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
+              {userInitials}
+            </div>
+            <span className="text-sm font-medium text-[#1e293b]">{user?.name}</span>
+            <Icon name="expand_more" className="text-[#64748b]" />
           </button>
           {dropdownOpen && (
             <>
@@ -102,10 +115,10 @@ export function DashboardScreen() {
                 className="fixed inset-0 z-40"
                 onClick={() => setDropdownOpen(false)}
               />
-              <div className="absolute right-0 mt-2 bg-white border border-slate-200 rounded shadow-lg z-50 min-w-32">
+              <div className="absolute right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg z-50 min-w-32 overflow-hidden">
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 w-full text-left hover:bg-slate-100 text-slate-700"
+                  className="px-4 py-2.5 w-full text-left hover:bg-slate-100 text-slate-700 text-sm"
                 >
                   Logout
                 </button>
@@ -116,79 +129,79 @@ export function DashboardScreen() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
+      <main className="mx-auto max-w-7xl px-6 pt-24 pb-12">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800">
-            Welcome, {user?.name}
-          </h1>
-          <p className="text-slate-500">
+          <h1 className="text-3xl font-bold text-[#1e293b]">Welcome, {user?.name}</h1>
+          <p className="mt-1 text-sm font-medium text-[#64748b]">
             {user?.role} • {user?.district} District
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div
-            className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-4"
-            aria-label={`${assigned} Assigned Villages`}
-          >
-            <div className="text-3xl font-bold text-blue-700">{assigned}</div>
-            <div className="text-blue-600 text-sm">Assigned</div>
+        <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="flex flex-col rounded-xl border border-[#bfdbfe] bg-[#eff6ff] p-6 shadow-sm">
+            <span className="text-sm font-semibold text-blue-900/60">Assigned</span>
+            <span className="mt-2 text-4xl font-bold text-[#1d4ed8]">{assigned}</span>
           </div>
-          <div
-            className="flex-1 bg-emerald-50 border border-emerald-200 rounded-lg p-4"
-            aria-label={`${completed} Completed Villages`}
-          >
-            <div className="text-3xl font-bold text-emerald-700">
-              {completed}
-            </div>
-            <div className="text-emerald-600 text-sm">Completed</div>
+          <div className="flex flex-col rounded-xl border border-[#a7f3d0] bg-[#ecfdf5] p-6 shadow-sm">
+            <span className="text-sm font-semibold text-emerald-900/60">Completed</span>
+            <span className="mt-2 text-4xl font-bold text-[#059669]">{completed}</span>
           </div>
-          <div
-            className="flex-1 bg-amber-50 border border-amber-200 rounded-lg p-4"
-            aria-label={`${pending} Pending Villages`}
-          >
-            <div className="text-3xl font-bold text-amber-700">{pending}</div>
-            <div className="text-amber-600 text-sm">Pending</div>
+          <div className="flex flex-col rounded-xl border border-[#fde68a] bg-[#fffbeb] p-6 shadow-sm">
+            <span className="text-sm font-semibold text-amber-900/60">Pending</span>
+            <span className="mt-2 text-4xl font-bold text-[#d97706]">{pending}</span>
           </div>
         </div>
 
         {/* Search and Sort */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <input
-            type="search"
-            placeholder="Search villages..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 border border-slate-300 rounded px-3 py-2 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            aria-label="Search villages by name or mandal"
-          />
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as 'name' | 'progress' | 'parcels')
-            }
-            className="border border-slate-300 rounded px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="name">Sort by: Name</option>
-            <option value="progress">Sort by: Progress</option>
-            <option value="parcels">Sort by: Parcels</option>
-          </select>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-[400px]">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <Icon name="search" className="text-[20px] text-gray-400" />
+            </div>
+            <input
+              type="search"
+              placeholder="Search villages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm placeholder-gray-400 shadow-sm focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af] focus:outline-none"
+              aria-label="Search villages by name or mandal"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-[#64748b]">Sort by:</label>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) =>
+                  setSortBy(e.target.value as 'name' | 'progress' | 'parcels')
+                }
+                className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-[#1e293b] shadow-sm focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af] focus:outline-none cursor-pointer"
+              >
+                <option value="name">Name</option>
+                <option value="progress">Progress (Low to High)</option>
+                <option value="parcels">Parcel Count</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                <Icon name="expand_more" className="text-[18px]" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-slate-100 rounded-lg p-4 animate-pulse"
+                className="flex flex-col rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-6 shadow-sm animate-pulse"
               >
                 <div className="h-5 bg-slate-200 rounded w-3/4 mb-2" />
                 <div className="h-4 bg-slate-200 rounded w-1/2 mb-4" />
                 <div className="h-2 bg-slate-200 rounded w-full mb-2" />
-                <div className="h-8 bg-slate-200 rounded w-1/3" />
+                <div className="h-8 bg-slate-200 rounded w-1/3 mt-4" />
               </div>
             ))}
           </div>
@@ -200,7 +213,7 @@ export function DashboardScreen() {
             <p className="text-red-600 mb-4">Failed to load villages</p>
             <button
               onClick={() => loadVillages()}
-              className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-[#1e40af] text-white rounded-lg hover:bg-blue-800 transition"
             >
               Retry
             </button>
@@ -223,68 +236,67 @@ export function DashboardScreen() {
 
         {/* Village Cards */}
         {!isLoading && !error && filteredVillages.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {filteredVillages.map((village) => (
               <article
                 key={village.id}
-                className="bg-slate-50 border border-slate-200 rounded-lg p-4 cursor-pointer hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="flex flex-col rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-6 shadow-sm transition hover:shadow-md cursor-pointer"
                 tabIndex={0}
                 onClick={() => handleVillageClick(village)}
-                onKeyDown={(e) =>
-                  e.key === 'Enter' && handleVillageClick(village)
-                }
+                onKeyDown={(e) => e.key === 'Enter' && handleVillageClick(village)}
                 aria-label={`${village.name}, ${village.parcelCount} parcels, ${village.progress}% verified`}
               >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-slate-800">
-                      {village.name}
-                    </h3>
-                    <p className="text-slate-500 text-sm">{village.mandal}</p>
+                    <h3 className="text-lg font-bold text-[#1e293b]">{village.name}</h3>
+                    <p className="text-sm text-[#64748b]">{village.mandal}</p>
                   </div>
-                  {village.progress === 100 && (
-                    <Check className="w-5 h-5 text-emerald-600" />
-                  )}
+                  <div className="rounded bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm border border-slate-100">
+                    {village.parcelCount.toLocaleString()} parcels
+                  </div>
                 </div>
 
-                <p className="text-slate-600 text-sm mt-2">
-                  {village.parcelCount.toLocaleString()} parcels
-                </p>
-
-                {/* Progress Bar */}
-                <div
-                  className="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden"
-                  role="progressbar"
-                  aria-valuenow={village.progress}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`${village.progress}% verified`}
-                >
-                  <div
-                    className={clsx(
-                      'h-full rounded-full transition-all',
-                      village.progress === 100
-                        ? 'bg-emerald-600'
-                        : village.progress > 0
-                          ? 'bg-blue-500'
-                          : 'bg-slate-300'
+                {/* Progress */}
+                <div className="mt-6">
+                  <div className="mb-2 flex items-center justify-between text-xs font-medium">
+                    {village.progress === 100 ? (
+                      <div className="flex items-center gap-1 text-[#059669]">
+                        <Icon name="check_circle" className="text-[16px]" />
+                        <span>Complete</span>
+                      </div>
+                    ) : village.progress > 0 ? (
+                      <span className="text-[#3b82f6]">{village.progress}% verified</span>
+                    ) : (
+                      <span className="text-[#64748b]">Not started</span>
                     )}
-                    style={{ width: `${village.progress}%` }}
-                  />
+                    <span className="text-[#1e293b]">{village.progress}%</span>
+                  </div>
+                  <div
+                    className="h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                    role="progressbar"
+                    aria-valuenow={village.progress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div
+                      className={clsx(
+                        'h-full transition-all',
+                        village.progress === 100
+                          ? 'bg-[#059669]'
+                          : village.progress > 0
+                            ? 'bg-[#3b82f6]'
+                            : 'bg-transparent'
+                      )}
+                      style={{ width: `${village.progress}%` }}
+                    />
+                  </div>
                 </div>
 
-                {/* Status and Action */}
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-sm text-slate-500">
-                    {village.progress === 0
-                      ? 'Not started'
-                      : village.progress === 100
-                        ? 'Complete'
-                        : `${village.progress}% verified`}
-                  </span>
-                  <span className="text-blue-600 font-medium text-sm">
-                    {getActionText(village)} →
-                  </span>
+                {/* Action */}
+                <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
+                  <button className="flex items-center gap-1 text-sm font-bold text-blue-700 hover:text-blue-800 transition">
+                    {getActionText(village)} <Icon name="arrow_forward" className="text-[18px]" />
+                  </button>
                 </div>
               </article>
             ))}
