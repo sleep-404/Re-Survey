@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRORStore } from '../../hooks/useRORStore';
-import { usePolygonStore } from '../../hooks/usePolygonStore';
 import type { RORRecord } from '../../types/ror';
 
 interface RORPanelProps {
@@ -21,7 +20,6 @@ export function RORPanel({ onSelectParcel }: RORPanelProps) {
     getFilteredRecords,
   } = useRORStore();
 
-  const { parcels } = usePolygonStore();
   const [showUpload, setShowUpload] = useState(false);
 
   // Auto-load Nibanupudi ROR on mount (only once)
