@@ -61,7 +61,7 @@ Track completion by checking off items as you commit each file.
 - [x] Create `src/components/Auth/ProtectedRoute.tsx`
 
 ### Phase 8: Routing
-- [ ] Update `src/main.tsx` (add router and routes)
+- [x] Update `src/main.tsx` (add router and routes)
 
 ### Phase 9: Testing
 - [ ] Verify all 23 test cases pass
