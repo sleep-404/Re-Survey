@@ -34,7 +34,7 @@ const BASE_VILLAGES: Omit<Village, 'parcelCount'>[] = [
     id: 'nibhanupudi',
     name: 'Nibhanupudi',
     mandal: 'Pedakurapadu',
-    progress: 0,
+    progress: 28,
     hasRealData: true
   },
   {
