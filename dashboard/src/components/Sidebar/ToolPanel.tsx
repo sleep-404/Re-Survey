@@ -3,7 +3,7 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
 import { Icon } from '../shared/Icon';
-import { union, featureCollection, buffer, simplify, area as turfArea } from '@turf/turf';
+import { convex, area as turfArea } from '@turf/turf';
 import type { AppMode, ParcelFeature } from '../../types';
 
 // Tool icons mapping
@@ -81,68 +81,40 @@ export function ToolPanel() {
     if (selectedParcels.length < 2) return;
 
     try {
-      // First, buffer each polygon slightly to close tiny gaps between adjacent segments
-      const bufferedFeatures = selectedParcels.map(p => {
-        const buffered = buffer(p, 0.5, { units: 'meters' });
-        return {
-          type: 'Feature' as const,
-          properties: {},
-          geometry: buffered?.geometry || p.geometry,
-        };
+      // Collect all points from all selected polygons
+      const allPoints: [number, number][] = [];
+      selectedParcels.forEach(parcel => {
+        if (parcel.geometry.type === 'Polygon') {
+          // Add all coordinates from the outer ring
+          parcel.geometry.coordinates[0].forEach(coord => {
+            allPoints.push([coord[0], coord[1]]);
+          });
+        }
       });
 
-      // Union the buffered polygons
-      let mergedResult = union(featureCollection(bufferedFeatures));
+      // Create convex hull - "wrap a rope around all points"
+      const pointsFeature = {
+        type: 'FeatureCollection' as const,
+        features: allPoints.map(coord => ({
+          type: 'Feature' as const,
+          properties: {},
+          geometry: { type: 'Point' as const, coordinates: coord },
+        })),
+      };
 
-      if (!mergedResult || !mergedResult.geometry) {
-        alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
+      const hull = convex(pointsFeature);
+
+      if (!hull || !hull.geometry) {
+        alert('Failed to merge polygons.');
         return;
       }
 
-      // Shrink back by the same buffer amount to restore original size
-      const shrunk = buffer(mergedResult, -0.5, { units: 'meters' });
-      if (shrunk && shrunk.geometry) {
-        mergedResult = shrunk;
-      }
-
-      // Simplify to clean up any artifacts (tolerance in degrees, ~0.1m)
-      const simplified = simplify(mergedResult, { tolerance: 0.000001, highQuality: true });
-      if (simplified && simplified.geometry) {
-        mergedResult = simplified;
-      }
-
-      // Handle both Polygon and MultiPolygon results
-      let finalGeometry: GeoJSON.Polygon | GeoJSON.MultiPolygon = mergedResult.geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
-
-      // If result is MultiPolygon, take the largest polygon
-      if (finalGeometry.type === 'MultiPolygon') {
-        const polygons = finalGeometry.coordinates;
-        // Find the largest polygon by coordinate count (rough area approximation)
-        let largestIdx = 0;
-        let largestSize = 0;
-        polygons.forEach((poly, idx) => {
-          const size = poly[0]?.length || 0;
-          if (size > largestSize) {
-            largestSize = size;
-            largestIdx = idx;
-          }
-        });
-        finalGeometry = {
-          type: 'Polygon',
-          coordinates: polygons[largestIdx],
-        };
-      }
-
-      // Calculate actual area from merged geometry
-      const calculatedArea = turfArea({
-        type: 'Feature',
-        properties: {},
-        geometry: finalGeometry,
-      });
+      // Calculate area from merged geometry
+      const calculatedArea = turfArea(hull);
 
       const mergedParcel: ParcelFeature = {
         type: 'Feature',
-        geometry: finalGeometry as GeoJSON.Polygon,
+        geometry: hull.geometry as GeoJSON.Polygon,
         properties: {
           id: `merged-${Date.now()}`,
           parcelType: selectedParcels[0].properties.parcelType,
