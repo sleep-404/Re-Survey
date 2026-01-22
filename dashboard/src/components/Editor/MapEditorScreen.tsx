@@ -4,7 +4,7 @@ import { Sidebar } from '../Sidebar/Sidebar';
 import { BottomBar } from '../BottomBar/BottomBar';
 import { EditorHeader } from './EditorHeader';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
-import { useLayerStore, type DataSource } from '../../hooks/useLayerStore';
+import { useLayerStore } from '../../hooks/useLayerStore';
 import { useLiveSegmentationStore, loadLiveSegmentsFromStorage } from '../../hooks/useLiveSegmentationStore';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import type { ParcelFeature } from '../../types';

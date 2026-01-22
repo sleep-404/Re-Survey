@@ -18,7 +18,6 @@ export function LivePanel() {
     isProcessing,
     lastError,
     lastProcessingTime,
-    liveSegments,
     totalSegmentCount,
     setDrawingBox,
     setSelectedModel,
