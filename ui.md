@@ -47,7 +47,7 @@ Track completion by checking off items as you commit each file.
 - [x] Create `src/hooks/useVillageStore.ts`
 
 ### Phase 4: Login Screen
-- [ ] Create `src/components/Auth/LoginScreen.tsx`
+- [x] Create `src/components/Auth/LoginScreen.tsx`
 
 ### Phase 5: Dashboard Screen
 - [ ] Create `src/components/Dashboard/DashboardScreen.tsx`
