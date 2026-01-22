@@ -552,6 +552,10 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     // Update features with selection/hover state and conflict level
     const featuresWithState = parcels
       .filter(p => {
+        // Hide the parcel being edited (it's shown in the editing layer instead)
+        if (editingPolygonId && p.properties.id === editingPolygonId) {
+          return false;
+        }
         // Filter by minimum area threshold
         const area = p.properties.area || 0;
         return area >= minAreaThreshold;
@@ -584,7 +588,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
       type: 'FeatureCollection',
       features: featuresWithState,
     });
-  }, [parcels, selectedIds, hoveredId, minAreaThreshold]);
+  }, [parcels, selectedIds, hoveredId, minAreaThreshold, editingPolygonId]);
 
   // Update drawing preview
   useEffect(() => {
