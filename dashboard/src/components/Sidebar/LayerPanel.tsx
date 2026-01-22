@@ -137,6 +137,27 @@ export function LayerPanel() {
               Ground Truth {dataSourceCounts.ground_truth !== null && <span className="text-green-400 ml-1">{formatCount(dataSourceCounts.ground_truth)}</span>}
             </span>
           </label>
+          <label
+            className={`flex items-center gap-3 p-2.5 rounded cursor-pointer group transition-colors ${
+              activeDataSource === 'live'
+                ? 'bg-purple-950/20 border border-purple-800/50'
+                : 'hover:bg-gray-800'
+            }`}
+          >
+            <input
+              type="radio"
+              name="dataSource"
+              checked={activeDataSource === 'live'}
+              onChange={() => setActiveDataSource('live')}
+              className="text-purple-500 focus:ring-purple-500/50 bg-gray-900 border-gray-600"
+            />
+            <span className={`text-xs font-medium transition-colors ${
+              activeDataSource === 'live' ? 'text-purple-100' : 'text-gray-300 group-hover:text-white'
+            }`}>
+              Live Segmentation {dataSourceCounts.live !== null && dataSourceCounts.live > 0 && <span className="text-purple-400 ml-1">{formatCount(dataSourceCounts.live)}</span>}
+              {(dataSourceCounts.live === null || dataSourceCounts.live === 0) && <span className="text-gray-600 ml-1">(0)</span>}
+            </span>
+          </label>
         </div>
         {isLoading && (
           <div className="mt-2 text-xs text-gray-500 flex items-center gap-2">
