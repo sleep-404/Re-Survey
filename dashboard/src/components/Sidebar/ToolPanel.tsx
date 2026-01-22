@@ -3,7 +3,7 @@ import { useSelectionStore } from '../../hooks/useSelectionStore';
 import { usePolygonStore } from '../../hooks/usePolygonStore';
 import { useHistoryStore, createDeleteAction, createMergeAction } from '../../hooks/useHistoryStore';
 import { Icon } from '../shared/Icon';
-import { union, area as turfArea } from '@turf/turf';
+import { union, featureCollection, area as turfArea } from '@turf/turf';
 import type { AppMode, ParcelFeature } from '../../types';
 
 // Tool icons mapping
@@ -88,14 +88,9 @@ export function ToolPanel() {
         geometry: p.geometry,
       }));
 
-      // Union all polygons - preserves exact boundaries, removes internal edges
-      let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null = features[0] as GeoJSON.Feature<GeoJSON.Polygon>;
-
-      for (let i = 1; i < features.length; i++) {
-        if (!merged) break;
-        const result = union(merged, features[i] as GeoJSON.Feature<GeoJSON.Polygon>);
-        merged = result as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null;
-      }
+      // Union all polygons using featureCollection (turf v7 API)
+      const fc = featureCollection(features);
+      const merged = union(fc);
 
       if (!merged || !merged.geometry) {
         console.error('Union returned null or empty geometry');
