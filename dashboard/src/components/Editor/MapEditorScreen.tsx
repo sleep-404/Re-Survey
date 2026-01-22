@@ -83,13 +83,13 @@ export function MapEditorScreen() {
   useKeyboardShortcuts();
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
+    <div className="h-screen w-screen bg-gray-900 text-gray-100 flex flex-col overflow-hidden font-sans selection:bg-cyan-500/30">
       <EditorHeader />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar className="w-64 flex-shrink-0 border-r border-gray-700" />
-        <MapCanvas className="flex-1" />
+      <div className="flex flex-1 overflow-hidden relative">
+        <Sidebar className="w-[280px] flex-shrink-0 border-r border-gray-700 z-20 shadow-xl" />
+        <MapCanvas className="flex-1 relative" />
       </div>
-      <BottomBar className="flex-shrink-0" />
+      <BottomBar className="flex-shrink-0 z-30" />
     </div>
   );
 }
