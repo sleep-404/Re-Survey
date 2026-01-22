@@ -50,7 +50,7 @@ Track completion by checking off items as you commit each file.
 - [x] Create `src/components/Auth/LoginScreen.tsx`
 
 ### Phase 5: Dashboard Screen
-- [ ] Create `src/components/Dashboard/DashboardScreen.tsx`
+- [x] Create `src/components/Dashboard/DashboardScreen.tsx`
 
 ### Phase 6: Map Editor Screen
 - [ ] Create `src/components/Editor/EditorHeader.tsx`
