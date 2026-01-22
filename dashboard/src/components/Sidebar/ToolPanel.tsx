@@ -81,18 +81,25 @@ export function ToolPanel() {
     if (selectedParcels.length < 2) return;
 
     try {
-      // Union all polygons - preserves exact boundaries, removes internal edges
-      let merged = selectedParcels[0] as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+      // Convert to clean GeoJSON features for turf
+      const features = selectedParcels.map(p => ({
+        type: 'Feature' as const,
+        properties: {},
+        geometry: p.geometry,
+      }));
 
-      for (let i = 1; i < selectedParcels.length; i++) {
-        const result = union(merged, selectedParcels[i]);
-        if (result) {
-          merged = result as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
-        }
+      // Union all polygons - preserves exact boundaries, removes internal edges
+      let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null = features[0] as GeoJSON.Feature<GeoJSON.Polygon>;
+
+      for (let i = 1; i < features.length; i++) {
+        if (!merged) break;
+        const result = union(merged, features[i] as GeoJSON.Feature<GeoJSON.Polygon>);
+        merged = result as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null;
       }
 
       if (!merged || !merged.geometry) {
-        alert('Failed to merge polygons.');
+        console.error('Union returned null or empty geometry');
+        alert('Failed to merge polygons. Make sure they are adjacent or overlapping.');
         return;
       }
 
