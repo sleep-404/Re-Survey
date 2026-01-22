@@ -36,9 +36,9 @@ git commit -m "feat: Add login screen with form validation and error states"
 Track completion by checking off items as you commit each file.
 
 ### Phase 1: Setup
-- [ ] Create branch `feature/ui-redesign`
-- [ ] Run `npm install react-router-dom lucide-react clsx react-hot-toast`
-- [ ] Update `src/index.css` (remove hardcoded dark theme)
+- [x] Create branch `feature/ui-redesign`
+- [x] Run `npm install react-router-dom lucide-react clsx react-hot-toast`
+- [x] Update `src/index.css` (remove hardcoded dark theme)
 
 ### Phase 2: Auth Store
 - [ ] Create `src/hooks/useAuthStore.ts`
