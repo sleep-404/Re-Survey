@@ -252,6 +252,13 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
       // Keep currentBox so user can re-run segmentation with different parameters
       lastError: null,
       lastProcessingTime: null,
+      // Reset settings to defaults
+      selectedModel: 'vit_b',
+      maxDimension: 512,
+      minArea: 1500,
+      maxArea: 500000,
+      pointsPerSide: 16,
+      simplifyTolerance: 2.0,
     });
     // Clear the file
     saveLiveSegmentsToFile([]);
