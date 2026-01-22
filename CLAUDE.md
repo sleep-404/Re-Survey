@@ -6,16 +6,32 @@ Land parcel boundary editing tool for Andhra Pradesh resurvey project. React + T
 ## Development Practices
 
 ### Commit Strategy
-- **Commit every file IMMEDIATELY after you create or update it** - DO NOT wait until the end
-- Never batch multiple file changes into one commit unless they are tightly coupled
-- Use descriptive commit messages following conventional commits:
-  - `feat:` for new features
-  - `fix:` for bug fixes
-  - `refactor:` for code restructuring
-  - `docs:` for documentation
-  - `chore:` for tooling/config changes
-- Keep commits atomic and focused
-- If implementing multiple tasks, commit after completing each task
+
+**CRITICAL: Commit immediately after EVERY file change**
+
+1. **One file = One commit** — As soon as you create or update a file, commit it immediately
+2. **Never wait** — Do NOT batch changes or wait until the end of a task
+3. **Never skip** — Every single file change gets its own commit
+
+**Commit message format (conventional commits):**
+- `feat:` for new features
+- `fix:` for bug fixes
+- `refactor:` for code restructuring
+- `docs:` for documentation
+- `chore:` for tooling/config changes
+
+**Rules:**
+- Keep commits atomic and focused (one file, one purpose)
+- **Never include yourself as commit author** — use the default git config
+- If a task involves multiple files, commit each file separately as you complete it
+- Only batch tightly-coupled files (e.g., component + its types in same commit)
+
+**Example workflow:**
+```
+1. Create useAuthStore.ts → git add → git commit -m "feat: Add auth store with login/logout"
+2. Create LoginScreen.tsx → git add → git commit -m "feat: Add login screen component"
+3. Update main.tsx → git add → git commit -m "feat: Add routing to main.tsx"
+```
 
 ### Code Style
 - TypeScript strict mode
