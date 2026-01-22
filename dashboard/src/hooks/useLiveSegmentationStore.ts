@@ -67,6 +67,8 @@ interface LiveSegmentationState {
   // Advanced settings
   pointsPerSide: number;
   simplifyTolerance: number;
+  stabilityThresh: number;
+  iouThresh: number;
 
   // API state
   isProcessing: boolean;
@@ -86,6 +88,8 @@ interface LiveSegmentationState {
   setMaxArea: (area: number) => void;
   setPointsPerSide: (points: number) => void;
   setSimplifyTolerance: (tolerance: number) => void;
+  setStabilityThresh: (thresh: number) => void;
+  setIouThresh: (thresh: number) => void;
   runSegmentation: () => Promise<void>;
   addSegments: (segments: ParcelFeature[]) => void;
   setLiveSegments: (segments: ParcelFeature[]) => void;
@@ -106,6 +110,8 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
   maxArea: 500000,
   pointsPerSide: 16,
   simplifyTolerance: 2.0,
+  stabilityThresh: 0.92,
+  iouThresh: 0.90,
 
   isProcessing: false,
   lastError: null,
@@ -131,8 +137,12 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
 
   setSimplifyTolerance: (tolerance) => set({ simplifyTolerance: tolerance }),
 
+  setStabilityThresh: (thresh) => set({ stabilityThresh: thresh }),
+
+  setIouThresh: (thresh) => set({ iouThresh: thresh }),
+
   runSegmentation: async () => {
-    const { currentBox, selectedModel, maxDimension, minArea, maxArea, pointsPerSide, simplifyTolerance } = get();
+    const { currentBox, selectedModel, maxDimension, minArea, maxArea, pointsPerSide, simplifyTolerance, stabilityThresh, iouThresh } = get();
 
     if (!currentBox) {
       set({ lastError: 'No bounding box selected. Draw a box on the map first.' });
@@ -150,6 +160,8 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
         max_area: maxArea,
         points_per_side: pointsPerSide,
         simplify_tolerance: simplifyTolerance,
+        stability_thresh: stabilityThresh,
+        iou_thresh: iouThresh,
       };
 
       const response = await fetch(API_ENDPOINT, {
@@ -259,6 +271,8 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
       maxArea: 500000,
       pointsPerSide: 16,
       simplifyTolerance: 2.0,
+      stabilityThresh: 0.92,
+      iouThresh: 0.90,
     });
     // Clear the file
     saveLiveSegmentsToFile([]);
