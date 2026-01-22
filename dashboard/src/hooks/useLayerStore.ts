@@ -2,16 +2,18 @@ import { create } from 'zustand';
 
 /**
  * Data source types for the main polygon layer
- * - 'sam': SAM-generated segments
+ * - 'sam': SAM-generated segments (pre-computed)
  * - 'ground_truth': Official annotations
  * - 'working': User's edited working layer
+ * - 'live': Live AI segmentation results
  */
-export type DataSource = 'working' | 'sam' | 'ground_truth';
+export type DataSource = 'working' | 'sam' | 'ground_truth' | 'live';
 
 interface DataSourceCounts {
   sam: number | null;
   ground_truth: number | null;
   working: number | null;
+  live: number | null;
 }
 
 interface LayerState {
@@ -66,6 +68,7 @@ export const useLayerStore = create<LayerState>((set) => ({
     sam: null,
     ground_truth: null,
     working: null,
+    live: null,
   },
 
   // Ground truth overlay off by default
