@@ -10,19 +10,12 @@ const MODEL_OPTIONS: { value: SAMModelType; label: string; description: string }
   { value: 'vit_h', label: 'ViT-H (Best)', description: 'Huge model, highest accuracy' },
 ];
 
-const QUALITY_OPTIONS = [
-  { value: 256, label: 'Fast', description: 'Lower resolution, faster' },
-  { value: 512, label: 'Balanced', description: 'Good balance' },
-  { value: 1024, label: 'High', description: 'Higher detail, slower' },
-];
-
 export function LivePanel() {
   const {
     isDrawingBox,
     currentBox,
     drawnBoxes,
     selectedModel,
-    maxDimension,
     minArea,
     pointsPerSide,
     simplifyTolerance,
@@ -32,12 +25,12 @@ export function LivePanel() {
     totalSegmentCount,
     setDrawingBox,
     setSelectedModel,
-    setMaxDimension,
     setMinArea,
     setPointsPerSide,
     setSimplifyTolerance,
     runSegmentation,
     clearAllSegments,
+    clearCurrentBox,
     clearError,
   } = useLiveSegmentationStore();
 
@@ -124,12 +117,20 @@ export function LivePanel() {
                 {formatBounds(currentBox)}
               </div>
             </div>
-            <button
-              onClick={handleStartDrawing}
-              className="w-full px-3 py-2 text-xs font-medium text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded transition-colors"
-            >
-              Draw New Box
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleStartDrawing}
+                className="flex-1 px-3 py-2 text-xs font-medium text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded transition-colors"
+              >
+                Redraw Box
+              </button>
+              <button
+                onClick={clearCurrentBox}
+                className="flex-1 px-3 py-2 text-xs font-medium text-red-400 hover:text-red-300 border border-red-800/50 hover:border-red-700 rounded transition-colors"
+              >
+                Clear Selection
+              </button>
+            </div>
           </div>
         ) : (
           <button
@@ -189,28 +190,6 @@ export function LivePanel() {
         </div>
 
         <div className="space-y-4 pl-1">
-          {/* Quality / Resolution */}
-          <div>
-            <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-2 block">Quality</label>
-            <div className="flex gap-1">
-              {QUALITY_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setMaxDimension(option.value)}
-                  disabled={isProcessing}
-                  className={`flex-1 px-2 py-1.5 text-[10px] font-medium rounded border transition-colors ${
-                    maxDimension === option.value
-                      ? 'bg-cyan-900/30 border-cyan-700 text-cyan-300'
-                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
-                  }`}
-                  title={option.description}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Min Area Filter */}
           <div>
             <div className="flex justify-between items-center mb-1.5">
