@@ -10,18 +10,32 @@ const MODEL_OPTIONS: { value: SAMModelType; label: string; description: string }
   { value: 'vit_h', label: 'ViT-H (Best)', description: 'Huge model, highest accuracy' },
 ];
 
+const QUALITY_OPTIONS = [
+  { value: 256, label: 'Fast', description: 'Lower resolution, faster' },
+  { value: 512, label: 'Balanced', description: 'Good balance' },
+  { value: 1024, label: 'High', description: 'Higher detail, slower' },
+];
+
 export function LivePanel() {
   const {
     isDrawingBox,
     currentBox,
     drawnBoxes,
     selectedModel,
+    maxDimension,
+    minArea,
+    pointsPerSide,
+    simplifyTolerance,
     isProcessing,
     lastError,
     lastProcessingTime,
     totalSegmentCount,
     setDrawingBox,
     setSelectedModel,
+    setMaxDimension,
+    setMinArea,
+    setPointsPerSide,
+    setSimplifyTolerance,
     runSegmentation,
     clearAllSegments,
     clearError,
@@ -167,10 +181,108 @@ export function LivePanel() {
         </div>
       </div>
 
-      {/* Step 3: Run Segmentation */}
+      {/* Step 3: Segmentation Settings */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">3</span>
+          <span className="text-xs font-medium text-gray-300">Settings</span>
+        </div>
+
+        <div className="space-y-4 pl-1">
+          {/* Quality / Resolution */}
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-2 block">Quality</label>
+            <div className="flex gap-1">
+              {QUALITY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setMaxDimension(option.value)}
+                  disabled={isProcessing}
+                  className={`flex-1 px-2 py-1.5 text-[10px] font-medium rounded border transition-colors ${
+                    maxDimension === option.value
+                      ? 'bg-cyan-900/30 border-cyan-700 text-cyan-300'
+                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
+                  }`}
+                  title={option.description}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Min Area Filter */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide">Min Area</label>
+              <span className="text-[10px] text-cyan-400 font-mono">{minArea} m²</span>
+            </div>
+            <input
+              type="range"
+              min="100"
+              max="5000"
+              step="100"
+              value={minArea}
+              onChange={(e) => setMinArea(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            />
+            <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+              <span>100</span>
+              <span>5000 m²</span>
+            </div>
+          </div>
+
+          {/* Simplify Tolerance */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide">Boundary Smoothing</label>
+              <span className="text-[10px] text-cyan-400 font-mono">{simplifyTolerance.toFixed(1)} m</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="0.5"
+              value={simplifyTolerance}
+              onChange={(e) => setSimplifyTolerance(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            />
+            <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+              <span>Detailed</span>
+              <span>Smooth</span>
+            </div>
+          </div>
+
+          {/* Points Per Side (Density) */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[10px] text-gray-500 uppercase tracking-wide">Segment Density</label>
+              <span className="text-[10px] text-cyan-400 font-mono">{pointsPerSide} pts</span>
+            </div>
+            <input
+              type="range"
+              min="8"
+              max="32"
+              step="4"
+              value={pointsPerSide}
+              onChange={(e) => setPointsPerSide(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            />
+            <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+              <span>Fewer segments</span>
+              <span>More segments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Step 4: Run Segmentation */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">3</span>
+          <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">4</span>
           <span className="text-xs font-medium text-gray-300">Run Segmentation</span>
         </div>
 
