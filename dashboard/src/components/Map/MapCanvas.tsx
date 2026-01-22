@@ -40,6 +40,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     updateVertex,
     startDragging,
     stopDragging,
+    deleteVertex,
     finishEditing,
   } = useEditingStore();
   const {
@@ -1085,6 +1086,29 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     }
   }, [isDragging, stopDragging, isDrawingBox, boxStart, boxEnd, setCurrentBox, setDrawingBox]);
 
+  // Handle right-click to delete vertex in edit mode
+  const handleContextMenu = useCallback(
+    (e: MapMouseEvent) => {
+      if (!map.current) return;
+      if (mode !== 'edit-vertices') return;
+
+      // Check if right-clicking on a vertex
+      const vertexFeatures = map.current.queryRenderedFeatures(e.point, {
+        layers: ['editing-vertices'],
+      });
+
+      if (vertexFeatures.length > 0) {
+        const vertexIndex = vertexFeatures[0].properties?.index;
+        if (typeof vertexIndex === 'number') {
+          e.preventDefault();
+          // Need at least 3 vertices (deleteVertex enforces this)
+          deleteVertex(vertexIndex);
+        }
+      }
+    },
+    [mode, deleteVertex]
+  );
+
   // Attach event handlers
   useEffect(() => {
     if (!map.current) return;
@@ -1094,6 +1118,7 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
     map.current.on('dblclick', handleDoubleClick);
     map.current.on('mousedown', handleMouseDown);
     map.current.on('mouseup', handleMouseUp);
+    map.current.on('contextmenu', handleContextMenu);
 
     // Disable default double-click zoom in draw mode
     if (mode === 'draw') {
@@ -1109,9 +1134,10 @@ export function MapCanvas({ className = '' }: MapCanvasProps) {
         map.current.off('dblclick', handleDoubleClick);
         map.current.off('mousedown', handleMouseDown);
         map.current.off('mouseup', handleMouseUp);
+        map.current.off('contextmenu', handleContextMenu);
       }
     };
-  }, [handleClick, handleMouseMove, handleDoubleClick, handleMouseDown, handleMouseUp, mode]);
+  }, [handleClick, handleMouseMove, handleDoubleClick, handleMouseDown, handleMouseUp, handleContextMenu, mode]);
 
   return (
     <div className={`relative ${className}`}>
