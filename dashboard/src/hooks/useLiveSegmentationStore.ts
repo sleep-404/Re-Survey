@@ -90,6 +90,7 @@ interface LiveSegmentationState {
   addSegments: (segments: ParcelFeature[]) => void;
   setLiveSegments: (segments: ParcelFeature[]) => void;
   clearAllSegments: () => void;
+  clearCurrentBox: () => void;
   clearError: () => void;
 }
 
@@ -210,7 +211,7 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
         drawnBoxes: updatedBoxes,
         isProcessing: false,
         lastProcessingTime: data.processing_time_ms,
-        currentBox: null, // Clear current box after successful segmentation
+        // Keep currentBox visible so user can re-run with different parameters
       });
 
       console.log(`Live segmentation: Added ${newFeatures.length} segments (total: ${updatedSegments.length})`);
@@ -248,12 +249,19 @@ export const useLiveSegmentationStore = create<LiveSegmentationState>((set, get)
       liveSegments: [],
       totalSegmentCount: 0,
       drawnBoxes: [],
-      currentBox: null,
+      // Keep currentBox so user can re-run segmentation with different parameters
       lastError: null,
       lastProcessingTime: null,
     });
     // Clear the file
     saveLiveSegmentsToFile([]);
+  },
+
+  clearCurrentBox: () => {
+    set({
+      currentBox: null,
+      isDrawingBox: false,
+    });
   },
 
   clearError: () => set({ lastError: null }),
